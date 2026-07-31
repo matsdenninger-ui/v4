@@ -1,0 +1,9 @@
+{
+  "name": "ascend-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Self-Improvement Dashboard mit Cloud-Sync über Vercel + Upstash Redis",
+  "dependencies": {
+    "@upstash/redis": "^1.34.0"
+  }
+}
