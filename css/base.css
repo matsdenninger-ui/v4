@@ -1,0 +1,112 @@
+/* ============================================================
+   ASCEND — base.css
+   Design-Tokens, Reset, Typografie, Grundelemente (Buttons, Inputs)
+   ============================================================ */
+:root{
+  --bg:#000000;
+  --surface:#121118;
+  --elev:#1a1824;
+  --border:#332f45;
+  --border-soft:#211f2d;
+  --text:#F5F3FA;
+  --dim:#B7A9DC;
+  --faint:#6f6785;
+  --ac:#9B5DE5;
+  --ac-2:#7C3FC4;
+  --ac-light:#C9A6F5;
+  --ac-soft:rgba(155,93,229,.13);
+  --sec:#F15A29;
+  --sec-light:#FF8C42;
+  --sec-soft:rgba(241,90,41,.13);
+  --mint:#34D399;
+  --mint-soft:rgba(52,211,153,.14);
+  --rose:#F87171;
+  --sky:#60A5FA;
+  --radius:16px;
+  --radius-sm:10px;
+  --shadow:0 10px 34px rgba(0,0,0,.55);
+  --sidebar-w:256px;
+  --font-display:"Archivo",system-ui,sans-serif;
+  --font-body:"Inter",system-ui,sans-serif;
+  --theme-transition:background-color 1.4s ease, border-color 1.4s ease, box-shadow 1.4s ease, color 1.4s ease;
+}
+/* ---------- Tageszeit-Farbverlauf ---------- */
+/* Morgens: Lila -> Orange (Standard, s. :root oben) */
+:root[data-period="day"]{
+  --dim:#A9C6E8;
+  --ac:#3B82F6;
+  --ac-2:#2563EB;
+  --ac-light:#93C5FD;
+  --ac-soft:rgba(59,130,246,.13);
+  --sec:#22C55E;
+  --sec-light:#4ADE80;
+  --sec-soft:rgba(34,197,94,.13);
+  }
+:root[data-period="evening"]{
+  --dim:#C9C2E8;
+  --ac:#5B7CFA;
+  --ac-2:#364FC7;
+  --ac-light:#A5B4FC;
+  --ac-soft:rgba(91,124,250,.14);
+  --sec:#F5D67B;
+  --sec-light:#FDE68A;
+  --sec-soft:rgba(245,214,123,.14);
+  }
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.55;
+  min-height:100vh;
+  position:relative;
+}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 800px 650px at 10% -5%, var(--ac-soft) 0%, transparent 55%),
+    radial-gradient(ellipse 700px 600px at 100% 100%, var(--sec-soft) 0%, transparent 55%);
+  transition:background 1.6s ease;
+}
+.main,.modal,.toasts{position:relative;z-index:1}
+::selection{background:var(--ac-soft)}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{
+  font-family:inherit;font-size:14px;color:var(--text);
+  background:var(--bg);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:9px 12px;outline:none;
+  transition:border-color .15s, box-shadow .15s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 3px var(--ac-soft)}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+input:focus-visible,textarea:focus-visible,select:focus-visible{outline:none}
+textarea{resize:vertical;min-height:90px;width:100%}
+::placeholder{color:var(--faint,#6B7280)}
+
+
+/* ---------- Buttons ---------- */
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;
+  background:linear-gradient(135deg,var(--ac),var(--ac-2));color:#fff;font-weight:600;font-size:13.5px;
+  padding:10px 18px;border-radius:var(--radius-sm);
+  transition:filter .15s,transform .1s,box-shadow .2s;
+}
+.btn:hover{filter:brightness(1.12)}
+.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--elev);color:var(--text);border:1px solid var(--border)}
+.btn.ghost:hover{border-color:var(--dim)}
+.btn.danger{background:var(--rose);color:#fff}
+.btn.danger:hover{filter:brightness(1.1)}
+.btn.violet{background:linear-gradient(120deg,var(--sec),var(--sec-light));color:#fff}
+.btn.sm{padding:6px 11px;font-size:12.5px}
+.icon-btn{
+  width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+  color:var(--dim);transition:background .15s,color .15s;flex:none;
+}
+.icon-btn:hover{background:var(--elev);color:var(--text)}
+.icon-btn.del:hover{color:var(--rose)}
+.icon-btn svg{width:15px;height:15px;stroke:currentColor}
+
