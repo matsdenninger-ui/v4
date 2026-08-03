@@ -1,0 +1,576 @@
+<!-- ASCEND DASHBOARD — v19 · 2026-08-01 · Phase 4: XP-Zähler, Level-Up-Feier, Badge-Glow, Tagesabschluss + Mobile-Feinschliff -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ascend — Self-Improvement Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/layout.css">
+<link rel="stylesheet" href="css/cards.css">
+<link rel="stylesheet" href="css/today.css">
+<link rel="stylesheet" href="css/nutrition.css">
+<link rel="stylesheet" href="css/body.css">
+<link rel="stylesheet" href="css/mind.css">
+<link rel="stylesheet" href="css/progress.css">
+<link rel="stylesheet" href="css/goals.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/responsive.css">
+<link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <linearGradient id="secGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" style="stop-color:var(--sec-light)"/><stop offset="100%" style="stop-color:var(--sec)"/>
+    </linearGradient>
+    <linearGradient id="acGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" style="stop-color:var(--ac-light)"/><stop offset="100%" style="stop-color:var(--ac)"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<!-- ================= SIDEBAR ================= -->
+<button class="burger" id="burger" aria-label="Menü öffnen">
+  <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16"/></svg>
+</button>
+<div class="scrim" id="scrim"></div>
+<aside class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-mark">A</div>
+    <div><h1>Ascend</h1><span id="versionTag">v19 · 01.08.2026</span></div>
+  </div>
+  <nav class="nav" id="nav">
+    <button data-page="today" class="active">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m6.4.6-1.4 1.4M21 12h-2M5 12H3m3-5-1.4-1.4M12 21a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"/></svg>
+      Today</button>
+    <button data-page="nutrition">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c0-3 2-5 5-5 0 3-2 5-5 5Zm0 0C12 5 10 3 7 3c0 3 2 5 5 5Zm0 0v2m-5.5 1C4 11 3 13 3 15c0 3.5 2.5 6 5.5 6 1.2 0 2.4-.4 3.5-1.2 1.1.8 2.3 1.2 3.5 1.2 3 0 5.5-2.5 5.5-6 0-2-1-4-3.5-4-1.9 0-3.5.8-5.5.8S8.4 11 6.5 11Z"/></svg>
+      Nutrition</button>
+    <button data-page="body">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 6.5v11m11-11v11M4 9v6m16-6v6M6.5 12h11"/></svg>
+      Body</button>
+    <button data-page="mind">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.5 3A6.5 6.5 0 0 0 5 14.2V17a2 2 0 0 0 2 2h1v2h6v-3.5a6.5 6.5 0 0 0 4-6A6.5 6.5 0 0 0 11.5 5 6.5 6.5 0 0 0 9.5 3Z"/></svg>
+      Mind</button>
+    <button data-page="progress">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg>
+      Progress</button>
+    <button data-page="goals">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+      Goals</button>
+  </nav>
+  <div class="side-foot">
+    <div class="level-card">
+      <div class="ring">
+        <svg width="58" height="58" viewBox="0 0 58 58"><circle class="track" cx="29" cy="29" r="25"/><circle class="bar" id="ringBar" cx="29" cy="29" r="25" stroke-dasharray="157" stroke-dashoffset="157"/></svg>
+        <div class="lvl" id="ringLvl">1</div>
+      </div>
+      <div class="level-meta">
+        <b id="lvlTitle">Novize</b>
+        <small id="lvlXp">0 / 100 XP</small>
+        <div class="xp-mini"><i id="xpMini" style="width:0%"></i></div>
+      </div>
+    </div>
+    <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>
+    <button class="demo-btn" id="resetBtn" style="border-color:rgba(248,113,113,.35);color:var(--rose)">🗑 Alles zurücksetzen</button>
+    <div class="sync-box" id="syncBox">
+      <div class="sync-status" id="syncStatus">☁️ Nicht verbunden</div>
+      <div class="row-add" id="syncForm" style="margin-bottom:0">
+        <input id="syncCode" type="password" placeholder="Sync-Code" style="font-size:12px;padding:7px 9px">
+        <button class="btn sm" id="syncConnect">Verbinden</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h2 id="pageTitle">Today</h2>
+      <div class="date" id="dateLabel"></div>
+    </div>
+  </div>
+
+  <!-- ================= TODAY ================= -->
+  <section class="page active" id="page-today">
+    <div class="page-greet" id="pageGreet">
+      <div class="page-greet-row">
+        <button class="greet-avatar" id="heroAvatarBtn" data-act="hero-avatar" title="Avatar wechseln">🔥</button>
+        <div class="greet-text">
+          <h1 class="greet-title" id="heroGreetRow">
+            <span id="heroGreetWord">Hallo</span>,
+            <span class="hero-name" id="heroNameDisplay" data-act="hero-name-edit">dir</span><button class="hero-name-edit-btn" id="heroNameEditBtn" data-act="hero-name-edit" aria-label="Namen bearbeiten">✎</button>
+          </h1>
+          <div class="hero-date" id="heroDate"></div>
+        </div>
+        <div class="greet-ring">
+          <div class="ring ac-ring" style="width:56px;height:56px">
+            <svg width="56" height="56" viewBox="0 0 58 58"><circle class="track" cx="29" cy="29" r="25"/><circle class="bar" id="dayRingBar" cx="29" cy="29" r="25" stroke-dasharray="157" stroke-dashoffset="157"/></svg>
+            <div class="lvl" id="dayRingPct" style="color:var(--ac);font-size:14px">0%</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-time" id="heroTime">
+        <div class="hero-time-lab"><span>⏱ Fokus-Zeit für heutige Ziele</span><span id="heroTimeNums">0 / 0 Min.</span></div>
+        <div class="bar"><i id="heroTimeBar" style="width:0%"></i></div>
+      </div>
+    </div>
+
+    <div class="mission-card" id="missionCard">
+      <div class="mission-icon" id="missionIcon">🎯</div>
+      <div>
+        <div class="mission-label">Deine Mission heute</div>
+        <div class="mission-text" id="missionText">Alles im Blick.</div>
+      </div>
+    </div>
+
+    <div class="hero-chips" id="heroChips"></div>
+
+    <div class="stat-strip">
+      <div class="stat"><b id="stTodos">0/0</b><small>To-Dos erledigt</small></div>
+      <div class="stat"><b id="stHabits">0/0</b><small>Habits heute</small></div>
+      <div class="stat"><b id="stFocus">0,0 h</b><small>Fokuszeit heute</small></div>
+      <div class="stat"><b id="stStreak">0</b><small>Längste Streak</small></div>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3>🎯 Aktuelle Fokus-Ziele</h3>
+        <p class="sub">Woran du gerade arbeitest — direkt aus den Goals gespiegelt.</p>
+        <div id="todayFocusGoals"></div>
+      </div>
+
+      <div class="card">
+        <h3>Deep Work Timer <span class="tag">+1 XP / min</span></h3>
+        <p class="sub">Eine Aufgabe. Kein Handy. Volle Konzentration.</p>
+        <div class="timer">
+          <div class="clock" id="clock">00:00:00</div>
+          <div class="state" id="timerState">Bereit</div>
+          <button class="btn violet" id="timerBtn">▶ Session starten</button>
+          <div class="focus-stat">
+            <div><b id="focusToday">0,0 h</b><small>Heute</small></div>
+            <div><b id="focusWeek">0,0 h</b><small>Diese Woche</small></div>
+            <div><b id="focusSessions">0</b><small>Sessions heute</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>To-Do Liste <span class="tag">+5 XP</span></h3>
+        <p class="sub">Alle deine Aufgaben — nicht nur heutige. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
+        <div class="row-add">
+          <input id="todoInput" placeholder="Neue Aufgabe eintragen …" maxlength="120">
+          <input id="todoMinutes" type="number" min="0" step="5" placeholder="Min." style="width:64px;flex:none">
+          <button class="btn" id="todoAdd">+</button>
+        </div>
+        <div class="check-list" id="todoList"></div>
+      </div>
+
+      <div class="collapsible" id="moreCollapsible">
+        <button class="collapsible-toggle" id="moreToggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+          <span id="moreToggleLabel">Mehr anzeigen</span>
+        </button>
+        <div class="collapsible-body">
+          <div class="card">
+            <h3>Morgenroutine <span class="tag">+2 XP</span></h3>
+            <p class="sub">Gewinne den Morgen, gewinne den Tag. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
+            <div class="row-add">
+              <input id="routineAMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
+              <button class="btn sm" data-act="routine-add" data-list="am">+</button>
+            </div>
+            <div class="check-list" id="routineAM"></div>
+          </div>
+
+          <div class="card">
+            <h3>Weekly Planning Board</h3>
+            <p class="sub">Ziehe To-Dos zwischen den Tagen, tippe „+“ um bestehende zuzuweisen. Nicht erledigte Punkte rutschen automatisch auf heute nach.</p>
+            <div class="week-board" id="weekBoard"></div>
+          </div>
+
+          <div class="card">
+            <h3>Habit Tracker <span class="tag">+10 XP</span></h3>
+            <p class="sub">Kleine Handlungen, täglich wiederholt, verändern alles.</p>
+            <div class="row-add">
+              <input id="habitInput" placeholder="Neuen Habit anlegen, z. B. „10 Min. Lesen“ …" maxlength="60">
+              <button class="btn" id="habitAdd">Anlegen</button>
+            </div>
+            <div class="check-list" id="habitList"></div>
+            <div class="divider"></div>
+            <h3 style="font-size:13.5px">Konsistenz der letzten 26 Wochen</h3>
+            <p class="sub">Jede Zelle ist ein Tag — je dunkler zu hell, desto mehr Habits erledigt.</p>
+            <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+            <div class="hm-legend">Weniger
+              <span class="hm-cell"></span><span class="hm-cell hm-1"></span><span class="hm-cell hm-2"></span><span class="hm-cell hm-3"></span><span class="hm-cell hm-4"></span>
+            Mehr</div>
+          </div>
+
+          <div class="card">
+            <h3>Abendroutine <span class="tag">+2 XP</span></h3>
+            <p class="sub">Runterfahren, reflektieren, regenerieren.</p>
+            <div class="row-add">
+              <input id="routinePMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
+              <button class="btn sm" data-act="routine-add" data-list="pm">+</button>
+            </div>
+            <div class="check-list" id="routinePM"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= NUTRITION ================= -->
+  <section class="page" id="page-nutrition">
+    <div class="grid g2">
+      <div class="card span2">
+        <h3>Makro-Übersicht <span class="tag">automatisch aus Plan</span></h3>
+        <p class="sub" id="macroSub">Berechnet aus den heute abgehakten Mahlzeiten, plus optionalen Extras.</p>
+        <div id="macroBars"></div>
+        <div class="macro-inputs">
+          <div><label>Extra Kalorien (kcal)</label><input type="number" id="inKcal" min="0" placeholder="0"></div>
+          <div><label>Ziel kcal</label><input type="number" id="tKcal" min="0"></div>
+          <div><label>Extra Protein (g)</label><input type="number" id="inPro" min="0" placeholder="0"></div>
+          <div><label>Ziel Protein</label><input type="number" id="tPro" min="0"></div>
+          <div><label>Extra Carbs (g)</label><input type="number" id="inCarb" min="0" placeholder="0"></div>
+          <div><label>Ziel Carbs</label><input type="number" id="tCarb" min="0"></div>
+          <div><label>Extra Fette (g)</label><input type="number" id="inFat" min="0" placeholder="0"></div>
+          <div><label>Ziel Fette</label><input type="number" id="tFat" min="0"></div>
+        </div>
+      </div>
+
+      <div class="card span2">
+        <h3>Mahlzeitenplan <span class="tag">6 Slots · 60 Varianten</span></h3>
+        <p class="sub">Antippen zum Aufklappen, mit „🔀 Andere Option“ durch Alternativen wechseln, Uhrzeit anpassen und als gegessen abhaken — fließt automatisch in die Makros oben ein.</p>
+        <div id="mealPlanList"></div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <h3>Hydration <span class="tag">+2 XP</span></h3>
+          <p class="sub" id="hydroSub">0 von 8 Gläsern</p>
+          <div class="glasses" id="glasses"></div>
+          <button class="btn ghost sm" id="hydroReset">Zurücksetzen</button>
+        </div>
+        <div class="card">
+          <h3>Notizen</h3>
+          <p class="sub">Freier Platz für Ausnahmen, Restaurantbesuche oder Anpassungen.</p>
+          <textarea id="mealPlan" rows="5" placeholder="z. B. Samstag: auswärts essen, Makros grob schätzen …"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Supplement-Stack <span class="tag">+2 XP</span></h3>
+        <p class="sub">Evidenzbasiert, mit fester Uhrzeit — tippe zum Abhaken. Reset um Mitternacht.</p>
+        <div class="disclaimer-note">⚠️ Ersetzt keine ärztliche Beratung. Vorher Blutwerte checken lassen: Vitamin D, Zink, Ferritin, Testosteron, TSH.</div>
+        <div class="row-add">
+          <input id="suppName" placeholder="Eigenes Supplement hinzufügen" style="flex:2">
+          <input id="suppTime" type="time" value="08:00" style="flex:1">
+          <button class="btn" id="suppAdd">+</button>
+        </div>
+        <button class="btn ghost sm" id="suppLoadStack" style="margin-bottom:14px">🧪 Basis-Stack laden (11 Supplements)</button>
+        <div id="suppList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BODY ================= -->
+  <section class="page" id="page-body">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Workout Log <span class="tag">+20 XP</span></h3>
+        <p class="sub">Übung, Sätze × Wiederholungen, Gewicht.</p>
+        <div class="row-add" style="flex-wrap:wrap">
+          <input id="exName" placeholder="Übung" style="flex:2;min-width:110px">
+          <input id="exSets" type="number" min="1" placeholder="Sätze" style="width:74px">
+          <input id="exReps" type="number" min="1" placeholder="Wdh." style="width:74px">
+          <input id="exKg" type="number" min="0" step="0.5" placeholder="kg" style="width:74px">
+          <button class="btn" id="exAdd">Loggen</button>
+        </div>
+        <div id="workoutTable"></div>
+      </div>
+
+      <div class="card">
+        <h3>Gym Routine</h3>
+        <p class="sub">Dein Trainingsplan — frei editierbar.</p>
+        <textarea id="gymPlan" rows="8" placeholder="Mo — Push: Bankdrücken 4×8, Schulterdrücken 3×10 …&#10;Mi — Pull: Klimmzüge 4×6, Rudern 4×10 …&#10;Fr — Legs: Kniebeugen 4×8, RDL 3×10 …"></textarea>
+      </div>
+
+      <div class="card">
+        <h3>Gewicht &amp; Körpermaße</h3>
+        <p class="sub">Regelmäßig messen, Trend beobachten — nicht den Einzeltag.</p>
+        <div class="row-add" style="flex-wrap:wrap">
+          <input id="bwKg" type="number" step="0.1" min="0" placeholder="Gewicht kg" style="width:105px">
+          <input id="bwWaist" type="number" step="0.5" min="0" placeholder="Taille cm" style="width:100px">
+          <input id="bwArm" type="number" step="0.5" min="0" placeholder="Arm cm" style="width:90px">
+          <button class="btn" id="bwAdd">Eintragen</button>
+        </div>
+        <div class="chart-box"><canvas id="chWeight"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Kraftwerte</h3>
+        <p class="sub">Bestes Satzgewicht pro Übung über die Zeit.</p>
+        <select id="strengthSel" style="margin-bottom:12px;width:100%"></select>
+        <div class="chart-box"><canvas id="chStrength"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Schlaf-Tracker <span class="tag">+5 XP</span></h3>
+        <p class="sub">Dauer &amp; Qualität der letzten Nacht.</p>
+        <div class="row-add">
+          <input id="sleepH" type="number" step="0.25" min="0" max="16" placeholder="Stunden" style="width:110px">
+          <div style="flex:1">
+            <div class="slider-lab"><span>Qualität</span><span id="sleepQVal">7 / 10</span></div>
+            <input type="range" id="sleepQ" min="1" max="10" value="7">
+          </div>
+          <button class="btn" id="sleepAdd">Loggen</button>
+        </div>
+        <div class="chart-box"><canvas id="chSleep"></canvas></div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <h3>Recovery Score</h3>
+          <p class="sub">Berechnet aus Schlafdauer, -qualität und Trainingslast.</p>
+          <div class="dial">
+            <div class="ring">
+              <svg width="88" height="88" viewBox="0 0 88 88"><circle class="track" cx="44" cy="44" r="38"/><circle class="bar" id="recRing" cx="44" cy="44" r="38" stroke-dasharray="239" stroke-dashoffset="239"/></svg>
+              <div class="lvl" id="recVal">–</div>
+            </div>
+            <ul id="recDetail">
+              <li>Noch keine Schlafdaten.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Body-Fotos &amp; Maße</h3>
+          <p class="sub">Aktuelle Messwerte im Überblick.</p>
+          <div id="measureSummary" class="note">Noch keine Maße eingetragen.</div>
+          <div class="divider"></div>
+          <div class="empty">📷 <b>Foto-Archiv</b><br>Platzhalter — lege deine Fortschrittsfotos<br>in einem privaten Ordner ab und notiere hier das Datum.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= MIND ================= -->
+  <section class="page" id="page-mind">
+    <div class="grid g2">
+      <div class="card">
+        <h3>Journal <span class="tag">+10 XP</span></h3>
+        <p class="sub" id="journalDate"></p>
+        <label class="meta" style="display:block;margin-bottom:5px">🌅 Morgenjournal — Wofür bin ich dankbar? Was ist heute wichtig?</label>
+        <textarea id="jMorning" placeholder="Drei Dinge, für die ich dankbar bin …"></textarea>
+        <label class="meta" style="display:block;margin:13px 0 5px">🌙 Abendjournal — Was lief gut? Was habe ich gelernt?</label>
+        <textarea id="jEvening" placeholder="Der beste Moment des Tages war …"></textarea>
+        <button class="btn" id="jSave" style="margin-top:12px">Eintrag speichern</button>
+        <div class="journal-hist" id="journalHist"></div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom:20px">
+          <h3>Mood Log <span class="tag">+5 XP</span></h3>
+          <p class="sub">Wie fühlst du dich gerade?</p>
+          <div class="mood-row" id="moodRow">
+            <button class="mood-btn" data-m="1">😞</button>
+            <button class="mood-btn" data-m="2">😕</button>
+            <button class="mood-btn" data-m="3">😐</button>
+            <button class="mood-btn" data-m="4">🙂</button>
+            <button class="mood-btn" data-m="5">🤩</button>
+          </div>
+          <div class="slider-lab"><span>Energie-Level</span><span id="energyVal">5 / 10</span></div>
+          <input type="range" id="energy" min="1" max="10" value="5">
+          <div class="tags" id="moodTags"></div>
+          <button class="btn" id="moodSave">Stimmung loggen</button>
+          <div id="moodHist" style="margin-top:14px"></div>
+        </div>
+
+        <div class="card">
+          <h3>Social Check-ins</h3>
+          <p class="sub">Beziehungen brauchen Pflege. Wann hast du dich zuletzt gemeldet?</p>
+          <div class="row-add">
+            <input id="personInput" placeholder="Name, z. B. Mama" maxlength="40">
+            <button class="btn" id="personAdd">+</button>
+          </div>
+          <div class="check-list" id="personList"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Learning Tracker <span class="tag">+5 XP</span></h3>
+        <p class="sub">Bücher &amp; Kurse — Fortschritt per Regler aktualisieren.</p>
+        <div class="row-add">
+          <input id="learnInput" placeholder="Titel, z. B. „Atomic Habits“" style="flex:2">
+          <select id="learnType" style="flex:1"><option>📖 Buch</option><option>🎓 Kurs</option><option>🎧 Audio</option></select>
+          <button class="btn" id="learnAdd">+</button>
+        </div>
+        <div id="learnList"></div>
+      </div>
+
+      <div class="card">
+        <h3>Skill Tree <span class="tag">Level-Up durch Ziele</span></h3>
+        <p class="sub">Deine Kompetenz-Landkarte. Level steigen automatisch, wenn ein verknüpftes Goal zu 100% erreicht ist.</p>
+        <div class="skill-cols" id="skillTree"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PROGRESS ================= -->
+  <section class="page" id="page-progress">
+    <div class="stat-strip">
+      <div class="stat"><b id="pXp">0</b><small>Gesamt-XP</small></div>
+      <div class="stat"><b id="pLvl">1</b><small>Level</small></div>
+      <div class="stat"><b id="pBadges">0/10</b><small>Badges</small></div>
+      <div class="stat"><b id="pFocusTotal">0 h</b><small>Fokus gesamt</small></div>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <h3>Fokuszeit — letzte 14 Tage</h3>
+        <p class="sub">Deep-Work-Stunden pro Tag.</p>
+        <div class="chart-box"><canvas id="chFocus"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Habit-Konsistenz — letzte 8 Wochen</h3>
+        <p class="sub">Abschlussquote pro Woche in Prozent.</p>
+        <div class="chart-box"><canvas id="chHabitRate"></canvas></div>
+      </div>
+
+      <div class="card span2">
+        <h3>Badges &amp; Achievements</h3>
+        <p class="sub">Schwer zu bekommen — und genau deshalb wertvoll.</p>
+        <div class="badges" id="badgeGrid"></div>
+      </div>
+
+      <div class="card">
+        <h3>Korrelations-Analyse</h3>
+        <p class="sub">Zusammenhänge in deinen eigenen Daten (Pearson r, ab 5 Datenpaaren).</p>
+        <div id="corrBox"></div>
+        <div class="chart-box" style="margin-top:14px"><canvas id="chCorr"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h3>Weekly Report</h3>
+        <p class="sub">Eine ehrliche Zusammenfassung deiner Woche — auf Knopfdruck.</p>
+        <div class="empty" style="margin-bottom:14px">📋 Der Report fasst To-Dos, Habits, Fokuszeit,<br>Workouts, Schlaf und Stimmung der letzten 7 Tage zusammen.</div>
+        <button class="btn violet" id="reportBtn">Weekly Report erzeugen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GOALS ================= -->
+  <section class="page" id="page-goals">
+    <div class="grid g2">
+      <div class="card span2">
+        <h3>Neues Ziel</h3>
+        <p class="sub">Fokus-Ziele: 4–12 Wochen. Langfristig: 1 Jahr und mehr. Meilensteine machen Fortschritt messbar.</p>
+        <div class="row-add" style="flex-wrap:wrap">
+          <input id="goalTitle" placeholder="Ziel, z. B. „100 kg Bankdrücken“" style="flex:2;min-width:180px">
+          <select id="goalType" style="width:130px"><option value="fokus">Fokus-Ziel</option><option value="lang">Langfristig</option></select>
+          <select id="goalSkill" style="width:160px"></select>
+          <button class="btn" id="goalAdd">Ziel anlegen</button>
+        </div>
+        <input id="goalMs" placeholder="Meilensteine, kommagetrennt: „80 kg, 90 kg, 95 kg, 100 kg“" style="width:100%">
+      </div>
+
+      <div class="card">
+        <h3>🎯 Aktuelle Fokus-Goals</h3>
+        <p class="sub">Woran du <em>jetzt</em> arbeitest.</p>
+        <div id="goalsFocus"></div>
+      </div>
+
+      <div class="card">
+        <h3>🧭 Langfristige Goals</h3>
+        <p class="sub">Dein Nordstern für die nächsten Jahre.</p>
+        <div id="goalsLong"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Report modal -->
+<div class="modal" id="reportModal">
+  <div class="modal-box">
+    <h3>📋 Weekly Report</h3>
+    <p class="sub" id="reportRange"></p>
+    <div class="report-body" id="reportBody"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn ghost" id="reportCopy">Kopieren</button>
+      <button class="btn" id="reportClose">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Generic confirm modal (used instead of native confirm/prompt, which browsers/webviews often block) -->
+<div class="modal" id="confirmModal">
+  <div class="modal-box" style="max-width:400px">
+    <h3 id="confirmTitle">Bist du sicher?</h3>
+    <p class="sub" id="confirmText" style="margin:10px 0 4px"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn ghost" id="confirmCancel">Abbrechen</button>
+      <button class="btn" id="confirmOk">Bestätigen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Focus-Session -> To-Do Zuordnung -->
+<div class="modal" id="focusPickModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>🎯 Woran hast du gearbeitet?</h3>
+    <p class="sub">Du hast gerade <b id="focusPickMinutes" style="color:var(--sec)">0</b> Minuten fokussiert gearbeitet — ordne sie einem To-Do zu, um deinen Tagesfortschritt zu tracken.</p>
+    <div id="focusPickList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0"></div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn ghost" id="focusPickSkip">Ohne Zuordnung</button>
+    </div>
+  </div>
+</div>
+
+<!-- Weekly Board: bestehendes To-Do einem Tag zuweisen -->
+<div class="modal" id="assignTodoModal">
+  <div class="modal-box" style="max-width:420px">
+    <h3>📅 To-Do zuweisen</h3>
+    <p class="sub">Wähle ein bestehendes To-Do für <b id="assignDayLabel" style="color:var(--ac)"></b>. Neue To-Dos legst du in der To-Do-Liste an.</p>
+    <div id="assignTodoList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0;max-height:320px;overflow:auto"></div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn ghost" id="assignTodoCancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<!-- Level-Up-Feier (Phase 4) -->
+<div class="levelup-burst" id="levelupBurst">
+  <div class="levelup-card">
+    <div class="levelup-icon">🎉</div>
+    <div class="levelup-title">Level Up</div>
+    <div class="levelup-lvl" id="levelupLvl">2</div>
+    <div class="levelup-name" id="levelupName">Lehrling</div>
+  </div>
+</div>
+
+<script src="js/helpers.js"></script>
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/theme.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/xp.js"></script>
+<script src="js/hero.js"></script>
+<script src="js/todos.js"></script>
+<script src="js/habits.js"></script>
+<script src="js/timer.js"></script>
+<script src="js/nutrition.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/workouts.js"></script>
+<script src="js/mind.js"></script>
+<script src="js/goals.js"></script>
+<script src="js/progress.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
