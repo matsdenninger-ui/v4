@@ -53,7 +53,19 @@
   --sec-soft:rgba(34,197,94,.13);
   }
 :root[data-period="evening"]{
-  /* Helles Abend-Theme — Farbakzente (ac/sec) unverändert, nur Flächen/Text auf Weiß umgestellt */
+  --dim:#C9C2E8;
+  --ac:#5B7CFA;
+  --ac-2:#364FC7;
+  --ac-light:#A5B4FC;
+  --ac-soft:rgba(91,124,250,.14);
+  --sec:#F5D67B;
+  --sec-light:#FDE68A;
+  --sec-soft:rgba(245,214,123,.14);
+  }
+
+/* ---------- Helles Theme (Button-Toggle, unabhängig von der Tageszeit) ---------- */
+/* Nur Flächen/Text werden umgestellt — Farbakzente (ac/sec) bleiben je Tageszeit gleich */
+:root[data-theme="light"]{
   --bg:#FFFFFF;
   --surface:#F6F4FC;
   --elev:#FFFFFF;
@@ -72,13 +84,6 @@
   --row-hover:rgba(0,0,0,.02);
   --track:#E7E2F5;
   --hm-0:#EDEAF7;
-  --ac:#5B7CFA;
-  --ac-2:#364FC7;
-  --ac-light:#A5B4FC;
-  --ac-soft:rgba(91,124,250,.14);
-  --sec:#F5D67B;
-  --sec-light:#FDE68A;
-  --sec-soft:rgba(245,214,123,.14);
   }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
