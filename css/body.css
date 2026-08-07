@@ -10,7 +10,7 @@ th{
 }
 td{padding:8px 10px;border-bottom:1px solid var(--border-soft);font-variant-numeric:tabular-nums}
 tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.015)}
+tr:hover td{background:var(--row-hover)}
 
 
 /* ---------- Score dial / recovery ---------- */

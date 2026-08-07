@@ -29,6 +29,16 @@
   --font-display:"Archivo",system-ui,sans-serif;
   --font-body:"Inter",system-ui,sans-serif;
   --theme-transition:background-color 1.4s ease, border-color 1.4s ease, box-shadow 1.4s ease, color 1.4s ease;
+  /* Flächen, die pro Tageszeit-Theme mitwechseln (Sidebar, Burger, Level-Card, Track, Heatmap-Basis) */
+  --overlay-1:rgba(20,18,28,.55);
+  --overlay-1-hover:rgba(20,18,28,.8);
+  --overlay-2:rgba(10,9,15,.9);
+  --overlay-3:rgba(20,18,28,.9);
+  --overlay-4:rgba(20,18,28,.3);
+  --nav-hover:rgba(255,255,255,.05);
+  --row-hover:rgba(255,255,255,.015);
+  --track:#242e46;
+  --hm-0:#1b2336;
 }
 /* ---------- Tageszeit-Farbverlauf ---------- */
 /* Morgens: Lila -> Orange (Standard, s. :root oben) */
@@ -43,7 +53,25 @@
   --sec-soft:rgba(34,197,94,.13);
   }
 :root[data-period="evening"]{
-  --dim:#C9C2E8;
+  /* Helles Abend-Theme — Farbakzente (ac/sec) unverändert, nur Flächen/Text auf Weiß umgestellt */
+  --bg:#FFFFFF;
+  --surface:#F6F4FC;
+  --elev:#FFFFFF;
+  --border:#E2DEEF;
+  --border-soft:#EEEBF6;
+  --text:#211D30;
+  --dim:#6A6288;
+  --faint:#948C9F;
+  --shadow:0 10px 28px rgba(35,25,70,.10);
+  --overlay-1:rgba(255,255,255,.65);
+  --overlay-1-hover:rgba(255,255,255,.95);
+  --overlay-2:rgba(246,244,252,.9);
+  --overlay-3:rgba(255,255,255,.9);
+  --overlay-4:rgba(0,0,0,.035);
+  --nav-hover:rgba(0,0,0,.045);
+  --row-hover:rgba(0,0,0,.02);
+  --track:#E7E2F5;
+  --hm-0:#EDEAF7;
   --ac:#5B7CFA;
   --ac-2:#364FC7;
   --ac-light:#A5B4FC;
