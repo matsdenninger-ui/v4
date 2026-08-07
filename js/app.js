@@ -310,3 +310,20 @@ renderAll();
 if(S.timerStart) startTimerUI();          // laufende Session nach Reload fortsetzen
 checkBadges();
 initCloudSync();
+
+/* ============================================================
+   Mitternachts-Reset
+   Häkchen bei Supplements, Morgen-/Abendroutine & Habits hängen
+   an S.*.dates[todayKey()] — bleibt die Seite über 0 Uhr hinaus
+   offen, muss die Ansicht aktiv neu gezeichnet werden, damit sie
+   sich sichtbar zurücksetzen.
+   ============================================================ */
+let currentDayKey = todayKey();
+setInterval(()=>{
+  const nk = todayKey();
+  if(nk === currentDayKey) return;
+  currentDayKey = nk;
+  rolloverTodos();
+  renderHabits(); renderHeatmap(); renderRoutines(); renderSupps();
+  renderHero(); renderWeek();
+}, 30*1000);
