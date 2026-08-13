@@ -64,6 +64,9 @@
     <button data-page="goals">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
       Goals</button>
+    <button data-page="knowledge">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5C4 4.7 4.7 4 5.5 4H11a1 1 0 0 1 1 1v15a1 1 0 0 0-1-1H5.5A1.5 1.5 0 0 1 4 17.5V5.5ZM20 5.5c0-.8-.7-1.5-1.5-1.5H13a1 1 0 0 0-1 1v15a1 1 0 0 1 1-1h5.5a1.5 1.5 0 0 0 1.5-1.5V5.5Z"/></svg>
+      Knowledge</button>
   </nav>
   <div class="side-foot">
     <div class="level-card">
@@ -493,6 +496,25 @@
       </div>
     </div>
   </section>
+
+  <!-- ================= KNOWLEDGE ================= -->
+  <section class="page" id="page-knowledge">
+    <div class="grid g2">
+      <div class="card span2">
+        <h3>Neues Thema</h3>
+        <p class="sub">Lege ein Thema an und sammle Wissen, Taktiken und offene Aufgaben dazu.</p>
+        <div class="row-add">
+          <input id="knowTopicTitle" placeholder="Thema, z. B. „Verhandlungstechnik“" maxlength="60">
+          <button class="btn" id="knowTopicAdd">Thema anlegen</button>
+        </div>
+      </div>
+
+      <div class="card span2">
+        <h3>📚 Themen</h3>
+        <div id="knowledgeList"></div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <!-- Report modal -->
@@ -571,6 +593,7 @@
 <script src="js/workouts.js"></script>
 <script src="js/mind.js"></script>
 <script src="js/goals.js"></script>
+<script src="js/knowledge.js"></script>
 <script src="js/progress.js"></script>
 <script src="js/app.js"></script>
 </body>

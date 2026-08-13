@@ -43,7 +43,7 @@ $("confirmModal").addEventListener("click", e=>{
 
 
 /* ---------- Navigation ---------- */
-const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body", mind:"Mind", progress:"Progress", goals:"Goals" };
+const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body", mind:"Mind", progress:"Progress", goals:"Goals", knowledge:"Knowledge" };
 document.querySelectorAll("#nav button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));

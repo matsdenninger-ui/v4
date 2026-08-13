@@ -158,6 +158,33 @@ document.body.addEventListener("click", e=>{
       save(); renderGoals();
       break; }
 
+    case "know-del":
+      customConfirm("Thema wirklich löschen? Notizen und To-Dos gehen verloren.", {okLabel:"Löschen", danger:true}).then(ok=>{
+        if(!ok) return;
+        S.knowledge = S.knowledge.filter(t=>t.id!==id); save(); renderKnowledge();
+      });
+      break;
+    case "know-todo-add": {
+      const t = S.knowledge.find(t=>t.id===id); if(!t) break;
+      const input = document.querySelector(`[data-act="know-todo-input"][data-id="${id}"]`);
+      const text = input ? input.value.trim() : "";
+      if(!text) break;
+      if(!t.todos) t.todos = [];
+      t.todos.push({id:uid(), text, done:false});
+      save(); renderKnowledge();
+      break; }
+    case "know-todo-toggle": {
+      const t = S.knowledge.find(t=>t.id===id); if(!t) break;
+      const td = (t.todos||[]).find(x=>x.id===el.dataset.tid); if(!td) break;
+      td.done = !td.done; save(); renderKnowledge();
+      if(td.done) addXP(3, "Knowledge-To-Do: "+td.text);
+      break; }
+    case "know-todo-del": {
+      const t = S.knowledge.find(t=>t.id===id); if(!t) break;
+      t.todos = (t.todos||[]).filter(x=>x.id!==el.dataset.tid);
+      save(); renderKnowledge();
+      break; }
+
     case "hero-avatar": {
       const cur = AVATAR_OPTIONS.indexOf(S.profile.avatar);
       S.profile.avatar = AVATAR_OPTIONS[(cur+1) % AVATAR_OPTIONS.length];
@@ -189,6 +216,11 @@ document.body.addEventListener("input", e=>{
     else if(kind === "am") obj = S.routineAM.find(x=>x.id===nid);
     else if(kind === "pm") obj = S.routinePM.find(x=>x.id===nid);
     if(obj){ obj.note = el.value; save(); }
+    return; // kein Re-Render, damit der Cursor beim Tippen nicht springt
+  }
+  if(el.dataset.act === "know-notes-input"){
+    const t = S.knowledge.find(t=>t.id===el.dataset.id);
+    if(t){ t.notes = el.value; save(); }
     return; // kein Re-Render, damit der Cursor beim Tippen nicht springt
   }
   if(el.dataset.act === "learn-range"){
@@ -301,6 +333,7 @@ function renderAll(){
   renderLearning(); renderSkills(); renderPeople();
   renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation();
   renderGoals(); renderGoalSkillSel();
+  renderKnowledge();
   renderHero(); renderTodayFocusGoals();
 }
 rolloverTodos();

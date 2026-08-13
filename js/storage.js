@@ -55,6 +55,7 @@ function defaultState(){
     ],
     people: [],                      // {id, name, last}
     goals: [],                       // {id, title, type, skillId, ms:[{text,done}], progress, actionTodos:[{id,text,done}], skillXPGranted}
+    knowledge: [],                   // {id, title, notes:"", todos:[{id,text,done}]}
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
   };
