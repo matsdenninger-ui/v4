@@ -45,7 +45,7 @@ function defaultState(){
     gymPlan: "",
     bodyLog: [],                     // {date, kg, waist, arm}
     sleep: [],                       // {date, hours, quality}
-    journal: {},                     // {"date": {m:"", e:""}}
+    journal: {},                     // {"date": {morning:{good,better}, evening:{grateful:[3], lookforward:[3]}}}
     moods: [],                       // {ts, date, mood, energy, tags:[]}
     learning: [],                    // {id, title, type, progress}
     skills: [

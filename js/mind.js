@@ -4,26 +4,76 @@
 /* ============================================================
    MIND
    ============================================================ */
-$("journalDate").textContent = "Eintrag für " + new Date().toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"});
-function loadJournalToday(){
-  const j = S.journal[todayKey()] || {m:"", e:""};
-  $("jMorning").value = j.m; $("jEvening").value = j.e;
+const isMorning = new Date().getHours() < 12;
+$("journalDate").textContent = (isMorning ? "🌅 Morgen-Eintrag für " : "🌙 Abend-Eintrag für ") + new Date().toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long"});
+
+function emptyJournalEntry(){
+  return { morning:{good:"", better:""}, evening:{grateful:["","",""], lookforward:["","",""]} };
 }
+
+function renderJournalFields(){
+  $("journalFields").innerHTML = isMorning
+    ? `<label class="meta" style="display:block;margin-bottom:5px">Was lief heute gut?</label>
+       <textarea id="jGood" placeholder="Das lief heute gut …"></textarea>
+       <label class="meta" style="display:block;margin:13px 0 5px">Was hätte ich besser machen können?</label>
+       <textarea id="jBetter" placeholder="Das hätte ich besser machen können …"></textarea>`
+    : `<label class="meta" style="display:block;margin-bottom:5px">Wofür bin ich heute dankbar? (3 Dinge)</label>
+       <input id="jGrateful0" placeholder="1." style="margin-bottom:6px">
+       <input id="jGrateful1" placeholder="2." style="margin-bottom:6px">
+       <input id="jGrateful2" placeholder="3.">
+       <label class="meta" style="display:block;margin:13px 0 5px">Worauf freue ich mich morgen? (3 Dinge)</label>
+       <input id="jLook0" placeholder="1." style="margin-bottom:6px">
+       <input id="jLook1" placeholder="2." style="margin-bottom:6px">
+       <input id="jLook2" placeholder="3.">`;
+}
+
+function loadJournalToday(){
+  const j = S.journal[todayKey()] || emptyJournalEntry();
+  renderJournalFields();
+  if(isMorning){
+    $("jGood").value = j.morning?.good || "";
+    $("jBetter").value = j.morning?.better || "";
+  } else {
+    [0,1,2].forEach(i=>{ $("jGrateful"+i).value = (j.evening?.grateful||[])[i] || ""; });
+    [0,1,2].forEach(i=>{ $("jLook"+i).value = (j.evening?.lookforward||[])[i] || ""; });
+  }
+}
+
 $("jSave").addEventListener("click", ()=>{
-  const m = $("jMorning").value.trim(), e = $("jEvening").value.trim();
-  if(!m && !e){ toast("Schreib zuerst ein paar Zeilen."); return; }
+  const entry = S.journal[todayKey()] || emptyJournalEntry();
   const isNew = !S.journal[todayKey()];
-  S.journal[todayKey()] = {m, e};
+
+  if(isMorning){
+    const good = $("jGood").value.trim(), better = $("jBetter").value.trim();
+    if(!good && !better){ toast("Schreib zuerst ein paar Zeilen."); return; }
+    entry.morning = {good, better};
+  } else {
+    const grateful = [0,1,2].map(i=>$("jGrateful"+i).value.trim());
+    const lookforward = [0,1,2].map(i=>$("jLook"+i).value.trim());
+    if(!grateful.some(Boolean) && !lookforward.some(Boolean)){ toast("Schreib zuerst ein paar Zeilen."); return; }
+    entry.evening = {grateful, lookforward};
+  }
+
+  S.journal[todayKey()] = entry;
   save(); renderJournalHist();
   if(isNew) addXP(10, "Journal-Eintrag gespeichert");
   else toast("Eintrag aktualisiert.");
 });
+
 function renderJournalHist(){
   const keys = Object.keys(S.journal).sort().reverse().filter(k=>k!==todayKey()).slice(0,5);
   $("journalHist").innerHTML = keys.length
     ? '<p class="sub" style="margin:4px 0 2px">Letzte Einträge</p>' + keys.map(k=>{
         const j = S.journal[k];
-        return `<div class="jh-item"><b>${fmtShort(k)}</b><p>${esc((j.m||"")+(j.m&&j.e?"\n":"")+(j.e||"")).slice(0,300)}</p></div>`;
+        const parts = [];
+        if(j.morning && (j.morning.good || j.morning.better)){
+          parts.push(`🌅 ${[j.morning.good, j.morning.better].filter(Boolean).join(" · ")}`);
+        }
+        if(j.evening && ((j.evening.grateful||[]).some(Boolean) || (j.evening.lookforward||[]).some(Boolean))){
+          parts.push(`🌙 ${[...(j.evening.grateful||[]), ...(j.evening.lookforward||[])].filter(Boolean).join(", ")}`);
+        }
+        if(!parts.length && (j.m || j.e)) parts.push([j.m, j.e].filter(Boolean).join("\n"));
+        return `<div class="jh-item"><b>${fmtShort(k)}</b><p>${esc(parts.join("\n")).slice(0,300)}</p></div>`;
       }).join("")
     : "";
 }
