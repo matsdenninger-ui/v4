@@ -58,6 +58,7 @@ function defaultState(){
     knowledge: [],                   // {id, title, notes:"", todos:[{id,text,done}]}
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
+    updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
   };
 }
 
@@ -69,6 +70,7 @@ function loadState(){
   return memoryFallback ? memoryFallback : defaultState();
 }
 function save(){
+  S.updatedAt = Date.now();
   try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
   catch(e){ memoryFallback = S; }
   cloudSave();
@@ -95,11 +97,11 @@ function setSyncStatus(text, cls){
   el.className = "sync-status" + (cls ? " "+cls : "");
 }
 
-function cloudSave(){
+function cloudSave(immediate){
   const token = getCloudToken();
   if(!token) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(async ()=>{
+  const push = async ()=>{
     try{
       const res = await fetch("/api/state", {
         method: "POST",
@@ -111,8 +113,19 @@ function cloudSave(){
     }catch(e){
       setSyncStatus("☁️ Sync fehlgeschlagen — offline gespeichert", "err");
     }
-  }, 900); // gebündelt, damit nicht bei jedem Tastendruck gesendet wird
+  };
+  if(immediate){ push(); }
+  else{ cloudSaveTimer = setTimeout(push, 900); } // gebündelt, damit nicht bei jedem Tastendruck gesendet wird
 }
+
+// Sofortiges Speichern erzwingen, wenn der Tab verlassen/geschlossen wird,
+// damit der 900ms-Puffer keine Einträge kurz vor dem Schließen verliert.
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden" && cloudSaveTimer){
+    clearTimeout(cloudSaveTimer);
+    cloudSave(true);
+  }
+});
 
 async function cloudLoad(silent){
   const token = getCloudToken();
@@ -123,12 +136,19 @@ async function cloudLoad(silent){
     if(res.status === 401){ setSyncStatus("☁️ Falscher Sync-Code", "err"); return; }
     if(!res.ok) throw new Error("HTTP "+res.status);
     const json = await res.json();
-    if(json.data){
-      S = Object.assign(defaultState(), json.data);
+    const cloudData = json.data || null;
+    const cloudUpdatedAt = cloudData ? (cloudData.updatedAt || 0) : 0;
+
+    if(cloudUpdatedAt > (S.updatedAt || 0)){
+      // Cloud hat einen neueren Stand als dieses Gerät -> übernehmen
+      S = Object.assign(defaultState(), cloudData);
       save0(); // nur lokal cachen, kein erneutes Hochladen auslösen
       openMealSlot = null;
       renderAll();
       checkBadges();
+    } else if((S.updatedAt || 0) > cloudUpdatedAt){
+      // Dieses Gerät hat neuere Daten als die Cloud -> Cloud aktualisieren statt sie zu überschreiben
+      cloudSave(true);
     }
     setSyncStatus("☁️ Verbunden · " + new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}), "ok");
   }catch(e){
@@ -148,8 +168,7 @@ function initCloudSync(){
     if(!val || val === "••••••••") return;
     try{ localStorage.setItem(CLOUD_TOKEN_KEY, val); }catch(e){}
     $("syncCode").value = "••••••••";
-    await cloudLoad();
-    cloudSave(); // eigenen Stand direkt spiegeln, falls Cloud noch leer war
+    await cloudLoad(); // vergleicht Zeitstempel und gleicht in beide Richtungen ab
     toast("Sync-Code gespeichert.");
   });
 }

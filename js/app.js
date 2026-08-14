@@ -295,8 +295,9 @@ $("demoBtn").addEventListener("click", async ()=>{
 });
 
 $("resetBtn").addEventListener("click", async ()=>{
+  const cloudWarning = getCloudToken() ? " Da Cloud-Sync aktiv ist, wird danach auch der gespeicherte Cloud-Stand überschrieben." : "";
   const ok = await customConfirm(
-    "Wirklich ALLE Daten zurücksetzen? Level, XP, Habits, Workouts, Journal, Ziele, Skills — alles wird unwiderruflich gelöscht. Dein Mahlzeitenplan (gewählte Gerichte je Slot) bleibt erhalten.",
+    "Wirklich ALLE Daten zurücksetzen? Level, XP, Habits, Workouts, Journal, Ziele, Skills — alles wird unwiderruflich gelöscht. Dein Mahlzeitenplan (gewählte Gerichte je Slot) bleibt erhalten." + cloudWarning,
     {title:"Alles zurücksetzen?", okLabel:"Ja, alles löschen", danger:true}
   );
   if(!ok) return;
