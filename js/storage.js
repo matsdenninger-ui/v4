@@ -103,6 +103,24 @@ function cloudSave(immediate){
   clearTimeout(cloudSaveTimer);
   const push = async ()=>{
     try{
+      // Sicherheitscheck: erst prüfen, ob die Cloud inzwischen neuer ist als unser
+      // lokaler Stand (z. B. weil ein anderes Gerät zwischenzeitlich gespeichert hat).
+      // Sonst könnte ein Gerät mit veraltetem S den neueren Cloud-Stand überschreiben,
+      // nur weil sein updatedAt-Zeitstempel beim Speichern auf "jetzt" gesetzt wird.
+      const check = await fetch("/api/state", { headers: { "Authorization": "Bearer " + token } });
+      if(check.ok){
+        const checkJson = await check.json();
+        const remoteUpdatedAt = checkJson.data ? (checkJson.data.updatedAt || 0) : 0;
+        if(remoteUpdatedAt > (S.updatedAt || 0)){
+          S = Object.assign(defaultState(), checkJson.data);
+          save0();
+          openMealSlot = null;
+          renderAll();
+          checkBadges();
+          setSyncStatus("☁️ Neuerer Stand von anderem Gerät übernommen", "ok");
+          return;
+        }
+      }
       const res = await fetch("/api/state", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
@@ -125,6 +143,14 @@ document.addEventListener("visibilitychange", ()=>{
     clearTimeout(cloudSaveTimer);
     cloudSave(true);
   }
+  // Beim Zurückkehren in den Tab (z. B. lange offenes Gerät reaktiviert) den
+  // Cloud-Stand neu abgleichen, bevor hier weitergearbeitet/gespeichert wird.
+  if(document.visibilityState === "visible" && getCloudToken()){
+    cloudLoad(true);
+  }
+});
+window.addEventListener("focus", ()=>{
+  if(getCloudToken()) cloudLoad(true);
 });
 
 async function cloudLoad(silent){
