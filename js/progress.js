@@ -62,8 +62,12 @@ const BADGES = [
     test:()=>Object.values(S.hydration).some(g=>g>=S.hydroGoal)},
   {id:"book",     ico:"📚", name:"Bücherwurm",       desc:"Ein Buch oder einen Kurs abgeschlossen", rarity:"selten",
     test:()=>S.learning.some(l=>l.progress>=100)},
-  {id:"lift10",   ico:"🏋️", name:"Stammgast",       desc:"10 Workouts geloggt", rarity:"selten",
-    test:()=>S.workouts.length>=10},
+  {id:"lift10",   ico:"🏋️", name:"Stammgast",       desc:"10 Übungen im Training geloggt", rarity:"selten",
+    test:()=>totalTrainingEntries()>=10},
+  {id:"pr5",      ico:"🏆", name:"Rekordjäger",      desc:"5 persönliche Rekorde aufgestellt", rarity:"episch",
+    test:()=>personalRecords().length>=5},
+  {id:"vol10t",   ico:"🗿", name:"Zehn Tonnen",      desc:"10 t Trainingsvolumen in 7 Tagen", rarity:"episch",
+    test:()=>{ const d=lastNDates(7); return allTrainingEntries().filter(e=>d.includes(e.date)).reduce((a,e)=>a+e.volume,0)>=10000; }},
   {id:"lvl5",     ico:"🌟", name:"Aufsteiger",       desc:"Level 5 erreicht", rarity:"episch",
     test:()=>levelInfo(S.xp).lvl>=5},
   {id:"lvl10",    ico:"👑", name:"Zehnkämpfer",      desc:"Level 10 erreicht", rarity:"legendaer",
@@ -143,7 +147,9 @@ $("reportBtn").addEventListener("click", ()=>{
   let hPoss=0, hDone=0;
   days.forEach(k=>{ hPoss+=S.habits.length; hDone+=S.habits.filter(h=>h.dates[k]).length; });
   const focus = days.reduce((s,k)=>s+(S.focusByDate[k]||0),0)/60;
-  const wos = S.workouts.filter(w=>days.includes(w.date));
+  const trainEntries = allTrainingEntries().filter(e=>days.includes(e.date));
+  const trainDays = new Set(trainEntries.map(e=>e.date));
+  const trainVol = trainEntries.reduce((a,e)=>a+e.volume, 0);
   const sl = S.sleep.filter(s=>days.includes(s.date));
   const avgSleep = sl.length ? sl.reduce((a,b)=>a+b.hours,0)/sl.length : null;
   const mo = S.moods.filter(m=>days.includes(m.date));
@@ -154,14 +160,16 @@ $("reportBtn").addEventListener("click", ()=>{
   lines.push("✅ To-Dos: "+tDone+" von "+todos.length+" erledigt"+(todos.length&&tDone===todos.length?" — alles abgehakt!":""));
   lines.push("🔁 Habits: "+(hPoss?Math.round(hDone/hPoss*100):0)+" % Konsistenz ("+hDone+"/"+hPoss+") · längste Streak: "+bestHabit+" Tage");
   lines.push("🎯 Deep Work: "+h1(focus)+" h Fokuszeit"+(focus>=10?" — starke Woche!":focus>0?"":" — nächste Woche eine Session einplanen."));
-  lines.push("🏋️ Training: "+wos.length+" Einträge im Workout Log");
+  lines.push("🏋️ Training: "+trainDays.size+" Einheit"+(trainDays.size===1?"":"en")
+    +(trainVol?" · "+fmtVolume(trainVol)+" Volumen":"")
+    +(trainDays.size>=(S.trainingGoal||3)?" — Wochenziel erreicht!":""));
   lines.push("😴 Schlaf: "+(avgSleep?("Ø "+h1(avgSleep)+" h über "+sl.length+" Nächte"):"keine Daten geloggt"));
   lines.push("🙂 Stimmung: "+(avgMood?("Ø "+h1(avgMood)+" / 5 über "+mo.length+" Logs"):"keine Daten geloggt"));
   lines.push("");
   const wins = [];
   if(hPoss && hDone/hPoss>=0.7) wins.push("hohe Habit-Konsistenz");
   if(focus>=8) wins.push("solide Fokuszeit");
-  if(wos.length>=3) wins.push("regelmäßiges Training");
+  if(trainDays.size>=3) wins.push("regelmäßiges Training");
   if(avgSleep && avgSleep>=7.5) wins.push("guter Schlaf");
   lines.push(wins.length ? "💪 Stärken der Woche: "+wins.join(", ")+"."
                          : "💡 Impuls: Wähle für nächste Woche EINEN Bereich und mach ihn zur Priorität.");

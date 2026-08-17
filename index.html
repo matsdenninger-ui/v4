@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v20 · 2026-08-01 · To-Dos verschwinden nach Erledigung automatisch am Folgetag, Abendroutine-Drag, Notizen an Habits/Routinen, deutlicherer Board-Löschen-Button -->
+<!-- ASCEND DASHBOARD — v21 · 2026-08-17 · Body-Seite ist jetzt eine vollwertige Trainings-App: Trainingspläne mit 5 Splits, Live-Session mit Satz-für-Satz-Logging, Pausen-Timer, Übungsdatenbank (63 Übungen), Rekorde, Volumen- & Muskelgruppen-Statistik -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="css/today.css">
 <link rel="stylesheet" href="css/nutrition.css">
 <link rel="stylesheet" href="css/body.css">
+<link rel="stylesheet" href="css/training.css">
 <link rel="stylesheet" href="css/mind.css">
 <link rel="stylesheet" href="css/progress.css">
 <link rel="stylesheet" href="css/goals.css">
@@ -43,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v20 · 01.08.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v21 · 17.08.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -283,65 +284,147 @@
     </div>
   </section>
 
-  <!-- ================= BODY ================= -->
+  <!-- ================= BODY / TRAINING ================= -->
   <section class="page" id="page-body">
-    <div class="grid g2">
-      <div class="card">
-        <h3>Workout Log <span class="tag">+20 XP</span></h3>
-        <p class="sub">Übung, Sätze × Wiederholungen, Gewicht.</p>
-        <div class="row-add" style="flex-wrap:wrap">
-          <input id="exName" placeholder="Übung" style="flex:2;min-width:110px">
-          <input id="exSets" type="number" min="1" placeholder="Sätze" style="width:74px">
-          <input id="exReps" type="number" min="1" placeholder="Wdh." style="width:74px">
-          <input id="exKg" type="number" min="0" step="0.5" placeholder="kg" style="width:74px">
-          <button class="btn" id="exAdd">Loggen</button>
+    <div class="body-tabs" id="bodyTabs">
+      <button data-btab="train" class="on">🏋️ Training</button>
+      <button data-btab="plan">🗓 Plan</button>
+      <button data-btab="stats">📈 Statistik</button>
+      <button data-btab="recovery">🛌 Körper &amp; Recovery</button>
+    </div>
+
+    <!-- ---------- TAB: TRAINING ---------- -->
+    <div class="body-tab active" id="btab-train">
+      <div class="tr-strip">
+        <div class="stat"><b id="trWeek">0 / 0</b><small id="trWeekSub">Einheiten diese Woche</small></div>
+        <div class="stat"><b id="trVolume">0 kg</b><small>Volumen (7 Tage)</small></div>
+        <div class="stat"><b id="trStreak">0</b><small>Wochen in Folge am Ziel</small></div>
+        <div class="stat"><b id="trLast">–</b><small>Letzte Einheit</small></div>
+        <div class="stat"><b id="trPRs">0</b><small>Persönliche Rekorde</small></div>
+      </div>
+
+      <div class="stack">
+        <div id="sessionMount"></div>
+
+        <div class="card">
+          <h3>Deine Trainingswoche</h3>
+          <p class="sub">Geplante Einheiten laut Plan — grün umrandet heißt: erledigt.</p>
+          <div class="week-plan" id="weekPlan"></div>
         </div>
-        <div id="workoutTable"></div>
-      </div>
 
-      <div class="card">
-        <h3>Gym Routine</h3>
-        <p class="sub">Dein Trainingsplan — frei editierbar.</p>
-        <textarea id="gymPlan" rows="8" placeholder="Mo — Push: Bankdrücken 4×8, Schulterdrücken 3×10 …&#10;Mi — Pull: Klimmzüge 4×6, Rudern 4×10 …&#10;Fr — Legs: Kniebeugen 4×8, RDL 3×10 …"></textarea>
-      </div>
-
-      <div class="card">
-        <h3>Gewicht &amp; Körpermaße</h3>
-        <p class="sub">Regelmäßig messen, Trend beobachten — nicht den Einzeltag.</p>
-        <div class="row-add" style="flex-wrap:wrap">
-          <input id="bwKg" type="number" step="0.1" min="0" placeholder="Gewicht kg" style="width:105px">
-          <input id="bwWaist" type="number" step="0.5" min="0" placeholder="Taille cm" style="width:100px">
-          <input id="bwArm" type="number" step="0.5" min="0" placeholder="Arm cm" style="width:90px">
-          <button class="btn" id="bwAdd">Eintragen</button>
+        <div class="card">
+          <h3>Trainings-Verlauf</h3>
+          <p class="sub">Jede abgeschlossene Einheit mit allen Sätzen. Antippen zum Aufklappen.</p>
+          <div id="sessionHistory"></div>
         </div>
-        <div class="chart-box"><canvas id="chWeight"></canvas></div>
       </div>
+    </div>
 
-      <div class="card">
-        <h3>Kraftwerte</h3>
-        <p class="sub">Bestes Satzgewicht pro Übung über die Zeit.</p>
-        <select id="strengthSel" style="margin-bottom:12px;width:100%"></select>
-        <div class="chart-box"><canvas id="chStrength"></canvas></div>
-      </div>
+    <!-- ---------- TAB: PLAN ---------- -->
+    <div class="body-tab" id="btab-plan">
+      <div class="stack">
+        <div class="card">
+          <h3>Trainingsplan-Vorlage <span class="tag">5 Splits</span></h3>
+          <p class="sub">Wähle einen erprobten Split — du kannst danach jede Übung, Satzzahl und Pause frei anpassen.</p>
+          <div class="split-list" id="splitList"></div>
+        </div>
 
-      <div class="card">
-        <h3>Schlaf-Tracker <span class="tag">+5 XP</span></h3>
-        <p class="sub">Dauer &amp; Qualität der letzten Nacht.</p>
-        <div class="row-add">
-          <input id="sleepH" type="number" step="0.25" min="0" max="16" placeholder="Stunden" style="width:110px">
-          <div style="flex:1">
-            <div class="slider-lab"><span>Qualität</span><span id="sleepQVal">7 / 10</span></div>
-            <input type="range" id="sleepQ" min="1" max="10" value="7">
+        <div class="card">
+          <h3>Dein Plan im Detail</h3>
+          <p class="sub">Trainingstag wählen, Übungen ergänzen oder entfernen, Sätze · Wiederholungen · Pausen einstellen und Wochentage zuordnen.</p>
+          <div class="plan-settings">
+            <label>Wochenziel <input type="number" id="trGoalInput" min="1" max="14"> Einheiten</label>
+            <label>Standard-Pause <input type="number" id="restDefaultInput" min="0" max="600" step="15"> Sek.</label>
+            <label><input type="checkbox" id="restSoundChk"> 🔔 Signalton nach der Pause</label>
           </div>
-          <button class="btn" id="sleepAdd">Loggen</button>
+          <div class="pd-tabs" id="planDayTabs"></div>
+          <div id="planDayBody"></div>
         </div>
-        <div class="chart-box"><canvas id="chSleep"></canvas></div>
-      </div>
 
-      <div>
-        <div class="card" style="margin-bottom:20px">
+        <div class="card">
+          <h3>Trainings-Notizen</h3>
+          <p class="sub">Platz für Deload-Wochen, Verletzungen, Technik-Hinweise oder Wettkampf-Termine.</p>
+          <textarea id="gymPlan" rows="6" placeholder="z. B. Woche 7 = Deload (Volumen −40 %) · Schulter links: kein Seitheben über 12 kg …"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- TAB: STATISTIK ---------- -->
+    <div class="body-tab" id="btab-stats">
+      <div class="grid g2">
+        <div class="card">
+          <h3>Trainingsvolumen — 8 Wochen</h3>
+          <p class="sub">Gesamttonnage pro Woche (Gewicht × Wiederholungen). Der wichtigste Treiber für Muskelaufbau.</p>
+          <div class="chart-box"><canvas id="chVolume"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>Muskelgruppen-Verteilung</h3>
+          <p class="sub">Sätze der letzten 30 Tage — zeigt sofort, was du vernachlässigst.</p>
+          <div class="chart-box"><canvas id="chMuscle"></canvas></div>
+          <div id="muscleBalance" style="margin-top:14px"></div>
+        </div>
+
+        <div class="card">
+          <h3>Kraftentwicklung</h3>
+          <p class="sub">Bestes Satzgewicht einer Übung über die Zeit.</p>
+          <select id="strengthSel" style="margin-bottom:12px;width:100%"></select>
+          <div class="chart-box"><canvas id="chStrength"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>Bestenliste <span class="tag">e1RM nach Epley</span></h3>
+          <p class="sub">Dein bester Satz je Übung, umgerechnet auf das geschätzte Ein-Wiederholungs-Maximum.</p>
+          <div id="prTable"></div>
+        </div>
+
+        <div class="card span2">
+          <h3>Schnell-Log <span class="tag">+20 XP</span></h3>
+          <p class="sub">Für Einheiten, die du nicht live mitgeloggt hast — Übung, Sätze × Wiederholungen, Gewicht.</p>
+          <div class="quick-log">
+            <input id="exName" placeholder="Übung" style="flex:2;min-width:130px">
+            <input id="exSets" type="number" min="1" placeholder="Sätze" style="width:80px">
+            <input id="exReps" type="number" min="1" placeholder="Wdh." style="width:80px">
+            <input id="exKg" type="number" min="0" step="0.5" placeholder="kg" style="width:80px">
+            <button class="btn" id="exAdd">Loggen</button>
+          </div>
+          <div id="workoutTable"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- TAB: KÖRPER & RECOVERY ---------- -->
+    <div class="body-tab" id="btab-recovery">
+      <div class="grid g2">
+        <div class="card">
+          <h3>Gewicht &amp; Körpermaße</h3>
+          <p class="sub">Regelmäßig messen, Trend beobachten — nicht den Einzeltag.</p>
+          <div class="row-add" style="flex-wrap:wrap">
+            <input id="bwKg" type="number" step="0.1" min="0" placeholder="Gewicht kg" style="width:105px">
+            <input id="bwWaist" type="number" step="0.5" min="0" placeholder="Taille cm" style="width:100px">
+            <input id="bwArm" type="number" step="0.5" min="0" placeholder="Arm cm" style="width:90px">
+            <button class="btn" id="bwAdd">Eintragen</button>
+          </div>
+          <div class="chart-box"><canvas id="chWeight"></canvas></div>
+        </div>
+
+        <div class="card">
+          <h3>Schlaf-Tracker <span class="tag">+5 XP</span></h3>
+          <p class="sub">Dauer &amp; Qualität der letzten Nacht.</p>
+          <div class="row-add">
+            <input id="sleepH" type="number" step="0.25" min="0" max="16" placeholder="Stunden" style="width:110px">
+            <div style="flex:1">
+              <div class="slider-lab"><span>Qualität</span><span id="sleepQVal">7 / 10</span></div>
+              <input type="range" id="sleepQ" min="1" max="10" value="7">
+            </div>
+            <button class="btn" id="sleepAdd">Loggen</button>
+          </div>
+          <div class="chart-box"><canvas id="chSleep"></canvas></div>
+        </div>
+
+        <div class="card">
           <h3>Recovery Score</h3>
-          <p class="sub">Berechnet aus Schlafdauer, -qualität und Trainingslast.</p>
+          <p class="sub">Berechnet aus Schlafdauer, -qualität und deiner Trainingslast der letzten 48 Stunden.</p>
           <div class="dial">
             <div class="ring">
               <svg width="88" height="88" viewBox="0 0 88 88"><circle class="track" cx="44" cy="44" r="38"/><circle class="bar" id="recRing" cx="44" cy="44" r="38" stroke-dasharray="239" stroke-dashoffset="239"/></svg>
@@ -352,6 +435,7 @@
             </ul>
           </div>
         </div>
+
         <div class="card">
           <h3>Body-Fotos &amp; Maße</h3>
           <p class="sub">Aktuelle Messwerte im Überblick.</p>
@@ -563,6 +647,56 @@
   </div>
 </div>
 
+<!-- Übungs-Picker (Trainingsplan & laufende Einheit) -->
+<div class="modal" id="exPickModal">
+  <div class="modal-box" style="max-width:520px">
+    <h3 id="exPickTitle">Übung hinzufügen</h3>
+    <p class="sub" style="margin:6px 0 0">Über 60 Übungen mit Muskelgruppe, Equipment und Technik-Hinweis.</p>
+    <input id="exPickSearch" placeholder="Suchen, z. B. Bank, Kabel, Rücken …" style="width:100%;margin-top:14px">
+    <div class="ex-pick-filters" id="exPickFilters"></div>
+    <div class="ex-pick-list" id="exPickList"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn ghost" id="exPickClose">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Einheit abschließen -->
+<div class="modal" id="sessionFinishModal">
+  <div class="modal-box" style="max-width:470px">
+    <h3>✓ Einheit abschließen</h3>
+    <p class="sub" style="margin:6px 0 0">Stark gemacht. Hier ist deine Zusammenfassung.</p>
+    <div class="fin-stats" id="finishStats"></div>
+    <div id="finishPRs"></div>
+    <div class="slider-lab" style="margin-top:4px"><span>Wie hat sich die Einheit angefühlt?</span></div>
+    <div class="feel-row" id="finishFeel">
+      <button data-feel="1">😵 platt</button>
+      <button data-feel="2">😕 zäh</button>
+      <button data-feel="3">🙂 solide</button>
+      <button data-feel="4">💪 stark</button>
+      <button data-feel="5">🚀 Bestform</button>
+    </div>
+    <textarea id="finishNote" rows="3" placeholder="Notiz zur Einheit — Technik, Schmerzen, Beobachtungen …"></textarea>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn ghost" id="finishCancel">Weiter trainieren</button>
+      <button class="btn" id="finishSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pausen-Timer -->
+<div class="rest-bar" id="restBar">
+  <div>
+    <div class="rest-label">Pause</div>
+    <div class="rest-time" id="restTime">0:00</div>
+  </div>
+  <div class="rest-mid">
+    <div class="rest-track"><i id="restFill" style="width:100%"></i></div>
+  </div>
+  <button class="btn ghost sm" id="restPlus">+30s</button>
+  <button class="btn sm" id="restSkip">Weiter</button>
+</div>
+
 <div class="toasts" id="toasts"></div>
 
 <!-- Level-Up-Feier (Phase 4) -->
@@ -577,6 +711,7 @@
 
 <script src="js/helpers.js"></script>
 <script src="js/data.js"></script>
+<script src="js/exercisedb.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/ui.js"></script>
@@ -588,6 +723,7 @@
 <script src="js/nutrition.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/workouts.js"></script>
+<script src="js/training.js"></script>
 <script src="js/mind.js"></script>
 <script src="js/goals.js"></script>
 <script src="js/knowledge.js"></script>
