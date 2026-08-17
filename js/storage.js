@@ -41,8 +41,17 @@ function defaultState(){
     supplements: SUPP_STACK.map(s => ({id: uid(), name:s.name, icon:s.icon, dose:s.dose, when:s.when, body:s.body, time:s.time, dates:{}})),
     hydration: {},                   // {"date": glasses}
     hydroGoal: 8,
-    workouts: [],                    // {id, date, name, sets, reps, kg}
+    workouts: [],                    // Schnell-Log: {id, date, name, sets, reps, kg}
     gymPlan: "",
+    /* ---------- Trainings-App ---------- */
+    trainingSplit: "ppl",            // aktive Plan-Vorlage (Key aus SPLITS)
+    trainingDays: buildDaysFromSplit("ppl"),
+                                     // [{id, name, icon, focus, weekdays:[0-6], exercises:[{id, exId, sets, reps, rest}]}]
+    trainingGoal: 6,                 // Ziel-Einheiten pro Woche (aus dem Split abgeleitet)
+    restDefault: 90,                 // Standard-Pause in Sekunden
+    restSound: true,                 // Signalton am Ende der Pause
+    activeSession: null,             // laufende Einheit {id, dayId, name, icon, startedAt, exercises:[{...sets:[{kg,reps,done}]}], restEnd}
+    sessions: [],                    // abgeschlossene Einheiten {id, date, name, durationSec, exercises, prs, feeling, note}
     bodyLog: [],                     // {date, kg, waist, arm}
     sleep: [],                       // {date, hours, quality}
     journal: {},                     // {"date": {morning:{good,better}, evening:{grateful:[3], lookforward:[3]}}}

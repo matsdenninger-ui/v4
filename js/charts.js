@@ -41,6 +41,8 @@ function lineOpts(unit){
 }
 
 function renderBodyCharts(){
+  // Recovery & Maße hängen nicht an Chart.js — immer zuerst zeichnen
+  renderRecovery(); renderMeasures();
   if(!window.Chart) return;
   const wl = S.bodyLog.filter(b=>b.kg!=null);
   mkChart("chWeight", { type:"line", plugins:[emptyPlugin],
@@ -62,30 +64,41 @@ function renderBodyCharts(){
       scales:{ x:{grid:{display:false}},
         y:{beginAtZero:true, max:12, title:{display:true,text:"h"}},
         y1:{beginAtZero:true, max:10, position:"right", grid:{display:false}, title:{display:true,text:"Q"}} } } });
-  renderRecovery(); renderMeasures();
 }
 
+/* Übungsauswahl der Kraftkurve — speist sich aus Sessions UND Schnell-Log,
+   die häufigste Übung steht oben. */
 function renderStrengthSel(){
-  const names = [...new Set(S.workouts.map(w=>w.name))];
+  const entries = allTrainingEntries().filter(e=>e.unit !== "time" && e.kg);
+  const count = {};
+  entries.forEach(e=>{ count[e.name] = (count[e.name]||0) + 1; });
+  const names = Object.keys(count).sort((a,b)=>count[b]-count[a]);
   const sel = $("strengthSel");
   const cur = sel.value;
   sel.innerHTML = names.length
     ? names.map(n=>`<option ${n===cur?"selected":""}>${esc(n)}</option>`).join("")
-    : '<option value="">— Erst Workouts loggen —</option>';
+    : '<option value="">— Erst Training loggen —</option>';
   renderStrengthChart();
 }
 $("strengthSel").addEventListener("change", renderStrengthChart);
 function renderStrengthChart(){
   if(!window.Chart) return;
   const name = $("strengthSel").value;
-  const pts = S.workouts.filter(w=>w.name===name && w.kg)
-    .sort((a,b)=>a.date.localeCompare(b.date));
-  const byDate = {};
-  pts.forEach(w=>{ byDate[w.date] = Math.max(byDate[w.date]||0, w.kg); });
-  const keys = Object.keys(byDate).sort();
+  const entries = allTrainingEntries().filter(e=>e.name===name && e.bestKg);
+  const topKg = {}, e1 = {};
+  entries.forEach(e=>{
+    topKg[e.date] = Math.max(topKg[e.date]||0, e.bestKg);
+    e1[e.date]    = Math.max(e1[e.date]||0, e.bestE1rm);
+  });
+  const keys = Object.keys(topKg).sort();
   mkChart("chStrength", { type:"line", plugins:[emptyPlugin],
     data:{ labels:keys.map(fmtShort),
-      datasets:[{ data:keys.map(k=>byDate[k]), borderColor:"#34D399", backgroundColor:"rgba(52,211,153,.12)",
-        fill:true, tension:.3, pointRadius:3, pointBackgroundColor:"#34D399" }] },
-    options: lineOpts("kg") });
+      datasets:[
+        { label:"Bestes Satzgewicht", data:keys.map(k=>topKg[k]), borderColor:"#34D399",
+          backgroundColor:"rgba(52,211,153,.12)", fill:true, tension:.3, pointRadius:3, pointBackgroundColor:"#34D399" },
+        { label:"geschätztes 1RM", data:keys.map(k=>e1[k]), borderColor:cssVar("--ac"),
+          borderDash:[5,4], fill:false, tension:.3, pointRadius:0 } ] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:10}}, tooltip:{callbacks:{label:c=>c.dataset.label+": "+c.parsed.y+" kg"}} },
+      scales:{ x:{grid:{display:false}}, y:{beginAtZero:false, title:{display:true,text:"kg"}} } } });
 }

@@ -69,6 +69,21 @@ function getNextSupplement(){
   return open[0] || null;
 }
 
+/* Trainings-Chip: laufende Einheit, erledigtes oder geplantes Training des Tages */
+function trainingChip(){
+  if(S.activeSession){
+    return `<div class="hchip clickable" data-act="goto-body">🏋️ <b>Einheit läuft:</b> ${esc(S.activeSession.name)} →</div>`;
+  }
+  if(trainingDates().has(todayKey())){
+    return `<div class="hchip">🏋️ Training heute <b>erledigt ✓</b></div>`;
+  }
+  const planned = plannedDaysFor(new Date().getDay());
+  if(planned.length){
+    return `<div class="hchip clickable" data-act="goto-body">🏋️ Heute geplant: <b>${esc(planned.map(p=>p.name).join(" / "))}</b> →</div>`;
+  }
+  return `<div class="hchip">🛌 Heute <b>Ruhetag</b></div>`;
+}
+
 /* Mission-Callout: zeigt das wichtigste Fokus-Ziel, sonst den nächsten offenen Punkt */
 function renderMission(){
   const fokusGoals = S.goals.filter(g=>g.type==="fokus" && goalProgress(g) < 100);
@@ -158,6 +173,7 @@ function renderHero(){
     : `<div class="hchip">💊 Alle Supplements genommen ✓</div>`);
   const streak = S.habits.reduce((m,h)=>Math.max(m,habitStreak(h)),0);
   chips.push(`<div class="hchip">🔥 Streak: <b>${streak} Tag${streak===1?"":"e"}</b></div>`);
+  chips.push(trainingChip());
   $("heroChips").innerHTML = chips.join("");
 
   renderMission();

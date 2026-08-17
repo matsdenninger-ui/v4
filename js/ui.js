@@ -43,7 +43,7 @@ $("confirmModal").addEventListener("click", e=>{
 
 
 /* ---------- Navigation ---------- */
-const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body", mind:"Mind", progress:"Progress", goals:"Goals", knowledge:"Knowledge" };
+const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body & Training", mind:"Mind", progress:"Progress", goals:"Goals", knowledge:"Knowledge" };
 document.querySelectorAll("#nav button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
@@ -52,7 +52,7 @@ document.querySelectorAll("#nav button").forEach(btn=>{
     document.querySelectorAll(".page").forEach(pg=>pg.classList.remove("active"));
     $("page-"+p).classList.add("active");
     $("pageTitle").textContent = PAGE_TITLES[p];
-    if(p==="body") renderBodyCharts();
+    if(p==="body"){ renderTraining(); switchBodyTab(bodyTab); }
     if(p==="progress"){ renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation(); }
     closeSidebar();
     try{ window.scrollTo({top:0, behavior:"smooth"}); }catch(e){}
