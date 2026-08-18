@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v21 · 2026-08-17 · Body-Seite ist jetzt eine vollwertige Trainings-App: Trainingspläne mit 5 Splits, Live-Session mit Satz-für-Satz-Logging, Pausen-Timer, Übungsdatenbank (63 Übungen), Rekorde, Volumen- & Muskelgruppen-Statistik -->
+<!-- ASCEND DASHBOARD — v22 · 2026-08-18 · Cloud-Sync führt Stände jetzt zusammen statt zu überschreiben: Trainingspläne und geloggte Einheiten gehen beim Abgleich mit einem anderen Gerät nicht mehr verloren -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v21 · 17.08.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v22 · 18.08.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -336,6 +336,7 @@
             <label>Wochenziel <input type="number" id="trGoalInput" min="1" max="14"> Einheiten</label>
             <label>Standard-Pause <input type="number" id="restDefaultInput" min="0" max="600" step="15"> Sek.</label>
             <label><input type="checkbox" id="restSoundChk"> 🔔 Signalton nach der Pause</label>
+            <span class="save-hint" id="planSaveHint"></span>
           </div>
           <div class="pd-tabs" id="planDayTabs"></div>
           <div id="planDayBody"></div>

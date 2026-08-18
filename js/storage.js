@@ -3,7 +3,14 @@
 
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
+const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
+const APP_STATE_VERSION = 22;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
+
+/* Felder, die es vor der Trainings-App (v21) noch nicht gab. Ein Gerät mit
+   älterer App-Version schickt sie gar nicht mit — dann dürfen sie beim
+   Zusammenführen NICHT durch Standardwerte ersetzt werden. */
+const V21_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions"];
 
 function defaultState(){
   return {
@@ -68,7 +75,18 @@ function defaultState(){
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
     updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
+    appVersion: APP_STATE_VERSION,   // Datenmodell-Version — erkennt Stände, die von einer älteren App-Version stammen
+    deletedIds: [],                  // Grabsteine: bewusst gelöschte Einträge kommen beim Sync nicht zurück
   };
+}
+
+/* Bewusst gelöschte Einträge merken, damit sie ein anderes Gerät
+   beim Zusammenführen nicht wieder einspielt. */
+function tombstone(id){
+  if(!id) return;
+  if(!Array.isArray(S.deletedIds)) S.deletedIds = [];
+  if(!S.deletedIds.includes(id)) S.deletedIds.push(id);
+  if(S.deletedIds.length > 500) S.deletedIds = S.deletedIds.slice(-500);
 }
 
 function loadState(){
@@ -80,9 +98,99 @@ function loadState(){
 }
 function save(){
   S.updatedAt = Date.now();
+  S.appVersion = APP_STATE_VERSION;
   try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
   catch(e){ memoryFallback = S; }
   cloudSave();
+}
+
+
+/* ============================================================
+   Zusammenführen statt Überschreiben
+   Früher wurde ein neuerer Cloud-Stand komplett über den lokalen
+   gelegt. Schrieb ein zweites Gerät (oder ein Tab mit älterer
+   App-Version) danach seinen Stand, verschwanden damit lokal
+   angelegte Trainingspläne und geloggte Einheiten spurlos.
+   Jetzt gilt:
+     · Protokolle (Einheiten, Workouts, Gewicht, Schlaf, Stimmung)
+       werden additiv vereinigt — Geloggtes geht nie verloren.
+     · Felder, die die Gegenseite gar nicht kennt, bleiben lokal.
+     · Bewusst Gelöschtes bleibt gelöscht (deletedIds).
+   ============================================================ */
+function unionBy(remoteArr, localArr, keyFn, deleted){
+  const out = [], seen = new Set();
+  (remoteArr||[]).concat(localArr||[]).forEach(item=>{
+    if(!item) return;
+    const k = keyFn(item);
+    if(k == null || seen.has(k)) return;      // Cloud-Eintrag gewinnt bei gleichem Schlüssel
+    if(deleted && deleted.has(k)) return;     // gelöscht bleibt gelöscht
+    seen.add(k); out.push(item);
+  });
+  return out;
+}
+
+/* Protokoll-Arrays vereinigen. `base` gewinnt bei gleichem Schlüssel. */
+const LOG_FIELDS = ["sessions","workouts","bodyLog","sleep","moods"];
+function mergeLogArrays(base, other, deleted){
+  const byDateAsc  = (a,b)=>String(a.date).localeCompare(String(b.date));
+  const byDateDesc = (a,b)=>String(b.date).localeCompare(String(a.date));
+  return {
+    sessions: unionBy(base.sessions, other.sessions, s=>s.id,          deleted).sort(byDateDesc),
+    workouts: unionBy(base.workouts, other.workouts, w=>w.id,          deleted),
+    bodyLog:  unionBy(base.bodyLog,  other.bodyLog,  b=>b.date).sort(byDateAsc),
+    sleep:    unionBy(base.sleep,    other.sleep,    s=>s.date).sort(byDateAsc),
+    moods:    unionBy(base.moods,    other.moods,    m=>String(m.ts)),
+  };
+}
+function deletedSet(a, b){ return new Set([].concat(a.deletedIds||[], b.deletedIds||[])); }
+function logsGrew(before, after){
+  return LOG_FIELDS.some(k => (after[k]||[]).length > (before[k]||[]).length);
+}
+
+/* Cloud-Stand ist neuer: übernehmen, aber lokale Daten retten.
+   Liefert {state, localExtras} — localExtras = true, wenn dieses Gerät Daten
+   hatte, die in der Cloud fehlten (dann muss die Cloud nachziehen). */
+function mergeCloudState(local, remote){
+  const merged = Object.assign(defaultState(), remote);
+  const remoteVersion = remote.appVersion || 0;
+  const localVersion  = local.appVersion  || 0;
+
+  // 1) Neue Felder retten, wenn die Cloud sie (noch) nicht kennt
+  let rescued = false;
+  V21_FIELDS.forEach(k=>{
+    const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
+    if(!remoteHasField || remoteVersion < localVersion){
+      if(local[k] != null){ merged[k] = local[k]; rescued = true; }
+    }
+  });
+
+  // 2) Protokolle vereinigen (Cloud gewinnt bei Konflikten)
+  const deleted = deletedSet(local, remote);
+  const before = Object.assign({}, merged);
+  Object.assign(merged, mergeLogArrays(merged, local, deleted));
+  merged.deletedIds = [...deleted].slice(-500);
+
+  // 3) Eine laufende Einheit nie durch einen Sync abwürgen
+  if(!merged.activeSession && local.activeSession) merged.activeSession = local.activeSession;
+
+  merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
+  return { state: merged, localExtras: rescued || logsGrew(before, merged) };
+}
+
+/* Dieses Gerät ist neuer: nur die Protokolle der Cloud dazunehmen, damit auf
+   einem anderen Gerät geloggte Einheiten beim Hochladen nicht verloren gehen. */
+function absorbRemoteLogs(local, remote){
+  const deleted = deletedSet(local, remote);
+  const before = Object.assign({}, local);
+  Object.assign(local, mergeLogArrays(local, remote, deleted));
+  local.deletedIds = [...deleted].slice(-500);
+  return logsGrew(before, local);
+}
+
+/* Sicherungskopie des lokalen Stands, bevor ein Cloud-Stand übernommen wird.
+   Reine Notfall-Reserve — liegt unter "ascend_state_prev" im localStorage. */
+function backupLocalState(){
+  try{ localStorage.setItem(LS_PREV_KEY, JSON.stringify(S)); }catch(e){ /* egal */ }
 }
 
 
@@ -114,21 +222,35 @@ function cloudSave(immediate){
     try{
       // Sicherheitscheck: erst prüfen, ob die Cloud inzwischen neuer ist als unser
       // lokaler Stand (z. B. weil ein anderes Gerät zwischenzeitlich gespeichert hat).
-      // Sonst könnte ein Gerät mit veraltetem S den neueren Cloud-Stand überschreiben,
-      // nur weil sein updatedAt-Zeitstempel beim Speichern auf "jetzt" gesetzt wird.
+      // Ist sie neuer, werden beide Stände zusammengeführt — früher wurde die
+      // gerade gemachte lokale Änderung an dieser Stelle stillschweigend verworfen.
       const check = await fetch("/api/state", { headers: { "Authorization": "Bearer " + token } });
       if(check.ok){
-        const checkJson = await check.json();
-        const remoteUpdatedAt = checkJson.data ? (checkJson.data.updatedAt || 0) : 0;
-        if(remoteUpdatedAt > (S.updatedAt || 0)){
-          S = Object.assign(defaultState(), checkJson.data);
+        const remote = (await check.json()).data;
+        if(remote && (remote.updatedAt || 0) > (S.updatedAt || 0)){
+          // Cloud ist neuer -> beide Stände zusammenführen, statt die gerade
+          // gemachte lokale Änderung stillschweigend zu verwerfen
+          backupLocalState();
+          S = mergeCloudState(S, remote).state;
+          S.updatedAt = Date.now();
           save0();
           openMealSlot = null;
           renderAll();
           checkBadges();
-          setSyncStatus("☁️ Neuerer Stand von anderem Gerät übernommen", "ok");
-          return;
+          setSyncStatus("☁️ Mit anderem Gerät zusammengeführt", "ok");
+        } else if(remote){
+          // Wir sind neuer -> trotzdem die Protokolle der Cloud übernehmen,
+          // damit auf einem anderen Gerät geloggte Einheiten nicht wegfallen
+          if(absorbRemoteLogs(S, remote)){
+            save0(); checkBadges();
+            // nicht neu zeichnen, während gerade in ein Feld getippt wird —
+            // sonst verschwinden Eingaben mitten in einer laufenden Einheit
+            const el = document.activeElement;
+            if(!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) renderAll();
+          }
         }
+        // kein return: der zusammengeführte Stand wird jetzt hochgeladen,
+        // damit beide Geräte denselben Datenbestand haben
       }
       const res = await fetch("/api/state", {
         method: "POST",
@@ -174,13 +296,21 @@ async function cloudLoad(silent){
     const cloudData = json.data || null;
     const cloudUpdatedAt = cloudData ? (cloudData.updatedAt || 0) : 0;
 
-    if(cloudUpdatedAt > (S.updatedAt || 0)){
-      // Cloud hat einen neueren Stand als dieses Gerät -> übernehmen
-      S = Object.assign(defaultState(), cloudData);
-      save0(); // nur lokal cachen, kein erneutes Hochladen auslösen
+    if(cloudData && cloudUpdatedAt > (S.updatedAt || 0)){
+      // Cloud ist neuer -> übernehmen, aber lokale Daten dabei nicht wegwerfen
+      backupLocalState();
+      const merge = mergeCloudState(S, cloudData);
+      S = merge.state;
+      save0(); // nur lokal cachen
       openMealSlot = null;
       renderAll();
       checkBadges();
+      if(merge.localExtras){
+        // Dieses Gerät hatte Daten, die in der Cloud fehlten -> nachreichen
+        S.updatedAt = Date.now();
+        save0();
+        cloudSave(true);
+      }
     } else if((S.updatedAt || 0) > cloudUpdatedAt){
       // Dieses Gerät hat neuere Daten als die Cloud -> Cloud aktualisieren statt sie zu überschreiben
       cloudSave(true);

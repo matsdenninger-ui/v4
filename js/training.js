@@ -654,6 +654,9 @@ function renderPlanEditor(){
     $("trGoalInput").value = S.trainingGoal || 3;
     $("restDefaultInput").value = S.restDefault != null ? S.restDefault : 90;
     $("restSoundChk").checked = S.restSound !== false;
+    $("planSaveHint").textContent = S.updatedAt
+      ? "✓ Automatisch gespeichert · " + new Date(S.updatedAt).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})
+      : "✓ Änderungen werden automatisch gespeichert";
   }
 
   const days = S.trainingDays || [];
