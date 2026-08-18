@@ -107,7 +107,8 @@ document.body.addEventListener("click", e=>{
       break; }
 
     case "wo-del":
-      S.workouts = S.workouts.filter(w=>w.id!==id); save(); renderWorkouts(); renderStrengthSel(); renderTraining(); break;
+      S.workouts = S.workouts.filter(w=>w.id!==id); tombstone(id);
+      save(); renderWorkouts(); renderStrengthSel(); renderTraining(); break;
 
     /* ---------- Training: laufende Einheit ---------- */
     case "tr-start":
@@ -214,7 +215,7 @@ document.body.addEventListener("click", e=>{
     case "hist-del":
       customConfirm("Diese Einheit aus dem Verlauf löschen?", {okLabel:"Löschen", danger:true}).then(ok=>{
         if(!ok) return;
-        S.sessions = S.sessions.filter(s=>s.id!==id); save();
+        S.sessions = S.sessions.filter(s=>s.id!==id); tombstone(id); save();
         renderTraining(); renderTrainingCharts(); renderBodyCharts();
       });
       break;
