@@ -31,7 +31,7 @@ function renderKnowledge(){
 $("knowTopicAdd").addEventListener("click", ()=>{
   const title = $("knowTopicTitle").value.trim();
   if(!title){ toast("Gib dem Thema einen Namen."); return; }
-  S.knowledge.push({id:uid(), title, notes:"", todos:[]});
+  S.knowledge.push({id:uid(), title, notes:"", todos:[], touched:Date.now()});
   $("knowTopicTitle").value = "";
   save(); renderKnowledge();
   toast("Thema angelegt: "+title);

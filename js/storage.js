@@ -61,7 +61,7 @@ function defaultState(){
     sessions: [],                    // abgeschlossene Einheiten {id, date, name, durationSec, exercises, prs, feeling, note}
     bodyLog: [],                     // {date, kg, waist, arm}
     sleep: [],                       // {date, hours, quality}
-    journal: {},                     // {"date": {morning:{good,better}, evening:{grateful:[3], lookforward:[3]}}}
+    journal: {},                     // {"date": {morning:{gratitude:[3], lookforward:[3], touched}, evening:{good, better, touched}}}
     moods: [],                       // {ts, date, mood, energy, tags:[]}
     learning: [],                    // {id, title, type, progress}
     skills: [
@@ -75,6 +75,8 @@ function defaultState(){
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
     updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
+    wipeAt: 0,                       // Zeitstempel von "Alles zurücksetzen" — verhindert, dass ein Sync die
+                                      // gelöschten Daten von einem noch nicht synchronisierten Gerät zurückholt
     appVersion: APP_STATE_VERSION,   // Datenmodell-Version — erkennt Stände, die von einer älteren App-Version stammen
     deletedIds: [],                  // Grabsteine: bewusst gelöschte Einträge kommen beim Sync nicht zurück
   };
@@ -114,13 +116,25 @@ function save(){
    Jetzt gilt:
      · Protokolle (Einheiten, Workouts, Gewicht, Schlaf, Stimmung)
        werden additiv vereinigt — Geloggtes geht nie verloren.
-     · To-Dos werden pro Eintrag anhand von `touched` vereinigt, nicht als
+     · Editierbare Listen (To-Dos, Habits, Routinen, Ziele, Wissen, Lernen,
+       Menschen) werden pro Eintrag anhand von `touched` vereinigt, nicht als
        ganzes Array ersetzt — sonst gewinnt bei jedem Sync einfach, wer
        zuletzt lokal gespeichert hat, auch wenn dessen Stand veraltet war
-       (genau das ließ Reihenfolge/Status auf einem zweiten Gerät verschwinden).
-     · XP läuft nie rückwärts (Math.max aus beiden Seiten).
+       (genau das ließ Knowledge-Themen und To-Do-Reihenfolge verschwinden).
+     · Tages-Häkchen (Routine, Mahlzeiten, Habit-/Supplement-Tage) sind
+       einmal gesetzt für immer gesetzt — ein Sync kann sie nicht mehr auf
+       0 zurücksetzen.
+     · Tages-Zahlen (Fokuszeit, Sessions), Skill-Level, XP und Badges laufen
+       nie rückwärts (jeweils das Maximum/die Vereinigung beider Seiten).
+       Trinkmenge ist bewusst ausgenommen — die lässt sich per Klick oder
+       Reset-Button gewollt verringern.
+     · Journal wird pro Tag vereinigt statt als Ganzes ersetzt.
      · Felder, die die Gegenseite gar nicht kennt, bleiben lokal.
      · Bewusst Gelöschtes bleibt gelöscht (deletedIds).
+     · "Alles zurücksetzen" setzt `wipeAt` — ein danach synchronisiertes,
+       noch nicht aktualisiertes Gerät holt die gelöschten Daten dann NICHT
+       per Merge zurück (sonst würde jeder obige Punkt einen echten Reset
+       unmöglich machen).
    ============================================================ */
 function unionBy(remoteArr, localArr, keyFn, deleted){
   const out = [], seen = new Set();
@@ -152,12 +166,13 @@ function logsGrew(before, after){
   return LOG_FIELDS.some(k => (after[k]||[]).length > (before[k]||[]).length);
 }
 
-/* To-Dos vereinigen: anders als Protokolle können To-Dos sich ändern (Reihenfolge,
-   erledigt, Text) statt nur zu wachsen. Ein simples "base gewinnt" würde also
-   Änderungen der Gegenseite verschlucken. Stattdessen gewinnt pro Eintrag, wer ihn
-   zuletzt angefasst hat (`touched`-Zeitstempel) — unabhängig davon, welche Seite
-   insgesamt den neueren `updatedAt`-Gesamtstand hat. */
-function mergeTodos(baseArr, otherArr, deleted){
+/* Editierbare Listen (To-Dos, Habits, Routinen, Ziele, Wissen, Lernen, Menschen)
+   vereinigen: anders als Protokolle können sie sich ändern (Reihenfolge, erledigt,
+   Text) statt nur zu wachsen. Ein simples "base gewinnt" würde also Änderungen der
+   Gegenseite verschlucken. Stattdessen gewinnt pro Eintrag, wer ihn zuletzt
+   angefasst hat (`touched`-Zeitstempel) — unabhängig davon, welche Seite insgesamt
+   den neueren `updatedAt`-Gesamtstand hat. */
+function mergeById(baseArr, otherArr, deleted){
   const map = new Map();
   (otherArr||[]).forEach(t=>{ if(t && !(deleted && deleted.has(t.id))) map.set(t.id, t); });
   (baseArr||[]).forEach(t=>{
@@ -167,8 +182,118 @@ function mergeTodos(baseArr, otherArr, deleted){
   });
   return [...map.values()];
 }
-function todosChanged(before, after){
+function arrChanged(before, after){
   return JSON.stringify(before||[]) !== JSON.stringify(after||[]);
+}
+
+/* Habits/Supplements: Array per id vereinigen (siehe mergeById), aber die
+   verschachtelten "dates"-Häkchen aus BEIDEN Seiten übernehmen. Sonst gewinnt ein
+   Gerät strukturell komplett und die am anderen Gerät abgehakten Tage verschwinden —
+   selbst wenn das gewinnende Gerät den Eintrag zuletzt nur umbenannt hat. */
+function mergeArrWithDates(baseArr, otherArr, deleted){
+  const merged = mergeById(baseArr, otherArr, deleted);
+  const otherById = new Map((otherArr||[]).map(x=>[x.id,x]));
+  const baseById  = new Map((baseArr||[]).map(x=>[x.id,x]));
+  return merged.map(item=>{
+    const a = baseById.get(item.id), b = otherById.get(item.id);
+    if(a && b) return Object.assign({}, item, { dates: mergeDateFlags(a.dates, b.dates) });
+    return item;
+  });
+}
+
+/* Datums-Dict mit Boolean-Flags (Routine-/Mahlzeiten-Checks, Habit-/Supplement-Tage):
+   einmal abgehakt bleibt abgehakt. Ohne das kann ein Sync mit einem Gerät, das den
+   heutigen Klick noch nicht kennt, ein Häkchen wieder auf 0 zurücksetzen. */
+function mergeDateFlags(baseDict, otherDict){
+  const out = {};
+  const dates = new Set([...Object.keys(baseDict||{}), ...Object.keys(otherDict||{})]);
+  dates.forEach(d=>{
+    const merged = Object.assign({}, (otherDict||{})[d], (baseDict||{})[d]);
+    if(Object.keys(merged).length) out[d] = merged;
+  });
+  return out;
+}
+
+/* Datums-Dict mit Zahlen (Fokuszeit, Sessions): fällt nie unter das Maximum
+   beider Seiten. Gilt NICHT für Trinkmenge (S.hydration) — die lässt sich per
+   Klick oder Reset-Button bewusst verringern, "nie sinken" würde das aushebeln. */
+function mergeDateMax(baseDict, otherDict){
+  const out = {};
+  const dates = new Set([...Object.keys(baseDict||{}), ...Object.keys(otherDict||{})]);
+  dates.forEach(d=>{ out[d] = Math.max((baseDict||{})[d]||0, (otherDict||{})[d]||0); });
+  return out;
+}
+
+/* Skills: Level läuft nie rückwärts (wie XP). */
+function mergeSkills(baseCats, otherCats){
+  const otherMap = new Map();
+  (otherCats||[]).forEach(c=>(c.items||[]).forEach(i=>otherMap.set(i.id,i)));
+  return (baseCats||[]).map(cat=>({
+    cat: cat.cat,
+    items: (cat.items||[]).map(it=>{
+      const o = otherMap.get(it.id);
+      return o ? Object.assign({}, it, {lvl: Math.max(it.lvl||0, o.lvl||0)}) : it;
+    })
+  }));
+}
+
+/* Badges: einmal freigeschaltet bleibt freigeschaltet. */
+function mergeBadges(baseDict, otherDict){
+  return Object.assign({}, otherDict||{}, baseDict||{});
+}
+
+/* Journal: pro Tag vereinigen statt das ganze Tagebuch (alle Tage!) zu ersetzen.
+   Innerhalb eines Tages gewinnt pro Morgen-/Abendteil, wer ihn zuletzt gespeichert
+   hat (`touched`). Ohne das würde jeder Sync die komplette Journal-Historie eines
+   Geräts durch die des anderen ersetzen. */
+function mergeJournal(baseDict, otherDict){
+  const out = {};
+  const dates = new Set([...Object.keys(baseDict||{}), ...Object.keys(otherDict||{})]);
+  dates.forEach(d=>{
+    const a = (baseDict||{})[d], b = (otherDict||{})[d];
+    if(a && b){
+      const pick = (x,y)=> !x ? y : !y ? x : (x.touched||0) >= (y.touched||0) ? x : y;
+      out[d] = { morning: pick(a.morning, b.morning), evening: pick(a.evening, b.evening) };
+    } else out[d] = a || b;
+  });
+  return out;
+}
+
+/* Alle editierbaren Sammlungen an einer Stelle vereinigen (`base` = strukturell
+   bevorzugte Seite bei Gleichstand, betrifft aber nur Metadaten wie Titel/Text —
+   Häkchen, Level und XP gehen nie verloren). */
+function mergeCollections(base, other, deleted){
+  return {
+    todos:      mergeById(base.todos, other.todos, deleted),
+    habits:     mergeArrWithDates(base.habits, other.habits, deleted),
+    supplements:mergeArrWithDates(base.supplements, other.supplements, deleted),
+    routineAM:  mergeById(base.routineAM, other.routineAM, deleted),
+    routinePM:  mergeById(base.routinePM, other.routinePM, deleted),
+    goals:      mergeById(base.goals, other.goals, deleted),
+    learning:   mergeById(base.learning, other.learning, deleted),
+    people:     mergeById(base.people, other.people, deleted),
+    knowledge:  mergeById(base.knowledge, other.knowledge, deleted),
+    routineChecks:  mergeDateFlags(base.routineChecks, other.routineChecks),
+    mealEaten:      mergeDateFlags(base.mealEaten, other.mealEaten),
+    focusByDate:    mergeDateMax(base.focusByDate, other.focusByDate),
+    sessionsByDate: mergeDateMax(base.sessionsByDate, other.sessionsByDate),
+    skills:  mergeSkills(base.skills, other.skills),
+    badges:  mergeBadges(base.badges, other.badges),
+    journal: mergeJournal(base.journal, other.journal),
+    xp: Math.max(base.xp||0, other.xp||0),
+  };
+}
+const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge"];
+function collectionsChanged(before, after){
+  return COLLECTION_KEYS.some(k=>arrChanged(before[k], after[k]))
+    || JSON.stringify(before.routineChecks) !== JSON.stringify(after.routineChecks)
+    || JSON.stringify(before.mealEaten) !== JSON.stringify(after.mealEaten)
+    || JSON.stringify(before.focusByDate) !== JSON.stringify(after.focusByDate)
+    || JSON.stringify(before.sessionsByDate) !== JSON.stringify(after.sessionsByDate)
+    || JSON.stringify(before.skills) !== JSON.stringify(after.skills)
+    || JSON.stringify(before.badges) !== JSON.stringify(after.badges)
+    || JSON.stringify(before.journal) !== JSON.stringify(after.journal)
+    || (after.xp||0) > (before.xp||0);
 }
 
 /* Cloud-Stand ist neuer: übernehmen, aber lokale Daten retten.
@@ -179,45 +304,64 @@ function mergeCloudState(local, remote){
   const remoteVersion = remote.appVersion || 0;
   const localVersion  = local.appVersion  || 0;
 
+  // Wurde die Cloud per "Alles zurücksetzen" geleert, NACHDEM dieses Gerät zuletzt
+  // gespeichert hat? Dann ist der lokale Stand komplett veraltet (Vor-Reset) — er
+  // darf nicht in den frisch geleerten Cloud-Stand zurückgemischt werden, sonst
+  // macht das übliche "nichts geht verloren"-Merge den Reset rückgängig.
+  const remoteWipedLocal = (remote.wipeAt||0) > (local.updatedAt||0);
+
   // 1) Neue Felder retten, wenn die Cloud sie (noch) nicht kennt
   let rescued = false;
-  V21_FIELDS.forEach(k=>{
-    const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
-    if(!remoteHasField || remoteVersion < localVersion){
-      if(local[k] != null){ merged[k] = local[k]; rescued = true; }
-    }
-  });
+  if(!remoteWipedLocal){
+    V21_FIELDS.forEach(k=>{
+      const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
+      if(!remoteHasField || remoteVersion < localVersion){
+        if(local[k] != null){ merged[k] = local[k]; rescued = true; }
+      }
+    });
+  }
 
   // 2) Protokolle vereinigen (Cloud gewinnt bei Konflikten)
   const deleted = deletedSet(local, remote);
   const before = Object.assign({}, merged);
-  Object.assign(merged, mergeLogArrays(merged, local, deleted));
+  if(!remoteWipedLocal){
+    Object.assign(merged, mergeLogArrays(merged, local, deleted));
+  }
   merged.deletedIds = [...deleted].slice(-500);
 
-  // 2b) To-Dos pro Eintrag vereinigen (nicht das ganze Array ersetzen) und
-  //     XP nie rückwärts laufen lassen — beides ist sonst anfällig dafür,
-  //     von einem Gerät mit veraltetem lokalem Stand überschrieben zu werden.
-  merged.todos = mergeTodos(remote.todos, local.todos, deleted);
-  merged.xp = Math.max(local.xp||0, remote.xp||0);
+  // 2b) Editierbare Sammlungen (To-Dos, Habits, Routinen, Ziele, Wissen, Lernen,
+  //     Menschen, Skills, Badges, Journal, Checks, XP) pro Eintrag vereinigen statt
+  //     komplett zu ersetzen — sonst gewinnt bei jedem Sync einfach, wer zuletzt
+  //     lokal gespeichert hat, auch wenn dessen Stand veraltet war (genau das ließ
+  //     z. B. Knowledge-Themen und abgehakte Routine-Schritte verschwinden).
+  if(!remoteWipedLocal){
+    Object.assign(merged, mergeCollections(merged, local, deleted));
+  }
 
   // 3) Eine laufende Einheit nie durch einen Sync abwürgen
   if(!merged.activeSession && local.activeSession) merged.activeSession = local.activeSession;
 
   merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
-  const extras = rescued || logsGrew(before, merged) || todosChanged(before.todos, merged.todos) || merged.xp > (remote.xp||0);
+  const extras = rescued || logsGrew(before, merged) || collectionsChanged(before, merged);
   return { state: merged, localExtras: extras };
 }
 
 /* Dieses Gerät ist neuer: nur die Protokolle der Cloud dazunehmen, damit auf
-   einem anderen Gerät geloggte Einheiten beim Hochladen nicht verloren gehen. */
+   einem anderen Gerät geloggte Einheiten/Häkchen/Themen beim Hochladen nicht
+   verloren gehen. */
 function absorbRemoteLogs(local, remote){
+  // Hat dieses Gerät gerade "Alles zurücksetzen" ausgeführt (lokal frischer als
+  // die letzte bekannte Cloud-Version)? Dann ist die Cloud-Seite komplett veraltet
+  // (Vor-Reset) — sie darf nicht zurück in den frisch geleerten lokalen Stand
+  // gemischt werden, sonst holt genau dieser Schritt die gelöschten Daten zurück.
+  if((local.wipeAt||0) > (remote.updatedAt||0)) return false;
+
   const deleted = deletedSet(local, remote);
   const before = Object.assign({}, local);
   Object.assign(local, mergeLogArrays(local, remote, deleted));
-  local.todos = mergeTodos(local.todos, remote.todos, deleted);
-  local.xp = Math.max(local.xp||0, remote.xp||0);
+  Object.assign(local, mergeCollections(local, remote, deleted));
   local.deletedIds = [...deleted].slice(-500);
-  return logsGrew(before, local) || todosChanged(before.todos, local.todos) || local.xp > (before.xp||0);
+  return logsGrew(before, local) || collectionsChanged(before, local);
 }
 
 /* Sicherungskopie des lokalen Stands, bevor ein Cloud-Stand übernommen wird.

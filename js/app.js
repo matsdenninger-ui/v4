@@ -27,7 +27,7 @@ document.body.addEventListener("click", e=>{
     case "habit-del":
       customConfirm("Habit und Historie wirklich löschen?", {okLabel:"Löschen", danger:true}).then(ok=>{
         if(!ok) return;
-        S.habits = S.habits.filter(h=>h.id!==id); save(); renderHabits(); renderHeatmap();
+        S.habits = S.habits.filter(h=>h.id!==id); tombstone(id); save(); renderHabits(); renderHeatmap();
       });
       break;
 
@@ -45,7 +45,7 @@ document.body.addEventListener("click", e=>{
       const list = el.dataset.list;
       if(list === "am") S.routineAM = S.routineAM.filter(x=>x.id!==id);
       else S.routinePM = S.routinePM.filter(x=>x.id!==id);
-      save(); renderRoutines();
+      tombstone(id); save(); renderRoutines();
       break; }
 
     case "note-toggle": {
@@ -82,7 +82,7 @@ document.body.addEventListener("click", e=>{
       renderSupps();
       break; }
     case "supp-del":
-      S.supplements = S.supplements.filter(s=>s.id!==id); save(); renderSupps(); break;
+      S.supplements = S.supplements.filter(s=>s.id!==id); tombstone(id); save(); renderSupps(); break;
 
     case "meal-open": {
       const slot = el.dataset.slot;
@@ -221,26 +221,26 @@ document.body.addEventListener("click", e=>{
       break;
 
     case "learn-del":
-      S.learning = S.learning.filter(l=>l.id!==id); save(); renderLearning(); break;
+      S.learning = S.learning.filter(l=>l.id!==id); tombstone(id); save(); renderLearning(); break;
 
     case "person-ping": {
       const p = S.people.find(p=>p.id===id); if(!p) break;
-      p.last = tk; save(); renderPeople();
+      p.last = tk; p.touched = Date.now(); save(); renderPeople();
       toast("Check-in bei "+p.name+" notiert 💬");
       break; }
     case "person-del":
-      S.people = S.people.filter(p=>p.id!==id); save(); renderPeople(); break;
+      S.people = S.people.filter(p=>p.id!==id); tombstone(id); save(); renderPeople(); break;
 
     case "goal-del":
       customConfirm("Ziel wirklich löschen?", {okLabel:"Löschen", danger:true}).then(ok=>{
         if(!ok) return;
-        S.goals = S.goals.filter(g=>g.id!==id); save(); renderGoals();
+        S.goals = S.goals.filter(g=>g.id!==id); tombstone(id); save(); renderGoals();
       });
       break;
     case "ms-toggle": {
       const g = S.goals.find(g=>g.id===id); if(!g) break;
       const m = g.ms[parseInt(el.dataset.i)]; if(!m) break;
-      m.done = !m.done; save();
+      m.done = !m.done; g.touched = Date.now(); save();
       if(m.done){
         addXP(25, "Meilenstein erreicht: "+m.text);
         if(g.ms.every(x=>x.done)) grantGoalCompletionXP(g);
@@ -255,24 +255,24 @@ document.body.addEventListener("click", e=>{
       if(!text) break;
       if(!g.actionTodos) g.actionTodos = [];
       g.actionTodos.push({id:uid(), text, done:false});
-      save(); renderGoals();
+      g.touched = Date.now(); save(); renderGoals();
       break; }
     case "goal-todo-toggle": {
       const g = S.goals.find(g=>g.id===id); if(!g) break;
       const at = (g.actionTodos||[]).find(x=>x.id===el.dataset.tid); if(!at) break;
-      at.done = !at.done; save(); renderGoals();
+      at.done = !at.done; g.touched = Date.now(); save(); renderGoals();
       if(at.done) addXP(5, "Aufgabe erledigt: "+at.text);
       break; }
     case "goal-todo-del": {
       const g = S.goals.find(g=>g.id===id); if(!g) break;
       g.actionTodos = (g.actionTodos||[]).filter(x=>x.id!==el.dataset.tid);
-      save(); renderGoals();
+      g.touched = Date.now(); save(); renderGoals();
       break; }
 
     case "know-del":
       customConfirm("Thema wirklich löschen? Notizen und To-Dos gehen verloren.", {okLabel:"Löschen", danger:true}).then(ok=>{
         if(!ok) return;
-        S.knowledge = S.knowledge.filter(t=>t.id!==id); save(); renderKnowledge();
+        S.knowledge = S.knowledge.filter(t=>t.id!==id); tombstone(id); save(); renderKnowledge();
       });
       break;
     case "know-todo-add": {
@@ -282,18 +282,18 @@ document.body.addEventListener("click", e=>{
       if(!text) break;
       if(!t.todos) t.todos = [];
       t.todos.push({id:uid(), text, done:false});
-      save(); renderKnowledge();
+      t.touched = Date.now(); save(); renderKnowledge();
       break; }
     case "know-todo-toggle": {
       const t = S.knowledge.find(t=>t.id===id); if(!t) break;
       const td = (t.todos||[]).find(x=>x.id===el.dataset.tid); if(!td) break;
-      td.done = !td.done; save(); renderKnowledge();
+      td.done = !td.done; t.touched = Date.now(); save(); renderKnowledge();
       if(td.done) addXP(3, "Knowledge-To-Do: "+td.text);
       break; }
     case "know-todo-del": {
       const t = S.knowledge.find(t=>t.id===id); if(!t) break;
       t.todos = (t.todos||[]).filter(x=>x.id!==el.dataset.tid);
-      save(); renderKnowledge();
+      t.touched = Date.now(); save(); renderKnowledge();
       break; }
 
     case "hero-avatar": {
@@ -330,25 +330,25 @@ document.body.addEventListener("input", e=>{
     if(kind === "habit") obj = S.habits.find(h=>h.id===nid);
     else if(kind === "am") obj = S.routineAM.find(x=>x.id===nid);
     else if(kind === "pm") obj = S.routinePM.find(x=>x.id===nid);
-    if(obj){ obj.note = el.value; save(); }
+    if(obj){ obj.note = el.value; obj.touched = Date.now(); save(); }
     return; // kein Re-Render, damit der Cursor beim Tippen nicht springt
   }
   if(el.dataset.act === "know-notes-input"){
     const t = S.knowledge.find(t=>t.id===el.dataset.id);
-    if(t){ t.notes = el.value; save(); }
+    if(t){ t.notes = el.value; t.touched = Date.now(); save(); }
     return; // kein Re-Render, damit der Cursor beim Tippen nicht springt
   }
   if(el.dataset.act === "learn-range"){
     const l = S.learning.find(x=>x.id===el.dataset.id); if(!l) return;
     const prev = l.progress;
-    l.progress = parseInt(el.value); save();
+    l.progress = parseInt(el.value); l.touched = Date.now(); save();
     el.closest(".check-item").querySelector(".meta").textContent = l.progress+"%";
     if(l.progress > prev) addXP(5, "Lernfortschritt: "+l.title+" → "+l.progress+"%");
     checkBadges();
   }
   if(el.dataset.act === "goal-range"){
     const g = S.goals.find(x=>x.id===el.dataset.id); if(!g) return;
-    g.progress = parseInt(el.value); save();
+    g.progress = parseInt(el.value); g.touched = Date.now(); save();
     if(g.progress === 100 && !g.ms.length) grantGoalCompletionXP(g);
     // sanftes Re-Render nach Loslassen
   }
@@ -364,7 +364,7 @@ document.body.addEventListener("change", e=>{
   }
   if(el.dataset.act === "supp-time"){
     const sp = S.supplements.find(s=>s.id===el.dataset.id); if(!sp) return;
-    sp.time = el.value; save(); renderSupps(); renderHero();
+    sp.time = el.value; sp.touched = Date.now(); save(); renderSupps(); renderHero();
   }
 
   /* ---------- Trainings-Eingaben (ohne Re-Render, damit der Fokus bleibt) ---------- */
@@ -490,6 +490,7 @@ $("resetBtn").addEventListener("click", async ()=>{
   S.trainingSplit = keepTrainingSplit;
   S.trainingGoal = keepTrainingGoal;
   S.gymPlan = keepGymPlan;
+  S.wipeAt = Date.now(); // schützt den Reset davor, per Merge von einem älteren Gerät rückgängig gemacht zu werden
   save();
   openMealSlot = null;
   clearInterval(timerInterval); timerInterval = null;

@@ -53,11 +53,11 @@ $("jSave").addEventListener("click", ()=>{
     const gratitude = [0,1,2].map(i=>$("jGrateful"+i).value.trim());
     const lookforward = [0,1,2].map(i=>$("jLook"+i).value.trim());
     if(!gratitude.some(Boolean) && !lookforward.some(Boolean)){ toast("Schreib zuerst ein paar Zeilen."); return; }
-    entry.morning = {gratitude, lookforward};
+    entry.morning = {gratitude, lookforward, touched:Date.now()};
   } else {
     const good = $("jGood").value.trim(), better = $("jBetter").value.trim();
     if(!good && !better){ toast("Schreib zuerst ein paar Zeilen."); return; }
-    entry.evening = {good, better};
+    entry.evening = {good, better, touched:Date.now()};
   }
 
   S.journal[todayKey()] = entry;
@@ -129,7 +129,7 @@ function renderMoodHist(){
 function addLearn(){
   const t = $("learnInput").value.trim();
   if(!t) return;
-  S.learning.push({id:uid(), title:t, type:$("learnType").value, progress:0});
+  S.learning.push({id:uid(), title:t, type:$("learnType").value, progress:0, touched:Date.now()});
   $("learnInput").value = ""; save(); renderLearning();
 }
 $("learnAdd").addEventListener("click", addLearn);
@@ -170,7 +170,7 @@ function findSkill(id){
 function addPerson(){
   const n = $("personInput").value.trim();
   if(!n) return;
-  S.people.push({id:uid(), name:n, last:null});
+  S.people.push({id:uid(), name:n, last:null, touched:Date.now()});
   $("personInput").value = ""; save(); renderPeople();
 }
 $("personAdd").addEventListener("click", addPerson);

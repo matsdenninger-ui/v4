@@ -14,7 +14,7 @@ $("goalAdd").addEventListener("click", ()=>{
   if(!title){ toast("Gib deinem Ziel einen Namen."); return; }
   const ms = $("goalMs").value.split(",").map(s=>s.trim()).filter(Boolean).map(text=>({text, done:false}));
   S.goals.push({id:uid(), title, type:$("goalType").value, skillId:$("goalSkill").value||null, ms, progress:0,
-    actionTodos:[], skillXPGranted:false});
+    actionTodos:[], skillXPGranted:false, touched:Date.now()});
   $("goalTitle").value = $("goalMs").value = "";
   save(); renderGoals(); renderTodayFocusGoals(); renderHero();
   toast("Ziel angelegt: "+title);

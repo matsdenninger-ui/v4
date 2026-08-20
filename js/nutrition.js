@@ -132,7 +132,7 @@ function addSupp(){
   const n = $("suppName").value.trim();
   if(!n) return;
   S.supplements.push({id:uid(), name:n, icon:"💊", dose:"Individuell", when:"Eigene Einnahme",
-    body:"", time:$("suppTime").value||"08:00", dates:{}});
+    body:"", time:$("suppTime").value||"08:00", dates:{}, touched:Date.now()});
   $("suppName").value = ""; save(); renderSupps(); renderHero();
 }
 $("suppAdd").addEventListener("click", addSupp);
@@ -143,7 +143,7 @@ $("suppLoadStack").addEventListener("click", ()=>{
   let added = 0;
   SUPP_STACK.forEach(s=>{
     if(!existing.has(s.name.toLowerCase())){
-      S.supplements.push({id:uid(), name:s.name, icon:s.icon, dose:s.dose, when:s.when, body:s.body, time:s.time, dates:{}});
+      S.supplements.push({id:uid(), name:s.name, icon:s.icon, dose:s.dose, when:s.when, body:s.body, time:s.time, dates:{}, touched:Date.now()});
       added++;
     }
   });

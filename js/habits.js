@@ -5,7 +5,7 @@
 function addHabit(){
   const v = $("habitInput").value.trim();
   if(!v) return;
-  S.habits.push({id:uid(), name:v, dates:{}, note:""});
+  S.habits.push({id:uid(), name:v, dates:{}, note:"", touched:Date.now()});
   $("habitInput").value = ""; save(); renderHabits(); renderHeatmap(); renderHero();
 }
 $("habitAdd").addEventListener("click", addHabit);
@@ -95,7 +95,7 @@ function addRoutineItem(list){
   const input = $(inputId);
   const v = input.value.trim();
   if(!v) return;
-  const item = {id:uid(), text:v, note:""};
+  const item = {id:uid(), text:v, note:"", touched:Date.now()};
   if(list === "am") S.routineAM.push(item); else S.routinePM.push(item);
   input.value = ""; save(); renderRoutines();
 }

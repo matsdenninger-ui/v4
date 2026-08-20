@@ -111,11 +111,13 @@ function initTodoDrag(){
   initDragReorder("routineAM", orderedIds=>{
     const map = new Map(S.routineAM.map(it=>[it.id, it]));
     S.routineAM = orderedIds.map(rid=>map.get(rid)).filter(Boolean);
+    S.routineAM.forEach(it=>it.touched=Date.now());
     save();
   });
   initDragReorder("routinePM", orderedIds=>{
     const map = new Map(S.routinePM.map(it=>[it.id, it]));
     S.routinePM = orderedIds.map(rid=>map.get(rid)).filter(Boolean);
+    S.routinePM.forEach(it=>it.touched=Date.now());
     save();
   });
 }
