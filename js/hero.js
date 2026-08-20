@@ -255,6 +255,7 @@ function openTodoAssignPicker(day){
     if(t){
       t.date = dateKey;
       t.order = nextTodoOrder();
+      t.touched = Date.now();
       save(); renderWeek(); renderTodos(); renderHero();
       toast("„"+t.text+"“ auf "+WD[day]+" gelegt");
     }

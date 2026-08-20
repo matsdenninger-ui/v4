@@ -114,6 +114,11 @@ function save(){
    Jetzt gilt:
      · Protokolle (Einheiten, Workouts, Gewicht, Schlaf, Stimmung)
        werden additiv vereinigt — Geloggtes geht nie verloren.
+     · To-Dos werden pro Eintrag anhand von `touched` vereinigt, nicht als
+       ganzes Array ersetzt — sonst gewinnt bei jedem Sync einfach, wer
+       zuletzt lokal gespeichert hat, auch wenn dessen Stand veraltet war
+       (genau das ließ Reihenfolge/Status auf einem zweiten Gerät verschwinden).
+     · XP läuft nie rückwärts (Math.max aus beiden Seiten).
      · Felder, die die Gegenseite gar nicht kennt, bleiben lokal.
      · Bewusst Gelöschtes bleibt gelöscht (deletedIds).
    ============================================================ */
@@ -147,6 +152,25 @@ function logsGrew(before, after){
   return LOG_FIELDS.some(k => (after[k]||[]).length > (before[k]||[]).length);
 }
 
+/* To-Dos vereinigen: anders als Protokolle können To-Dos sich ändern (Reihenfolge,
+   erledigt, Text) statt nur zu wachsen. Ein simples "base gewinnt" würde also
+   Änderungen der Gegenseite verschlucken. Stattdessen gewinnt pro Eintrag, wer ihn
+   zuletzt angefasst hat (`touched`-Zeitstempel) — unabhängig davon, welche Seite
+   insgesamt den neueren `updatedAt`-Gesamtstand hat. */
+function mergeTodos(baseArr, otherArr, deleted){
+  const map = new Map();
+  (otherArr||[]).forEach(t=>{ if(t && !(deleted && deleted.has(t.id))) map.set(t.id, t); });
+  (baseArr||[]).forEach(t=>{
+    if(!t || (deleted && deleted.has(t.id))) return;
+    const existing = map.get(t.id);
+    if(!existing || (t.touched||0) >= (existing.touched||0)) map.set(t.id, t);
+  });
+  return [...map.values()];
+}
+function todosChanged(before, after){
+  return JSON.stringify(before||[]) !== JSON.stringify(after||[]);
+}
+
 /* Cloud-Stand ist neuer: übernehmen, aber lokale Daten retten.
    Liefert {state, localExtras} — localExtras = true, wenn dieses Gerät Daten
    hatte, die in der Cloud fehlten (dann muss die Cloud nachziehen). */
@@ -170,11 +194,18 @@ function mergeCloudState(local, remote){
   Object.assign(merged, mergeLogArrays(merged, local, deleted));
   merged.deletedIds = [...deleted].slice(-500);
 
+  // 2b) To-Dos pro Eintrag vereinigen (nicht das ganze Array ersetzen) und
+  //     XP nie rückwärts laufen lassen — beides ist sonst anfällig dafür,
+  //     von einem Gerät mit veraltetem lokalem Stand überschrieben zu werden.
+  merged.todos = mergeTodos(remote.todos, local.todos, deleted);
+  merged.xp = Math.max(local.xp||0, remote.xp||0);
+
   // 3) Eine laufende Einheit nie durch einen Sync abwürgen
   if(!merged.activeSession && local.activeSession) merged.activeSession = local.activeSession;
 
   merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
-  return { state: merged, localExtras: rescued || logsGrew(before, merged) };
+  const extras = rescued || logsGrew(before, merged) || todosChanged(before.todos, merged.todos) || merged.xp > (remote.xp||0);
+  return { state: merged, localExtras: extras };
 }
 
 /* Dieses Gerät ist neuer: nur die Protokolle der Cloud dazunehmen, damit auf
@@ -183,8 +214,10 @@ function absorbRemoteLogs(local, remote){
   const deleted = deletedSet(local, remote);
   const before = Object.assign({}, local);
   Object.assign(local, mergeLogArrays(local, remote, deleted));
+  local.todos = mergeTodos(local.todos, remote.todos, deleted);
+  local.xp = Math.max(local.xp||0, remote.xp||0);
   local.deletedIds = [...deleted].slice(-500);
-  return logsGrew(before, local);
+  return logsGrew(before, local) || todosChanged(before.todos, local.todos) || local.xp > (before.xp||0);
 }
 
 /* Sicherungskopie des lokalen Stands, bevor ein Cloud-Stand übernommen wird.

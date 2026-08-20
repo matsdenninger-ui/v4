@@ -12,7 +12,7 @@ function addTodo(){
   if(!v) return;
   const mins = parseInt($("todoMinutes").value) || null;
   const tk = todayKey();
-  S.todos.push({id:uid(), text:v, done:false, date:tk, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder()});
+  S.todos.push({id:uid(), text:v, done:false, date:tk, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now()});
   $("todoInput").value = ""; $("todoMinutes").value = ""; save(); renderTodos(); renderWeek(); renderHero();
 }
 $("todoAdd").addEventListener("click", addTodo);
@@ -100,9 +100,10 @@ function initDragReorder(listId, onReorder){
 }
 function initTodoDrag(){
   initDragReorder("todoList", orderedIds=>{
+    const now = Date.now();
     orderedIds.forEach((tid, idx)=>{
       const t = S.todos.find(x=>x.id===tid);
-      if(t) t.order = idx;
+      if(t){ t.order = idx; t.touched = now; }
     });
     save();
     renderHero();
@@ -184,7 +185,7 @@ function initWeekDragReorder(){
       const dateKey = weekDates()[dayIndex];
       const t = S.todos.find(x=>x.id===todoId);
       if(t && t.date !== dateKey){
-        t.date = dateKey; save();
+        t.date = dateKey; t.touched = Date.now(); save();
         renderTodos(); renderHero();
         toast("„"+t.text+"“ auf "+WD[dayIndex]+" verschoben");
       }
@@ -199,18 +200,18 @@ function initWeekDragReorder(){
 // Geteilte Logik für Today-Liste UND Weekly Board (beide arbeiten auf S.todos)
 function toggleTodoDone(id){
   const t = S.todos.find(t=>t.id===id); if(!t) return;
-  t.done = !t.done; save();
+  t.done = !t.done; t.touched = Date.now(); save();
   if(t.done) addXP(5, "To-Do erledigt");
   renderTodos(); renderWeek(); renderHero();
 }
 function deleteTodo(id){
-  S.todos = S.todos.filter(t=>t.id!==id); save();
+  S.todos = S.todos.filter(t=>t.id!==id); tombstone(id); save();
   renderTodos(); renderWeek(); renderHero();
 }
 /* Nur aus dem Weekly Board entfernen: Datum wird gelöscht (nicht eingeplant), das To-Do selbst bleibt in der Liste erhalten */
 function unassignTodo(id){
   const t = S.todos.find(t=>t.id===id); if(!t) return;
-  t.date = null; save();
+  t.date = null; t.touched = Date.now(); save();
   renderWeek(); renderTodos(); renderHero();
   toast("„"+t.text+"“ aus dem Weekly Board entfernt — bleibt in der To-Do-Liste.");
 }
@@ -222,7 +223,7 @@ function rolloverTodos(){
   const tk = todayKey();
   let changed = false;
   S.todos.forEach(t=>{
-    if(!t.done && t.date && t.date < tk){ t.date = tk; changed = true; }
+    if(!t.done && t.date && t.date < tk){ t.date = tk; t.touched = Date.now(); changed = true; }
   });
   const before = S.todos.length;
   S.todos = S.todos.filter(t => !(t.done && t.date && t.date < tk));

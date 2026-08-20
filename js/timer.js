@@ -35,7 +35,7 @@ $("timerBtn").addEventListener("click", async ()=>{
       const todoId = await pickTodoForFocus(mins);
       if(todoId){
         const t = S.todos.find(x=>x.id===todoId);
-        if(t){ t.focusedMinutes = (t.focusedMinutes||0) + mins; save(); renderTodos(); }
+        if(t){ t.focusedMinutes = (t.focusedMinutes||0) + mins; t.touched = Date.now(); save(); renderTodos(); }
       }
       addXP(mins, "Deep Work: "+mins+" Min. Fokus");
       renderHero();
