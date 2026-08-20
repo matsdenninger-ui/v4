@@ -268,7 +268,10 @@ function cloudSave(immediate){
           S.updatedAt = Date.now();
           save0();
           openMealSlot = null;
-          renderAll();
+          // nicht neu zeichnen, während gerade in ein Feld getippt wird (z. B. Journal) —
+          // sonst verschwindet der ungespeicherte Text durch einen Sync im Hintergrund
+          const activeEl1 = document.activeElement;
+          if(!activeEl1 || (activeEl1.tagName !== "INPUT" && activeEl1.tagName !== "TEXTAREA")) renderAll();
           checkBadges();
           setSyncStatus("☁️ Mit anderem Gerät zusammengeführt", "ok");
         } else if(remote){
@@ -336,7 +339,10 @@ async function cloudLoad(silent){
       S = merge.state;
       save0(); // nur lokal cachen
       openMealSlot = null;
-      renderAll();
+      // nicht neu zeichnen, während gerade in ein Feld getippt wird (z. B. Journal) —
+      // sonst verschwindet der ungespeicherte Text durch einen Sync im Hintergrund
+      const activeEl2 = document.activeElement;
+      if(!activeEl2 || (activeEl2.tagName !== "INPUT" && activeEl2.tagName !== "TEXTAREA")) renderAll();
       checkBadges();
       if(merge.localExtras){
         // Dieses Gerät hatte Daten, die in der Cloud fehlten -> nachreichen
