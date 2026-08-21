@@ -40,6 +40,13 @@ function customConfirm(message, opts){
 $("confirmModal").addEventListener("click", e=>{
   if(e.target === $("confirmModal")) $("confirmCancel").click();
 });
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape"){
+    if($("confirmModal").classList.contains("open")) $("confirmCancel").click();
+    else if($("focusPickModal").classList.contains("open")) $("focusPickSkip").click();
+    else if($("exPickModal").classList.contains("open")) $("exPickModal").classList.remove("open");
+  }
+});
 
 
 /* ---------- Navigation ---------- */

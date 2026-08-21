@@ -2,7 +2,10 @@
 /* ASCEND helpers.js — Datums-/Formatierungs-Hilfsfunktionen */
 
 /* ---------- Helpers ---------- */
-function uid(){ return Math.random().toString(36).slice(2,10); }
+function uid(){
+  if(window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID().slice(0,12);
+  return Math.random().toString(36).slice(2,10);
+}
 function todayKey(d){ d = d || new Date(); 
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function dateFromKey(k){ const [y,m,dd]=k.split("-").map(Number); return new Date(y,m-1,dd); }

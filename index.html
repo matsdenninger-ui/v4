@@ -84,6 +84,11 @@
     <button class="demo-btn" id="themeToggleBtn">🌙 Dunkles Theme</button>
     <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>
     <button class="demo-btn" id="resetBtn" style="border-color:rgba(248,113,113,.35);color:var(--rose)">🗑 Alles zurücksetzen</button>
+    <div class="export-import-box">
+      <button class="demo-btn" id="exportBtn">⬇️ Exportieren (JSON)</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <button class="demo-btn" id="importBtn">⬆️ Importieren (JSON)</button>
+    </div>
     <div class="sync-box" id="syncBox">
       <div class="sync-status" id="syncStatus">☁️ Nicht verbunden</div>
       <div class="row-add" id="syncForm" style="margin-bottom:0">
@@ -613,7 +618,7 @@
 </div>
 
 <!-- Generic confirm modal (used instead of native confirm/prompt, which browsers/webviews often block) -->
-<div class="modal" id="confirmModal">
+<div class="modal" id="confirmModal" role="dialog" aria-labelledby="confirmTitle">
   <div class="modal-box" style="max-width:400px">
     <h3 id="confirmTitle">Bist du sicher?</h3>
     <p class="sub" id="confirmText" style="margin:10px 0 4px"></p>
@@ -625,9 +630,9 @@
 </div>
 
 <!-- Focus-Session -> To-Do Zuordnung -->
-<div class="modal" id="focusPickModal">
+<div class="modal" id="focusPickModal" role="dialog" aria-labelledby="focusPickTitle">
   <div class="modal-box" style="max-width:420px">
-    <h3>🎯 Woran hast du gearbeitet?</h3>
+    <h3 id="focusPickTitle">🎯 Woran hast du gearbeitet?</h3>
     <p class="sub">Du hast gerade <b id="focusPickMinutes" style="color:var(--sec)">0</b> Minuten fokussiert gearbeitet — ordne sie einem To-Do zu, um deinen Tagesfortschritt zu tracken.</p>
     <div id="focusPickList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0"></div>
     <div style="display:flex;justify-content:flex-end">
@@ -637,9 +642,9 @@
 </div>
 
 <!-- Weekly Board: bestehendes To-Do einem Tag zuweisen -->
-<div class="modal" id="assignTodoModal">
+<div class="modal" id="assignTodoModal" role="dialog" aria-labelledby="assignTodoTitle">
   <div class="modal-box" style="max-width:420px">
-    <h3>📅 To-Do zuweisen</h3>
+    <h3 id="assignTodoTitle">📅 To-Do zuweisen</h3>
     <p class="sub">Wähle ein bestehendes To-Do für <b id="assignDayLabel" style="color:var(--ac)"></b>. Neue To-Dos legst du in der To-Do-Liste an.</p>
     <div id="assignTodoList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0;max-height:320px;overflow:auto"></div>
     <div style="display:flex;justify-content:flex-end">
@@ -649,7 +654,7 @@
 </div>
 
 <!-- Übungs-Picker (Trainingsplan & laufende Einheit) -->
-<div class="modal" id="exPickModal">
+<div class="modal" id="exPickModal" role="dialog" aria-labelledby="exPickTitle">
   <div class="modal-box" style="max-width:520px">
     <h3 id="exPickTitle">Übung hinzufügen</h3>
     <p class="sub" style="margin:6px 0 0">Über 60 Übungen mit Muskelgruppe, Equipment und Technik-Hinweis.</p>
@@ -729,6 +734,7 @@
 <script src="js/goals.js"></script>
 <script src="js/knowledge.js"></script>
 <script src="js/progress.js"></script>
+<script src="js/export.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
