@@ -277,6 +277,7 @@ function mergeCollections(base, other, deleted){
     mealEaten:      mergeDateFlags(base.mealEaten, other.mealEaten),
     focusByDate:    mergeDateMax(base.focusByDate, other.focusByDate),
     sessionsByDate: mergeDateMax(base.sessionsByDate, other.sessionsByDate),
+    hydration:      mergeDateMax(base.hydration, other.hydration),
     skills:  mergeSkills(base.skills, other.skills),
     badges:  mergeBadges(base.badges, other.badges),
     journal: mergeJournal(base.journal, other.journal),

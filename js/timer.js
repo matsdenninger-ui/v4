@@ -22,8 +22,20 @@ $("timerBtn").addEventListener("click", async ()=>{
     clearInterval(timerInterval); timerInterval = null;
     const mins = Math.floor((Date.now() - S.timerStart)/60000);
     const tk = todayKey();
-    S.focusByDate[tk] = (S.focusByDate[tk]||0) + mins;
-    S.sessionsByDate[tk] = (S.sessionsByDate[tk]||0) + 1;
+    const startDate = new Date(S.timerStart);
+    const startDayKey = todayKey(startDate);
+
+    if(startDayKey === tk){
+      S.focusByDate[tk] = (S.focusByDate[tk]||0) + mins;
+      S.sessionsByDate[tk] = (S.sessionsByDate[tk]||0) + 1;
+    } else {
+      const midnightMs = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 1).getTime();
+      const minsBeforeMidnight = Math.floor((midnightMs - S.timerStart) / 60000);
+      const minsAfterMidnight = mins - minsBeforeMidnight;
+      S.focusByDate[startDayKey] = (S.focusByDate[startDayKey]||0) + Math.max(0, minsBeforeMidnight);
+      S.focusByDate[tk] = (S.focusByDate[tk]||0) + Math.max(0, minsAfterMidnight);
+      S.sessionsByDate[startDayKey] = (S.sessionsByDate[startDayKey]||0) + 1;
+    }
     S.timerStart = null; save();
     $("clock").classList.remove("running");
     $("clock").textContent = "00:00:00";
