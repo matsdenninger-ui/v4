@@ -757,7 +757,9 @@ function renderExPicker(){
   const list = EX_DB.filter(e=>{
     if(pickerMuscle !== "alle" && e.m !== pickerMuscle) return false;
     if(!q) return true;
-    return e.name.toLowerCase().includes(q) || e.eq.toLowerCase().includes(q) || muscleMeta(e.m).label.toLowerCase().includes(q);
+    // Auch englische Bezeichnungen finden ("Preacher Curls" → Scott-Curls)
+    const hay = [e.name, e.eq, e.alt||"", muscleMeta(e.m).label].join(" ").toLowerCase();
+    return q.split(/\s+/).every(word => hay.includes(word));
   });
   $("exPickList").innerHTML = list.length ? list.map(e=>{
     const mm = muscleMeta(e.m);
@@ -766,7 +768,8 @@ function renderExPicker(){
       <span class="ep-dot" style="background:${mm.color}"></span>
       <span class="ep-txt">
         <b>${esc(e.name)}</b>
-        <small>${mm.label} · ${esc(e.eq)} · ${e.type==="grund"?"Grundübung":"Isolation"}</small>
+        <small>${mm.label} · ${esc(e.eq)} · ${e.type==="grund"?"Grundübung":"Isolation"}${
+          e.alt ? " · auch: " + esc(e.alt.split(",")[0].trim()) : ""}</small>
       </span>
       ${pr ? `<span class="ep-pr">${h1(pr.kg)} kg × ${pr.reps}</span>` : ""}
     </button>`;
