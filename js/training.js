@@ -161,7 +161,7 @@ let openSessionEx = 0;          // aktuell aufgeklappte Übung in der Live-Sessi
 function startSession(dayId){
   if(S.activeSession){ toast("Es läuft bereits eine Einheit."); return; }
   const day = (S.trainingDays||[]).find(d=>d.id===dayId);
-  const exercises = day ? day.exercises.map(pe=>buildSessionExercise(pe.exId, pe.sets, pe.reps, pe.rest)) : [];
+  const exercises = day ? day.exercises.map(pe=>buildSessionExercise(pe.exId, pe.sets, pe.reps, pe.rest, pe.note)) : [];
   S.activeSession = {
     id: uid(),
     dayId: day ? day.id : null,
@@ -179,7 +179,7 @@ function startSession(dayId){
 }
 
 /* Übungs-Objekt für die laufende Session inkl. Vorbelegung aus der letzten Einheit */
-function buildSessionExercise(exId, setCount, targetReps, rest){
+function buildSessionExercise(exId, setCount, targetReps, rest, note){
   const ex = exById(exId);
   const name = ex ? ex.name : exId;
   const last = lastPerformance(exId, name);
@@ -199,6 +199,7 @@ function buildSessionExercise(exId, setCount, targetReps, rest){
     targetSets: setCount || 3,
     targetReps: targetReps || 0,
     rest: rest != null ? rest : (S.restDefault || 90),
+    note: note || "",
     sets,
   };
 }
@@ -569,6 +570,7 @@ function sessionHTML(){
       </button>
       <div class="sx-body">
         ${last ? `<div class="sx-last">📊 Letztes Mal (${fmtShort(last.date)}): ${last.sets.map(s=>`${s.kg?h1(s.kg)+(isTime?" km":" kg")+" × ":""}${s.reps}${isTime?" Min.":""}`).join(" · ")}</div>` : ""}
+        ${ex.note ? `<div class="sx-note">📌 ${esc(ex.note)}</div>` : ""}
         ${ex0 && ex0.cue ? `<div class="sx-cue">💡 ${esc(ex0.cue)}</div>` : ""}
         <div class="set-head"><span>Satz</span><span>${isTime?"Distanz":"Gewicht"}</span><span>${isTime?"Dauer":"Wdh."}</span><span></span></div>
         ${setRows}
@@ -636,6 +638,7 @@ let planDayIdx = 0;
 let pickerMode = "plan";        // "plan" | "session"
 
 function renderPlanEditor(){
+  if($("splitCount")) $("splitCount").textContent = Object.keys(SPLITS).length + " Vorlagen";
   const splitBox = $("splitList");
   if(splitBox){
     splitBox.innerHTML = Object.keys(SPLITS).map(key=>{
@@ -690,6 +693,7 @@ function renderPlanEditor(){
       <div class="pe-name">
         <b>${esc(name)}</b>
         <small>${mm.label}${ex?" · "+esc(ex.eq):""}</small>
+        ${pe.note ? `<span class="pe-note">${esc(pe.note)}</span>` : ""}
       </div>
       <label class="pe-field"><input type="number" min="1" max="12" value="${pe.sets}" data-act="plan-sets" data-i="${i}"><span>Sätze</span></label>
       <label class="pe-field"><input type="number" min="1" max="120" value="${pe.reps}" data-act="plan-reps" data-i="${i}"><span>${isTime?"Min.":"Wdh."}</span></label>
@@ -727,8 +731,15 @@ function applySplit(key){
     S.trainingDays = buildDaysFromSplit(key);
     S.trainingGoal = sp.days.reduce((a,d)=>a+d.weekdays.length, 0);
     planDayIdx = 0;
+    // Grundsätze zum Plan nur übernehmen, wenn noch keine eigenen Notizen da sind
+    let notesAdded = false;
+    if(sp.notes && !(S.gymPlan||"").trim()){
+      S.gymPlan = sp.notes;
+      const box = $("gymPlan"); if(box) box.value = S.gymPlan;
+      notesAdded = true;
+    }
     save(); renderTraining();
-    toast(sp.name + " übernommen — viel Erfolg 💪");
+    toast(sp.name + " übernommen" + (notesAdded ? " — Grundsätze stehen in den Trainings-Notizen 💪" : " — viel Erfolg 💪"));
   });
 }
 
@@ -757,7 +768,9 @@ function renderExPicker(){
   const list = EX_DB.filter(e=>{
     if(pickerMuscle !== "alle" && e.m !== pickerMuscle) return false;
     if(!q) return true;
-    return e.name.toLowerCase().includes(q) || e.eq.toLowerCase().includes(q) || muscleMeta(e.m).label.toLowerCase().includes(q);
+    // Auch englische Bezeichnungen finden ("Preacher Curls" → Scott-Curls)
+    const hay = [e.name, e.eq, e.alt||"", muscleMeta(e.m).label].join(" ").toLowerCase();
+    return q.split(/\s+/).every(word => hay.includes(word));
   });
   $("exPickList").innerHTML = list.length ? list.map(e=>{
     const mm = muscleMeta(e.m);
@@ -766,7 +779,8 @@ function renderExPicker(){
       <span class="ep-dot" style="background:${mm.color}"></span>
       <span class="ep-txt">
         <b>${esc(e.name)}</b>
-        <small>${mm.label} · ${esc(e.eq)} · ${e.type==="grund"?"Grundübung":"Isolation"}</small>
+        <small>${mm.label} · ${esc(e.eq)} · ${e.type==="grund"?"Grundübung":"Isolation"}${
+          e.alt ? " · auch: " + esc(e.alt.split(",")[0].trim()) : ""}</small>
       </span>
       ${pr ? `<span class="ep-pr">${h1(pr.kg)} kg × ${pr.reps}</span>` : ""}
     </button>`;
