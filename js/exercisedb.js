@@ -56,12 +56,14 @@ const EX_DB = [
   {id:"frontsquat",  name:"Frontkniebeugen",          m:"beine", eq:"Langhantel", type:"grund", alt:"Front Squats", cue:"Ellbogen hoch, Oberkörper aufrecht — starker Quadrizeps-Reiz."},
   {id:"legpress",    name:"Beinpresse",               m:"beine", eq:"Maschine",   type:"grund", alt:"Leg Press", cue:"Unterer Rücken bleibt am Polster, Knie nicht durchdrücken."},
   {id:"rdl",         name:"Rumänisches Kreuzheben",   m:"beine", eq:"Langhantel", type:"grund", alt:"Romanian Deadlift, RDL", cue:"Hüfte weit nach hinten, leichte Kniebeugung, Dehnung in den Beinbeugern spüren."},
+  {id:"pullthrough", name:"Kabel-Pull-Through",       m:"beine", eq:"Kabel",      type:"grund", alt:"Cable Pull Through", cue:"Hüfte nach hinten schieben, Seil zwischen den Beinen. Trainiert Hamstrings und Gesäß, ohne dass die Griffkraft limitiert."},
   {id:"lunge",       name:"Ausfallschritte",          m:"beine", eq:"Kurzhantel", type:"grund", alt:"Lunges", cue:"Großer Schritt, hinteres Knie fast zum Boden, Oberkörper aufrecht."},
   {id:"bulgarian",   name:"Bulgarian Split Squat",    m:"beine", eq:"Kurzhantel", type:"grund", cue:"Hinteres Bein erhöht — brutal effektiv für Beine und Balance."},
   {id:"legext",      name:"Beinstrecker",             m:"beine", eq:"Maschine",   type:"iso", alt:"Leg Extensions",   cue:"Oben 1 Sekunde halten und maximal anspannen."},
   {id:"legcurl",     name:"Beinbeuger",               m:"beine", eq:"Maschine",   type:"iso", alt:"Leg Curls",   cue:"Langsam ablassen — die exzentrische Phase bringt den Reiz."},
   {id:"hipthrust",   name:"Hip Thrust",               m:"beine", eq:"Langhantel", type:"grund", cue:"Oben Gesäß fest anspannen, Rippen unten lassen, Kinn zur Brust."},
   {id:"calf",        name:"Wadenheben stehend",       m:"beine", eq:"Maschine",   type:"iso", alt:"Standing Calf Raises",   cue:"Volle Dehnung unten, oben 2 Sekunden halten."},
+  {id:"calf-seated",  name:"Wadenheben sitzend",      m:"beine", eq:"Maschine",   type:"iso", alt:"Seated Calf Raises",     cue:"Gebeugtes Knie nimmt den Gastrocnemius raus und trifft den Soleus — hohe Wiederholungen, volle Dehnung."},
   {id:"hacksquat",   name:"Hack Squats",              m:"beine", eq:"Maschine",   type:"grund", alt:"Heck Squats, Hackenschmidt", cue:"Rücken flach am Polster, Füße mittig. Starker Quadrizeps-Reiz, ohne dass der Rumpf limitiert."},
   {id:"abductor",    name:"Abduktoren-Maschine",      m:"beine", eq:"Maschine",   type:"iso", alt:"Abductor, Abduktoren",   cue:"Beine nach außen drücken, außen 1 Sekunde halten — Gesäßmuskulatur und Hüftstabilität."},
   {id:"adductor",    name:"Adduktoren-Maschine",      m:"beine", eq:"Maschine",   type:"iso", alt:"Adductor, Adduktoren",   cue:"Beine zusammenführen, kontrolliert öffnen lassen. Nicht in die maximale Dehnung fallen."},
@@ -82,6 +84,7 @@ const EX_DB = [
   {id:"hammer",      name:"Hammer-Curls",             m:"bizeps", eq:"Kurzhantel", type:"iso", alt:"Hammer Curls", cue:"Neutraler Griff — trainiert Brachialis und macht den Arm dicker."},
   {id:"preacher",    name:"Scott-Curls",              m:"bizeps", eq:"Bank",       type:"iso", alt:"Preacher Curls", cue:"Arm nie ganz durchstrecken, Spannung halten."},
   {id:"cable-curl",  name:"Kabel-Curls",              m:"bizeps", eq:"Kabel",      type:"iso", alt:"Cable Curls", cue:"Konstante Spannung über die volle Bewegung — perfekt als Abschluss."},
+  {id:"incline-curl",name:"Schrägbank-Curls",         m:"bizeps", eq:"Kurzhantel", type:"iso", alt:"Incline Dumbbell Curls, Schrägbankcurls", cue:"Arme hängen hinter dem Körper — trifft den langen Bizepskopf in maximaler Dehnung. Bewusst leicht anfangen."},
 
   /* ---------- Trizeps ---------- */
   {id:"pushdown",    name:"Trizepsdrücken am Kabel",  m:"trizeps", eq:"Kabel",      type:"iso", alt:"Triceps Pulldowns, Pushdowns",   cue:"Oberarme fixiert, unten kurz halten und maximal anspannen."},
@@ -148,10 +151,73 @@ function muscleOfName(name){
 
 /* ============================================================
    TRAININGSPLAN-VORLAGEN
-   ex: [Übungs-ID, Sätze, Ziel-Wiederholungen, Pause in Sekunden]
+   ex: [Übungs-ID, Sätze, Ziel-Wiederholungen, Pause in Sekunden, Hinweis?]
+       Ziel-Wiederholungen = oberes Ende des Bereichs: Schaffst du es in
+       allen Sätzen sauber, wird das Gewicht erhöht.
    days: Wochentage (0 = Sonntag … 6 = Samstag)
+   notes: Grundsätze zum Plan — landen in den Trainings-Notizen,
+       sofern dort noch nichts steht.
    ============================================================ */
 const SPLITS = {
+
+  arnold4: {
+    name: "Arnold Split (4 Tage)",
+    badge: "4× pro Woche · Mo · Mi · Sa · So",
+    desc: "Angepasster Arnold Split: Schultern und Arme getrennt, damit der JM Press auf einen Tag fällt, an dem du frisch bist. Jede Muskelgruppe 1× pro Woche.",
+    notes:
+      "TRAININGSPLAN — 4 Tage (Arnold Split, angepasst)\n" +
+      "Mo Schultern + Core · Mi Brust/Rücken · Sa Arme + Core · So Beine\n" +
+      "Pausen: 2–3 Min. bei schweren Grundübungen, 60–90 s bei Isolation.\n\n" +
+      "PROGRESSION\n" +
+      "· Gewicht × Wiederholungen weiter notieren.\n" +
+      "· Sobald du das obere Wiederholungsziel in ALLEN Sätzen sauber schaffst: Gewicht erhöhen " +
+      "(kleinste Scheibe / nächste Steckposition). Die Wiederholungen fallen dann wieder ans untere Ende.\n" +
+      "· Bei 1× Frequenz pro Woche zählt Progression doppelt — lieber 3 saubere Sätze mit mehr Gewicht " +
+      "als 4 mit nachlassender Technik.\n" +
+      "· Richtwert: 10–20 harte Sätze pro Muskelgruppe pro Woche.\n" +
+      "· 4 Sätze bekommen die großen Mehrgelenksübungen und der Seitendelta. 3 Sätze alles, was isoliert " +
+      "ist oder schon vorbelastet wurde.\n\n" +
+      "ZU BEACHTEN\n" +
+      "· Sa → So: Arme vor Beinen kann die Griffkraft beim RDL limitieren → Zughilfen oder Kabel-Pull-Through.\n" +
+      "· JM Press: konservativ starten (SZ-Stange + ca. 10 kg), Ellbogen eng. Zwickt der Ellbogen: " +
+      "Katana zuerst, JM Press leichter.\n" +
+      "· Preacher Curls: die alten 30 kg × 5 waren Schwung. 18–20 kg für saubere 8–10 Wdh.\n" +
+      "· Wenn die Regeneration knapp wird: zuerst Isolationsübungen streichen (Flys, Abduktor), " +
+      "nicht die Grundübungen.",
+    days: [
+      { name:"Schultern + Core", icon:"🪖", focus:"Schultern · Trapez · Rumpf", weekdays:[1], ex:[
+        ["ohp-db",4,10,150,"Neutraler Griff = schulterschonend. Alternativ an der Maschine."],
+        ["lateral",4,15,60,"Dein Schwachpunkt — hier lohnt sich das Volumen. Voller Bewegungsumfang, leicht."],
+        ["rearfly",3,15,60,"Hintere Schulter. Sitzend, sauber, kein Schwung."],
+        ["facepull",3,15,60,"Schultergesundheit — bewusst leichtes Gewicht."],
+        ["shrug",3,15,60,"Trapez."],
+        ["cable-crunch",3,15,60,""],
+        ["hanging-leg",3,15,60,""]]},
+      { name:"Brust / Rücken", icon:"🫀", focus:"Brust · Rücken", weekdays:[3], ex:[
+        ["incline-db",4,10,150,"Obere Brust."],
+        ["dips",3,12,120,"Leicht vorgelehnt = untere und mittlere Brust."],
+        ["fly-high",3,15,75,"Adduktion, gelenkschonend."],
+        ["latpull",4,10,120,"Oder Klimmzüge — Lat und Breite."],
+        ["row-cable",4,10,120,"Mittlerer Rücken."],
+        ["hyperext",3,15,60,"Rückenstrecker."]]},
+      { name:"Arme + Core", icon:"💪", focus:"Trizeps · Bizeps · Rumpf", weekdays:[6], ex:[
+        ["jmpress",3,10,150,"Zuerst, solange du frisch bist. Konservativ starten, Ellbogen eng."],
+        ["katana",3,12,90,"Langer Trizepskopf."],
+        ["pushdown",3,15,60,""],
+        ["hammer",3,10,90,"Brachialis."],
+        ["preacher",3,10,90,"18–20 kg, sauber ohne Schwung."],
+        ["incline-curl",3,10,90,"Langer Bizepskopf — fehlte bisher."],
+        ["cable-crunch",3,15,60,"Optional, alternativ Beinheben."]]},
+      { name:"Beine", icon:"🦵", focus:"Beine · Waden", weekdays:[0], ex:[
+        ["hacksquat",4,10,180,"Geführt, knieschonender als frei."],
+        ["rdl",3,12,150,"Oder Kabel-Pull-Through, wenn die Griffkraft von gestern limitiert."],
+        ["legext",3,15,75,""],
+        ["legcurl",3,12,75,""],
+        ["abductor",3,15,60,"Glute medius."],
+        ["calf",3,15,60,"Gastrocnemius."],
+        ["calf-seated",3,20,45,"Soleus — fehlte bisher."]]},
+    ]
+  },
   ppl: {
     name: "Push / Pull / Legs",
     badge: "3–6× pro Woche",
@@ -244,8 +310,8 @@ function buildDaysFromSplit(splitId){
     icon: d.icon,
     focus: d.focus,
     weekdays: d.weekdays.slice(),
-    exercises: d.ex.map(([exId, sets, reps, rest]) => ({
-      id: uid(), exId, sets, reps, rest
+    exercises: d.ex.map(([exId, sets, reps, rest, note]) => ({
+      id: uid(), exId, sets, reps, rest, note: note || ""
     })),
   }));
 }

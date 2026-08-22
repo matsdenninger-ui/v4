@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v23 · 2026-08-22 · Cloud-Sync führt Stände zusammen statt zu überschreiben; Übungsdatenbank auf 72 Übungen erweitert (Hack Squats, Ab-/Adduktoren, Katana Extensions, JM Press, Kickbacks, Frontheben, Flys von oben/unten) plus englische Such-Synonyme -->
+<!-- ASCEND DASHBOARD — v24 · 2026-08-22 · Neue Plan-Vorlage "Arnold Split (4 Tage)" mit Hinweisen je Übung, Übungsdatenbank auf 75 Übungen erweitert, Cloud-Sync führt Stände zusammen statt zu überschreiben -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v23 · 22.08.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v24 · 22.08.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -324,7 +324,7 @@
     <div class="body-tab" id="btab-plan">
       <div class="stack">
         <div class="card">
-          <h3>Trainingsplan-Vorlage <span class="tag">5 Splits</span></h3>
+          <h3>Trainingsplan-Vorlage <span class="tag" id="splitCount">Vorlagen</span></h3>
           <p class="sub">Wähle einen erprobten Split — du kannst danach jede Übung, Satzzahl und Pause frei anpassen.</p>
           <div class="split-list" id="splitList"></div>
         </div>
@@ -652,7 +652,7 @@
 <div class="modal" id="exPickModal">
   <div class="modal-box" style="max-width:520px">
     <h3 id="exPickTitle">Übung hinzufügen</h3>
-    <p class="sub" style="margin:6px 0 0">72 Übungen mit Muskelgruppe, Equipment und Technik-Hinweis. Englische Bezeichnungen funktionieren auch — „Preacher Curls“, „Lat Pulldowns“, „Heck Squats“.</p>
+    <p class="sub" style="margin:6px 0 0">75 Übungen mit Muskelgruppe, Equipment und Technik-Hinweis. Englische Bezeichnungen funktionieren auch — „Preacher Curls“, „Lat Pulldowns“, „Heck Squats“.</p>
     <input id="exPickSearch" placeholder="Suchen, z. B. Bank, Kabel, Rücken …" style="width:100%;margin-top:14px">
     <div class="ex-pick-filters" id="exPickFilters"></div>
     <div class="ex-pick-list" id="exPickList"></div>
