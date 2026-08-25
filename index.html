@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v24 · 2026-08-22 · Neue Plan-Vorlage "Arnold Split (4 Tage)" mit Hinweisen je Übung, Übungsdatenbank auf 75 Übungen erweitert, Cloud-Sync führt Stände zusammen statt zu überschreiben -->
+<!-- ASCEND DASHBOARD — v25 · 2026-08-25 · Speichern überarbeitet: Zeitstempel pro Feld statt einem globalen für alles, immer feldweise zusammenführen, keine Uploads ohne echte Änderung — ein Gerät mit altem Stand überschreibt den neuen nicht mehr -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v24 · 22.08.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v25 · 25.08.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -91,10 +91,11 @@
     </div>
     <div class="sync-box" id="syncBox">
       <div class="sync-status" id="syncStatus">☁️ Nicht verbunden</div>
-      <div class="row-add" id="syncForm" style="margin-bottom:0">
+      <div class="row-add" id="syncForm" style="margin-bottom:6px">
         <input id="syncCode" type="password" placeholder="Sync-Code" style="font-size:12px;padding:7px 9px">
         <button class="btn sm" id="syncConnect">Verbinden</button>
       </div>
+      <button class="btn ghost sm" id="syncNowBtn" style="width:100%">⟳ Jetzt abgleichen</button>
     </div>
   </div>
 </aside>
