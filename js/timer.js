@@ -64,7 +64,9 @@ function renderFocus(){
   const today = (S.focusByDate[tk]||0)/60;
   $("focusToday").textContent = h1(today)+" h";
   $("stFocus").textContent = h1(today)+" h";
-  const wk = lastNDates(7).reduce((s,k)=>s+(S.focusByDate[k]||0),0)/60;
+  // "Diese Woche" = laufende Kalenderwoche ab Montag. Vorher lief hier ein
+  // rollierendes 7-Tage-Fenster (lastNDates), das montags nie auf 0 zurückging.
+  const wk = weekDates().reduce((s,k)=>s+(S.focusByDate[k]||0),0)/60;
   $("focusWeek").textContent = h1(wk)+" h";
   $("focusSessions").textContent = S.sessionsByDate[tk]||0;
 }
