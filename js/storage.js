@@ -4,13 +4,82 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 22;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 23;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die es vor der Trainings-App (v21) noch nicht gab. Ein Gerät mit
    älterer App-Version schickt sie gar nicht mit — dann dürfen sie beim
    Zusammenführen NICHT durch Standardwerte ersetzt werden. */
 const V21_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions"];
+
+/* ============================================================
+   Zeitstempel pro Feld
+   Vorher entschied EIN Zeitstempel (updatedAt), welcher Stand der
+   neuere ist — für den gesamten Datenbestand. Schon das Öffnen der
+   App schreibt diesen Zeitstempel aber neu (To-Do-Rollover,
+   Tageswechsel bei den Makros rufen save() auf, noch bevor der
+   Cloud-Abgleich läuft). Damit wurde ein Gerät mit wochenaltem Stand
+   automatisch zum "neueren" und schob ihn über den frischen Stand.
+
+   Jetzt trägt jedes Feld seinen eigenen Zeitstempel. Sammlungen und
+   Protokolle werden weiterhin eintragsweise vereinigt (siehe unten);
+   für die übrigen Felder — darunter der Trainingsplan — entscheidet
+   der Zeitstempel des Feldes, nicht der des ganzen Datenbestands.
+   ============================================================ */
+const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","dedupedAt"];
+/* Felder, die eintragsweise zusammengeführt werden (mergeCollections/mergeLogArrays)
+   und deshalb NICHT feldweise überschrieben werden dürfen. */
+const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
+  "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
+  "routineChecks","mealEaten","focusByDate","sessionsByDate","hydration","skills","badges","journal","xp"];
+
+function contentKeys(state){ return Object.keys(state).filter(k => !META_FIELDS.includes(k)); }
+function plainKeys(state){ return contentKeys(state).filter(k => !MERGED_FIELDS.includes(k)); }
+
+/* Ältere Stände kennen fieldTs nicht — dort gilt für alle Felder ihr globaler Zeitstempel. */
+function ensureFieldTs(state){
+  if(!state) return state;
+  if(!state.fieldTs || typeof state.fieldTs !== "object") state.fieldTs = {};
+  const base = state.updatedAt || 0;
+  contentKeys(state).forEach(k=>{ if(typeof state.fieldTs[k] !== "number") state.fieldTs[k] = base; });
+  return state;
+}
+function isCurrentFormat(state){ return !!(state && state.fieldTs && (state.appVersion||0) >= 23); }
+function fieldStamp(state, key, isCurrent){
+  if(isCurrent && state.fieldTs && typeof state.fieldTs[key] === "number") return state.fieldTs[key];
+  return state.updatedAt || 0;   // Stand einer älteren App-Version: ein Zeitstempel für alles
+}
+function mergeFieldTs(local, remote){
+  const remoteCurrent = isCurrentFormat(remote);
+  const out = Object.assign({}, (local && local.fieldTs) || {});
+  contentKeys(local || {}).concat(contentKeys(remote || {})).forEach(k=>{
+    const lt = local ? fieldStamp(local, k, true) : 0;
+    const rt = remote ? fieldStamp(remote, k, remoteCurrent) : 0;
+    out[k] = Math.max(lt, rt, out[k] || 0);
+  });
+  return out;
+}
+
+/* Nur Felder, die sich wirklich geändert haben, bekommen einen neuen Zeitstempel.
+   Ein Render oder ein Reload allein verändert nichts. */
+let lastSnapshot = {};
+function snapshotOf(state){
+  const out = {};
+  contentKeys(state).forEach(k=>{ try{ out[k] = JSON.stringify(state[k]); }catch(e){ out[k] = "?"; } });
+  return out;
+}
+function stampChanges(){
+  ensureFieldTs(S);
+  const snap = snapshotOf(S), now = Date.now();
+  let changed = 0;
+  Object.keys(snap).forEach(k=>{ if(snap[k] !== lastSnapshot[k]){ S.fieldTs[k] = now; changed++; } });
+  lastSnapshot = snap;
+  if(changed) S.updatedAt = now;
+  return changed;
+}
+/* Nach dem Übernehmen eines fremden Stands ist dessen Inhalt die neue
+   Vergleichsbasis — sonst gälte beim nächsten Speichern alles als geändert. */
+function resetChangeTracking(){ lastSnapshot = snapshotOf(S); }
 
 function defaultState(){
   return {
@@ -19,20 +88,20 @@ function defaultState(){
                                       // date = zugewiesener Tag (YYYY-MM-DD) ODER null = nicht eingeplant
                                       // Weekly Board zeigt To-Dos gruppiert nach date; To-Do-Liste zeigt IMMER alle
     habits: [
-      {id: uid(), name: "10 Minuten lesen", dates: {}, note: ""},
-      {id: uid(), name: "Bewegung / Training", dates: {}, note: ""},
-      {id: uid(), name: "Kein Handy in der ersten Stunde", dates: {}, note: ""},
+      {id: "def-habit-lesen",   name: "10 Minuten lesen", dates: {}, note: ""},
+      {id: "def-habit-bewegung",name: "Bewegung / Training", dates: {}, note: ""},
+      {id: "def-habit-handy",   name: "Kein Handy in der ersten Stunde", dates: {}, note: ""},
     ],
     routineAM: [
-      {id: uid(), text: "Glas Wasser trinken", note: ""},
-      {id: uid(), text: "5 Min. Stretching / Mobility", note: ""},
-      {id: uid(), text: "Top-3-Prioritäten festlegen", note: ""},
-      {id: uid(), text: "Kalt duschen", note: ""},
+      {id: "def-am-wasser",  text: "Glas Wasser trinken", note: ""},
+      {id: "def-am-stretch", text: "5 Min. Stretching / Mobility", note: ""},
+      {id: "def-am-top3",    text: "Top-3-Prioritäten festlegen", note: ""},
+      {id: "def-am-kalt",    text: "Kalt duschen", note: ""},
     ],
     routinePM: [
-      {id: uid(), text: "Bildschirm aus 60 Min. vor dem Schlafen", note: ""},
-      {id: uid(), text: "Abendjournal schreiben", note: ""},
-      {id: uid(), text: "Morgigen Tag kurz planen", note: ""},
+      {id: "def-pm-screen",  text: "Bildschirm aus 60 Min. vor dem Schlafen", note: ""},
+      {id: "def-pm-journal", text: "Abendjournal schreiben", note: ""},
+      {id: "def-pm-plan",    text: "Morgigen Tag kurz planen", note: ""},
     ],
     routineChecks: {},               // {"2026-07-28": {itemId:true}}
     focusByDate: {},                 // {"date": minutes}
@@ -45,7 +114,7 @@ function defaultState(){
       slot4:{idx:0,time:"16:30"}, slot5:{idx:0,time:"19:30"}, slot6:{idx:0,time:"21:30"},
     },
     mealEaten: {},                   // {"date": {slot1:true, ...}}
-    supplements: SUPP_STACK.map(s => ({id: uid(), name:s.name, icon:s.icon, dose:s.dose, when:s.when, body:s.body, time:s.time, dates:{}})),
+    supplements: SUPP_STACK.map(s => ({id: "def-supp-" + s.name.toLowerCase().replace(/[^a-z0-9]+/g,"-"), name:s.name, icon:s.icon, dose:s.dose, when:s.when, body:s.body, time:s.time, dates:{}})),
     hydration: {},                   // {"date": glasses}
     hydroGoal: 8,
     workouts: [],                    // Schnell-Log: {id, date, name, sets, reps, kg}
@@ -91,19 +160,50 @@ function tombstone(id){
   if(S.deletedIds.length > 500) S.deletedIds = S.deletedIds.slice(-500);
 }
 
+/* Einmalige Bereinigung: Vor den stabilen IDs erzeugte JEDES Gerät die
+   Standard-Einträge (Habits, Routinen, Supplements) mit eigenen IDs. Beim
+   Abgleich hielt der Merge sie für verschiedene Einträge — aus 3 Habits
+   wurden 6, dann 9. Gleichnamige Einträge werden hier einmalig
+   zusammengeführt, die überzähligen IDs als gelöscht vermerkt, damit ein
+   anderes Gerät sie nicht wieder einspielt. */
+function dedupeByLabel(list, labelKey, deletedIds){
+  const seen = new Map(), out = [];
+  (list||[]).forEach(it=>{
+    if(!it) return;
+    const key = String(it[labelKey]||"").trim().toLowerCase();
+    const first = seen.get(key);
+    if(!first){ seen.set(key, it); out.push(it); return; }
+    if(first.dates || it.dates) first.dates = mergeDateFlags(first.dates, it.dates);
+    if(!first.note && it.note) first.note = it.note;
+    if(it.id && !deletedIds.includes(it.id)) deletedIds.push(it.id);
+  });
+  return out;
+}
+function dedupeDefaults(state){
+  if(state.dedupedAt) return state;
+  if(!Array.isArray(state.deletedIds)) state.deletedIds = [];
+  const del = state.deletedIds;
+  state.habits      = dedupeByLabel(state.habits,      "name", del);
+  state.supplements = dedupeByLabel(state.supplements, "name", del);
+  state.routineAM   = dedupeByLabel(state.routineAM,   "text", del);
+  state.routinePM   = dedupeByLabel(state.routinePM,   "text", del);
+  state.dedupedAt = Date.now();
+  return state;
+}
+
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(raw){ return Object.assign(defaultState(), JSON.parse(raw)); }
+    if(raw){ return dedupeDefaults(Object.assign(defaultState(), JSON.parse(raw))); }
   }catch(e){ /* localStorage nicht verfügbar (z. B. Sandbox) */ }
   return memoryFallback ? memoryFallback : defaultState();
 }
 function save(){
-  S.updatedAt = Date.now();
   S.appVersion = APP_STATE_VERSION;
+  const changed = stampChanges();          // stempelt nur, was sich wirklich geändert hat
   try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
   catch(e){ memoryFallback = S; }
-  cloudSave();
+  if(changed) cloudSave();                 // ohne echte Änderung nichts in die Cloud schieben
 }
 
 
@@ -204,12 +304,23 @@ function mergeArrWithDates(baseArr, otherArr, deleted){
 /* Datums-Dict mit Boolean-Flags (Routine-/Mahlzeiten-Checks, Habit-/Supplement-Tage):
    einmal abgehakt bleibt abgehakt. Ohne das kann ein Sync mit einem Gerät, das den
    heutigen Klick noch nicht kennt, ein Häkchen wieder auf 0 zurücksetzen. */
+/* Tages-Häkchen vereinigen. Es gibt ZWEI Formen:
+     · verschachtelt  — routineChecks/mealEaten: {"2026-08-25": {itemId:true}}
+     · einfach        — habit.dates/supplement.dates: {"2026-08-25": true}
+   Die einfache Form wurde bisher verschluckt: Object.assign({}, true, true)
+   ergibt {}, damit war jedes abgehakte Habit nach dem nächsten Sync wieder leer. */
 function mergeDateFlags(baseDict, otherDict){
   const out = {};
   const dates = new Set([...Object.keys(baseDict||{}), ...Object.keys(otherDict||{})]);
   dates.forEach(d=>{
-    const merged = Object.assign({}, (otherDict||{})[d], (baseDict||{})[d]);
-    if(Object.keys(merged).length) out[d] = merged;
+    const a = (baseDict||{})[d], b = (otherDict||{})[d];
+    const aObj = a && typeof a === "object", bObj = b && typeof b === "object";
+    if(aObj || bObj){
+      const merged = Object.assign({}, bObj ? b : null, aObj ? a : null);
+      if(Object.keys(merged).length) out[d] = merged;
+    } else if(a || b){
+      out[d] = a || b;      // einmal gesetzt bleibt gesetzt
+    }
   });
   return out;
 }
@@ -301,9 +412,16 @@ function collectionsChanged(before, after){
    Liefert {state, localExtras} — localExtras = true, wenn dieses Gerät Daten
    hatte, die in der Cloud fehlten (dann muss die Cloud nachziehen). */
 function mergeCloudState(local, remote){
+  ensureFieldTs(local);
+  // Hat DIESES Gerät gerade "Alles zurücksetzen" ausgeführt? Dann darf der alte
+  // Cloud-Stand nicht zurückgemischt werden — sonst macht der Abgleich den Reset rückgängig.
+  if((local.wipeAt||0) > (remote.updatedAt||0)){
+    return { state: local, localExtras: true };
+  }
   const merged = Object.assign(defaultState(), remote);
   const remoteVersion = remote.appVersion || 0;
   const localVersion  = local.appVersion  || 0;
+  const remoteCurrent = isCurrentFormat(remote);
 
   // Wurde die Cloud per "Alles zurücksetzen" geleert, NACHDEM dieses Gerät zuletzt
   // gespeichert hat? Dann ist der lokale Stand komplett veraltet (Vor-Reset) — er
@@ -342,8 +460,26 @@ function mergeCloudState(local, remote){
   // 3) Eine laufende Einheit nie durch einen Sync abwürgen
   if(!merged.activeSession && local.activeSession) merged.activeSession = local.activeSession;
 
+  // 2c) Einzelfelder (Trainingsplan, Notizen, Profil, Makro-Ziele, Mahlzeitenplan …)
+  //     feldweise nach Zeitstempel entscheiden. Basis oben ist der Cloud-Stand; hier
+  //     holen wir zurück, was DIESES Gerät zuletzt geändert hat. Ohne diesen Schritt
+  //     gewinnt weiterhin einfach, wer zuletzt irgendetwas gespeichert hat.
+  let plainKept = false;
+  if(!remoteWipedLocal){
+    plainKeys(local).forEach(k=>{
+      if(local[k] === undefined) return;
+      const lt = fieldStamp(local, k, true);
+      const rt = fieldStamp(remote, k, remoteCurrent);
+      const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
+      if(lt > rt || !remoteHasField){
+        if(JSON.stringify(merged[k]) !== JSON.stringify(local[k])){ merged[k] = local[k]; plainKept = true; }
+      }
+    });
+  }
+  merged.fieldTs = mergeFieldTs(local, remote);
+
   merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
-  const extras = rescued || logsGrew(before, merged) || collectionsChanged(before, merged);
+  const extras = rescued || plainKept || logsGrew(before, merged) || collectionsChanged(before, merged);
   return { state: merged, localExtras: extras };
 }
 
@@ -385,6 +521,15 @@ let cloudSyncing = false;
 function getCloudToken(){
   try{ return localStorage.getItem(CLOUD_TOKEN_KEY) || ""; }catch(e){ return ""; }
 }
+/* Nach dem Übernehmen fremder Daten neu zeichnen — aber nicht,
+   während gerade in ein Feld getippt wird (Journal, laufende Einheit). */
+function adoptRender(){
+  const el = document.activeElement;
+  if(el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) return false;
+  renderAll();
+  checkBadges();
+  return true;
+}
 function setSyncStatus(text, cls){
   const el = $("syncStatus");
   if(!el) return;
@@ -405,29 +550,18 @@ function cloudSave(immediate){
       const check = await fetch("/api/state", { headers: { "Authorization": "Bearer " + token } });
       if(check.ok){
         const remote = (await check.json()).data;
-        if(remote && (remote.updatedAt || 0) > (S.updatedAt || 0)){
-          // Cloud ist neuer -> beide Stände zusammenführen, statt die gerade
-          // gemachte lokale Änderung stillschweigend zu verwerfen
+        if(remote){
+          // IMMER zusammenführen — feldweise, nicht danach, wer global "neuer" ist.
           backupLocalState();
+          const before = JSON.stringify(S);
           S = mergeCloudState(S, remote).state;
-          S.updatedAt = Date.now();
           save0();
-          openMealSlot = null;
-          // nicht neu zeichnen, während gerade in ein Feld getippt wird (z. B. Journal) —
-          // sonst verschwindet der ungespeicherte Text durch einen Sync im Hintergrund
-          const activeEl1 = document.activeElement;
-          if(!activeEl1 || (activeEl1.tagName !== "INPUT" && activeEl1.tagName !== "TEXTAREA")) renderAll();
-          checkBadges();
-          setSyncStatus("☁️ Mit anderem Gerät zusammengeführt", "ok");
-        } else if(remote){
-          // Wir sind neuer -> trotzdem die Protokolle der Cloud übernehmen,
-          // damit auf einem anderen Gerät geloggte Einheiten nicht wegfallen
-          if(absorbRemoteLogs(S, remote)){
-            save0(); checkBadges();
-            // nicht neu zeichnen, während gerade in ein Feld getippt wird —
-            // sonst verschwinden Eingaben mitten in einer laufenden Einheit
-            const el = document.activeElement;
-            if(!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) renderAll();
+          resetChangeTracking();
+          if(JSON.stringify(S) !== before){
+            // Es kam wirklich etwas von der Gegenseite dazu -> anzeigen
+            openMealSlot = null;
+            adoptRender();
+            setSyncStatus("☁️ Mit anderem Gerät zusammengeführt", "ok");
           }
         }
         // kein return: der zusammengeführte Stand wird jetzt hochgeladen,
@@ -464,6 +598,14 @@ document.addEventListener("visibilitychange", ()=>{
 window.addEventListener("focus", ()=>{
   if(getCloudToken()) cloudLoad(true);
 });
+window.addEventListener("pagehide", ()=>{
+  if(getCloudToken() && cloudSaveTimer){ clearTimeout(cloudSaveTimer); cloudSave(true); }
+});
+// Regelmäßig abgleichen, solange die App offen ist — sonst merkt ein Gerät
+// stundenlang nichts von den Änderungen des anderen.
+setInterval(()=>{
+  if(getCloudToken() && document.visibilityState === "visible") cloudLoad(true);
+}, 120000);
 
 async function cloudLoad(silent){
   const token = getCloudToken();
@@ -475,29 +617,24 @@ async function cloudLoad(silent){
     if(!res.ok) throw new Error("HTTP "+res.status);
     const json = await res.json();
     const cloudData = json.data || null;
-    const cloudUpdatedAt = cloudData ? (cloudData.updatedAt || 0) : 0;
 
-    if(cloudData && cloudUpdatedAt > (S.updatedAt || 0)){
-      // Cloud ist neuer -> übernehmen, aber lokale Daten dabei nicht wegwerfen
+    if(cloudData){
+      // Immer feldweise zusammenführen — unabhängig davon, wer global "neuer" ist.
+      // Genau diese Unterscheidung ließ ein Gerät mit altem Stand gewinnen.
       backupLocalState();
+      const before = JSON.stringify(S);
       const merge = mergeCloudState(S, cloudData);
       S = merge.state;
-      save0(); // nur lokal cachen
-      openMealSlot = null;
-      // nicht neu zeichnen, während gerade in ein Feld getippt wird (z. B. Journal) —
-      // sonst verschwindet der ungespeicherte Text durch einen Sync im Hintergrund
-      const activeEl2 = document.activeElement;
-      if(!activeEl2 || (activeEl2.tagName !== "INPUT" && activeEl2.tagName !== "TEXTAREA")) renderAll();
-      checkBadges();
-      if(merge.localExtras){
-        // Dieses Gerät hatte Daten, die in der Cloud fehlten -> nachreichen
-        S.updatedAt = Date.now();
-        save0();
-        cloudSave(true);
+      save0();                 // nur lokal cachen
+      resetChangeTracking();
+      if(JSON.stringify(S) !== before){
+        openMealSlot = null;
+        adoptRender();
       }
-    } else if((S.updatedAt || 0) > cloudUpdatedAt){
-      // Dieses Gerät hat neuere Daten als die Cloud -> Cloud aktualisieren statt sie zu überschreiben
-      cloudSave(true);
+      // Dieses Gerät hat Daten, die der Cloud fehlen -> nachreichen
+      if(merge.localExtras) cloudSave(true);
+    } else {
+      cloudSave(true);         // Cloud ist noch leer
     }
     setSyncStatus("☁️ Verbunden · " + new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}), "ok");
   }catch(e){
@@ -517,11 +654,20 @@ function initCloudSync(){
     if(!val || val === "••••••••") return;
     try{ localStorage.setItem(CLOUD_TOKEN_KEY, val); }catch(e){}
     $("syncCode").value = "••••••••";
-    await cloudLoad(); // vergleicht Zeitstempel und gleicht in beide Richtungen ab
+    await cloudLoad(); // gleicht feldweise in beide Richtungen ab
     toast("Sync-Code gespeichert.");
   });
+  if($("syncNowBtn")){
+    $("syncNowBtn").addEventListener("click", async ()=>{
+      if(!getCloudToken()){ toast("Erst einen Sync-Code hinterlegen."); return; }
+      await cloudLoad();
+      toast("Abgleich abgeschlossen.");
+    });
+  }
 }
 
 
 let S = loadState();
+ensureFieldTs(S);        // ältere Stände auf Feld-Zeitstempel heben
+resetChangeTracking();   // ab hier zählt nur, was sich WIRKLICH ändert
 const $ = id => document.getElementById(id);
