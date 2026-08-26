@@ -60,10 +60,17 @@ $("sleepAdd").addEventListener("click", ()=>{
 
 function renderRecovery(){
   const last = S.sleep[S.sleep.length-1];
-  if(!last){
+  // Ein Score aus wochenalten Schlafdaten wäre irreführend — er sah bisher aus,
+  // als beträfe er die letzte Nacht.
+  const freshKeys = [todayKey(), todayKey(addDays(new Date(),-1))];
+  if(!last || !freshKeys.includes(last.date)){
     $("recVal").textContent = "–";
+    $("recVal").style.color = "";
     $("recRing").style.strokeDashoffset = 239;
-    $("recDetail").innerHTML = "<li>Noch keine Schlafdaten — logge deine letzte Nacht.</li>";
+    $("recDetail").innerHTML = last
+      ? `<li>Letzter Schlaf-Eintrag: <b>${fmtShort(last.date)}</b> (${h1(last.hours)} h).</li>
+         <li>Für einen aktuellen Score die letzte Nacht loggen.</li>`
+      : "<li>Noch keine Schlafdaten — logge deine letzte Nacht.</li>";
     return;
   }
   const sleepScore = Math.min(1, last.hours/8) * 55;

@@ -320,6 +320,9 @@ document.body.addEventListener("click", e=>{
   if(["goal-del","ms-toggle"].includes(act)) renderTodayFocusGoals();
 });
 
+/* Startwert einer Slider-Bewegung, damit XP nur einmal beim Loslassen zählen */
+const learnDragFrom = {};
+
 /* Range-Slider (input statt click) */
 document.body.addEventListener("input", e=>{
   const el = e.target.closest("[data-act]");
@@ -340,11 +343,11 @@ document.body.addEventListener("input", e=>{
   }
   if(el.dataset.act === "learn-range"){
     const l = S.learning.find(x=>x.id===el.dataset.id); if(!l) return;
-    const prev = l.progress;
+    // XP erst beim Loslassen (change), nicht bei jedem Zwischenschritt des Ziehens —
+    // sonst gibt eine Bewegung von 30 % auf 65 % sieben Toasts und 35 XP.
+    if(learnDragFrom[l.id] === undefined) learnDragFrom[l.id] = l.progress;
     l.progress = parseInt(el.value); l.touched = Date.now(); save();
     el.closest(".check-item").querySelector(".meta").textContent = l.progress+"%";
-    if(l.progress > prev) addXP(5, "Lernfortschritt: "+l.title+" → "+l.progress+"%");
-    checkBadges();
   }
   if(el.dataset.act === "goal-range"){
     const g = S.goals.find(x=>x.id===el.dataset.id); if(!g) return;
@@ -354,6 +357,18 @@ document.body.addEventListener("input", e=>{
   }
 });
 document.body.addEventListener("change", e=>{
+  const lr = e.target.closest('[data-act="learn-range"]');
+  if(lr){
+    const l = S.learning.find(x=>x.id===lr.dataset.id);
+    if(l){
+      const from = learnDragFrom[l.id];
+      delete learnDragFrom[l.id];
+      if(from !== undefined && l.progress > from){
+        addXP(5, "Lernfortschritt: "+l.title+" → "+l.progress+"%");
+      }
+      checkBadges();
+    }
+  }
   if(e.target.closest('[data-act="goal-range"]')){ renderGoals(); renderTodayFocusGoals(); renderHero(); }
   const el = e.target.closest("[data-act]");
   if(!el) return;

@@ -31,7 +31,10 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
    und deshalb NICHT feldweise überschrieben werden dürfen. */
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
-  "routineChecks","mealEaten","focusByDate","sessionsByDate","hydration","skills","badges","journal","xp"];
+  "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp"];
+/* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
+   oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
+   jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
 
 function contentKeys(state){ return Object.keys(state).filter(k => !META_FIELDS.includes(k)); }
 function plainKeys(state){ return contentKeys(state).filter(k => !MERGED_FIELDS.includes(k)); }
@@ -388,7 +391,6 @@ function mergeCollections(base, other, deleted){
     mealEaten:      mergeDateFlags(base.mealEaten, other.mealEaten),
     focusByDate:    mergeDateMax(base.focusByDate, other.focusByDate),
     sessionsByDate: mergeDateMax(base.sessionsByDate, other.sessionsByDate),
-    hydration:      mergeDateMax(base.hydration, other.hydration),
     skills:  mergeSkills(base.skills, other.skills),
     badges:  mergeBadges(base.badges, other.badges),
     journal: mergeJournal(base.journal, other.journal),
@@ -457,8 +459,6 @@ function mergeCloudState(local, remote){
     Object.assign(merged, mergeCollections(merged, local, deleted));
   }
 
-  // 3) Eine laufende Einheit nie durch einen Sync abwürgen
-  if(!merged.activeSession && local.activeSession) merged.activeSession = local.activeSession;
 
   // 2c) Einzelfelder (Trainingsplan, Notizen, Profil, Makro-Ziele, Mahlzeitenplan …)
   //     feldweise nach Zeitstempel entscheiden. Basis oben ist der Cloud-Stand; hier
@@ -476,6 +476,14 @@ function mergeCloudState(local, remote){
       }
     });
   }
+  // 3) Eine laufende Einheit nur retten, wenn die Gegenseite das Feld gar nicht kennt
+  //    (ältere App-Version). Sonst entscheidet der Feld-Zeitstempel — andernfalls
+  //    taucht eine auf dem anderen Gerät beendete Einheit hier wieder als "läuft" auf.
+  if(!merged.activeSession && local.activeSession &&
+     !Object.prototype.hasOwnProperty.call(remote, "activeSession")){
+    merged.activeSession = local.activeSession;
+  }
+
   merged.fieldTs = mergeFieldTs(local, remote);
 
   merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
