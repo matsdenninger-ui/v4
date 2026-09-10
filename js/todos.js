@@ -44,8 +44,10 @@ function renderTodos(){
       <div class="check-item draggable-item ${t.done?"done":""}" data-id="${t.id}">
         <button class="drag-handle" aria-label="Ziehen zum Umsortieren">${DRAG_ICON}</button>
         <button class="cbx ${t.done?"on":""}" data-act="todo-toggle" data-id="${t.id}" aria-label="Abhaken">${ICON_CHECK}</button>
-        <span class="txt">${esc(t.text)}</span>
-        <span class="meta">${todoDayLabel(t)}${t.estMinutes ? ` · ⏱ ${t.focusedMinutes||0}/${t.estMinutes} Min.` : ""}</span>
+        <div class="todo-main">
+          <span class="txt">${esc(t.text)}</span>
+          <span class="meta">${todoDayLabel(t)}${t.estMinutes ? ` · ⏱ ${t.focusedMinutes||0}/${t.estMinutes} Min.` : ""}</span>
+        </div>
         <button class="icon-btn del" data-act="todo-del" data-id="${t.id}" aria-label="Löschen">${ICON_X}</button>
       </div>`).join("");
   }
@@ -207,8 +209,31 @@ function toggleTodoDone(id){
   renderTodos(); renderWeek(); renderHero();
 }
 function deleteTodo(id){
-  S.todos = S.todos.filter(t=>t.id!==id); tombstone(id); save();
+  const t = S.todos.find(x=>x.id===id);
+  S.todos = S.todos.filter(x=>x.id!==id); tombstone(id);
+  if(t){
+    // 30 Tage im Papierkorb aufheben, damit ein Fehlgriff nichts kostet
+    if(!Array.isArray(S.trash)) S.trash = [];
+    S.trash.unshift(Object.assign({}, t, { deletedAt: Date.now() }));
+    const grenze = Date.now() - 30*864e5;
+    S.trash = S.trash.filter(x=>(x.deletedAt||0) > grenze).slice(0, 100);
+  }
+  save();
   renderTodos(); renderWeek(); renderHero();
+  if(t) toast("„"+t.text+"“ gelöscht — im Papierkorb wiederherstellbar.");
+}
+
+/* Wiederherstellen: neue ID, damit kein alter Grabstein den Eintrag beim
+   nächsten Abgleich gleich wieder entfernt. */
+function restoreTodo(text, estMinutes){
+  if(!text) return null;
+  const t = { id: uid(), text, done:false, date:null,
+              estMinutes: estMinutes||0, focusedMinutes:0,
+              order: nextTodoOrder(), touched: Date.now() };
+  S.todos.push(t);
+  const key = String(text).trim().toLowerCase();
+  S.trash = (S.trash||[]).filter(x=>String(x.text).trim().toLowerCase() !== key);
+  return t;
 }
 /* Nur aus dem Weekly Board entfernen: Datum wird gelöscht (nicht eingeplant), das To-Do selbst bleibt in der Liste erhalten */
 function unassignTodo(id){
@@ -217,6 +242,55 @@ function unassignTodo(id){
   renderWeek(); renderTodos(); renderHero();
   toast("„"+t.text+"“ aus dem Weekly Board entfernt — bleibt in der To-Do-Liste.");
 }
+
+/* ---------- Papierkorb: gelöschte To-Dos zurückholen ---------- */
+function trashZeitLabel(zeit){
+  if(!zeit) return "";
+  return new Date(zeit).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"});
+}
+function renderTrashList(){
+  const box = $("trashList");
+  const items = recoverableTodos();
+  if(!items.length){
+    box.innerHTML = '<div class="empty">Nichts wiederherzustellen.<br>Gelöschte To-Dos landen ab jetzt hier und bleiben 30 Tage liegen.</div>';
+    $("trashRestoreAll").disabled = true;
+    return;
+  }
+  $("trashRestoreAll").disabled = false;
+  box.innerHTML = items.map((it,i)=>`
+    <div class="trash-row">
+      <div class="trash-info">
+        <span class="txt">${esc(it.text)}</span>
+        <span class="meta">${esc(it.quelle)}${it.zeit ? " · " + trashZeitLabel(it.zeit) : ""}</span>
+      </div>
+      <button class="btn ghost sm" data-trash-i="${i}">Zurückholen</button>
+    </div>`).join("");
+  box.querySelectorAll("button[data-trash-i]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const it = items[parseInt(btn.dataset.trashI)];
+      if(!it) return;
+      const t = restoreTodo(it.text, it.estMinutes);
+      if(t){
+        save(); renderTodos(); renderWeek(); renderHero();
+        toast("„"+t.text+"“ wiederhergestellt.");
+      }
+      renderTrashList();
+    });
+  });
+}
+function openTrashModal(){ renderTrashList(); $("trashModal").classList.add("open"); }
+function closeTrashModal(){ $("trashModal").classList.remove("open"); }
+$("trashBtn").addEventListener("click", openTrashModal);
+$("trashClose").addEventListener("click", closeTrashModal);
+$("trashModal").addEventListener("click", e=>{ if(e.target === $("trashModal")) closeTrashModal(); });
+$("trashRestoreAll").addEventListener("click", ()=>{
+  const items = recoverableTodos();
+  if(!items.length) return;
+  items.forEach(it=>restoreTodo(it.text, it.estMinutes));
+  save(); renderTodos(); renderWeek(); renderHero();
+  toast(items.length + (items.length===1 ? " To-Do wiederhergestellt." : " To-Dos wiederhergestellt."));
+  renderTrashList();
+});
 
 /* Jeden Tag: überfällige, nicht erledigte To-Dos auf heute nachziehen (Fortschritt bleibt erhalten) */
 /* Jeden Tag: überfällige, nicht erledigte To-Dos auf heute nachziehen (Fortschritt bleibt erhalten);

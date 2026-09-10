@@ -216,7 +216,7 @@ function renderWeek(){
           <div class="wb-item-row">
             <button class="wb-drag-handle" aria-label="Ziehen">${DRAG_ICON}</button>
             <span class="wb-txt" data-act="wb-toggle" data-id="${it.id}">${esc(it.text)}</span>
-            <button class="wb-del" data-act="wb-unassign" data-id="${it.id}" aria-label="Aus Board entfernen">${ICON_X}</button>
+            <button class="wb-del" data-act="wb-unassign" data-id="${it.id}" title="Aus dem Board nehmen — bleibt in der To-Do-Liste" aria-label="Aus dem Board nehmen, bleibt in der To-Do-Liste">${ICON_UNPLAN}</button>
           </div>
           ${it.estMinutes ? `<span class="wb-time">⏱ ${it.focusedMinutes||0}/${it.estMinutes} Min.</span>` : ""}
         </div>`;

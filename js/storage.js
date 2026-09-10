@@ -4,7 +4,7 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 23;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 24;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die es vor der Trainings-App (v21) noch nicht gab. Ein Gerät mit
@@ -31,7 +31,7 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
    und deshalb NICHT feldweise überschrieben werden dürfen. */
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
-  "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp"];
+  "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash"];
 /* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
    oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
    jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
@@ -151,6 +151,7 @@ function defaultState(){
                                       // gelöschten Daten von einem noch nicht synchronisierten Gerät zurückholt
     appVersion: APP_STATE_VERSION,   // Datenmodell-Version — erkennt Stände, die von einer älteren App-Version stammen
     deletedIds: [],                  // Grabsteine: bewusst gelöschte Einträge kommen beim Sync nicht zurück
+    trash: [],                       // gelöschte To-Dos, 30 Tage wiederherstellbar: {...todo, deletedAt}
   };
 }
 
@@ -206,6 +207,7 @@ function save(){
   const changed = stampChanges();          // stempelt nur, was sich wirklich geändert hat
   try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }
   catch(e){ memoryFallback = S; }
+  writeSnapshot();
   if(changed) cloudSave();                 // ohne echte Änderung nichts in die Cloud schieben
 }
 
@@ -395,6 +397,9 @@ function mergeCollections(base, other, deleted){
     badges:  mergeBadges(base.badges, other.badges),
     journal: mergeJournal(base.journal, other.journal),
     xp: Math.max(base.xp||0, other.xp||0),
+    // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
+    trash: mergeById(base.trash, other.trash, null)
+      .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
   };
 }
 const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge"];
@@ -649,8 +654,45 @@ async function cloudLoad(silent){
     setSyncStatus("☁️ Verbindung fehlgeschlagen", "err");
   }
 }
+/* Rollierende lokale Sicherungen: einmal pro Stunde ein Abzug, die letzten 24
+   bleiben liegen. Kostet wenig und ist die Rettung, wenn versehentlich etwas
+   gelöscht wurde — der Papierkorb deckt nur To-Dos ab. */
+const LS_SNAP_KEY = "ascend_state_snapshots";
+function writeSnapshot(){
+  try{
+    const raw = localStorage.getItem(LS_SNAP_KEY);
+    const snaps = raw ? JSON.parse(raw) : [];
+    const last = snaps[0];
+    if(last && Date.now() - last.at < 3600000) return;      // höchstens stündlich
+    snaps.unshift({ at: Date.now(), state: JSON.parse(JSON.stringify(S)) });
+    localStorage.setItem(LS_SNAP_KEY, JSON.stringify(snaps.slice(0, 24)));
+  }catch(e){ /* Speicher voll oder nicht verfügbar — dann eben ohne */ }
+}
+/* Alle Quellen, aus denen sich verlorene To-Dos zurückholen lassen. */
+function recoverableTodos(){
+  const vorhanden = new Set((S.todos||[]).map(t=>String(t.text).trim().toLowerCase()));
+  const gefunden = new Map();
+  const merke = (t, quelle, zeit)=>{
+    if(!t || !t.text) return;
+    const key = String(t.text).trim().toLowerCase();
+    if(!key || vorhanden.has(key) || gefunden.has(key)) return;
+    gefunden.set(key, { text:t.text, estMinutes:t.estMinutes||0, date:t.date||null, quelle, zeit: zeit||0 });
+  };
+  (S.trash||[]).forEach(t=>merke(t, "Papierkorb", t.deletedAt));
+  try{
+    const prev = JSON.parse(localStorage.getItem(LS_PREV_KEY) || "null");
+    (prev && prev.todos || []).forEach(t=>merke(t, "Sicherung vor Cloud-Abgleich", prev.updatedAt));
+  }catch(e){}
+  try{
+    const snaps = JSON.parse(localStorage.getItem(LS_SNAP_KEY) || "[]");
+    snaps.forEach(sn=>((sn.state && sn.state.todos) || []).forEach(t=>merke(t, "Sicherung " + new Date(sn.at).toLocaleString("de-DE",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}), sn.at)));
+  }catch(e){}
+  return [...gefunden.values()].sort((a,b)=>(b.zeit||0)-(a.zeit||0));
+}
+
 function save0(){
   try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){ memoryFallback = S; }
+  writeSnapshot();
 }
 
 function initCloudSync(){
