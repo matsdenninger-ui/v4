@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v26 · 2026-08-25 · App-Audit: Fokuszeit "Diese Woche" ist jetzt die Kalenderwoche, Trinkmenge lässt sich wieder verringern, Recovery-Score nur mit aktuellen Schlafdaten, Lern-XP einmal statt bei jedem Slider-Schritt, beendete Einheit taucht nicht mehr als laufend auf -->
+<!-- ASCEND DASHBOARD — v27 · 2026-09-10 · Weekly Board: eigenes Symbol zum Ausplanen (löscht nicht mehr), To-Do-Zeilen brechen sauber um, Papierkorb + lokale Sicherungen für gelöschte To-Dos -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v26 · 25.08.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v27 · 10.09.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -181,6 +181,7 @@
           <button class="btn" id="todoAdd">+</button>
         </div>
         <div class="check-list" id="todoList"></div>
+        <button class="btn ghost sm" id="trashBtn" style="margin-top:12px">🗑 Gelöschte To-Dos wiederherstellen</button>
       </div>
 
       <div class="collapsible" id="moreCollapsible">
@@ -638,6 +639,19 @@
     <div id="focusPickList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0"></div>
     <div style="display:flex;justify-content:flex-end">
       <button class="btn ghost" id="focusPickSkip">Ohne Zuordnung</button>
+    </div>
+  </div>
+</div>
+
+<!-- Papierkorb / Wiederherstellung gelöschter To-Dos -->
+<div class="modal" id="trashModal">
+  <div class="modal-box" style="max-width:480px">
+    <h3>🗑 Gelöschte To-Dos</h3>
+    <p class="sub" style="margin:6px 0 0">Aus dem Papierkorb (30 Tage) und aus den lokalen Sicherungen dieses Geräts.</p>
+    <div id="trashList" style="display:flex;flex-direction:column;gap:8px;margin:16px 0;max-height:50vh;overflow:auto"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn ghost" id="trashRestoreAll">Alle wiederherstellen</button>
+      <button class="btn" id="trashClose">Schließen</button>
     </div>
   </div>
 </div>

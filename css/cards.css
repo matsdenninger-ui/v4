@@ -38,7 +38,11 @@
   border:1px solid transparent;transition:border-color .15s;
 }
 .check-item:hover{border-color:var(--border)}
-.check-item .txt{flex:1;min-width:0;font-size:14px;overflow-wrap:anywhere}
+/* break-word statt anywhere: "anywhere" erlaubt dem Browser, die Mindestbreite
+   des Textes auf ein einzelnes Zeichen zu drücken. In einer engen Flex-Zeile
+   (Text + Meta-Angabe + Löschen) wurde der Text dadurch auf dem Handy
+   buchstabenweise untereinander umgebrochen. */
+.check-item .txt{flex:1;min-width:0;font-size:14px;overflow-wrap:break-word}
 .draggable-item{position:relative;touch-action:none}
 .drag-handle{
   width:20px;height:20px;flex:none;color:var(--faint);cursor:grab;
@@ -60,6 +64,25 @@
 .cbx.on{background:var(--mint);border-color:var(--mint)}
 .cbx.on svg{opacity:1}
 .meta{font-size:11.5px;color:var(--dim)}
+
+/* To-Do-Zeile: Text und Meta-Angabe teilen sich einen Block, der umbrechen
+   darf. Reicht der Platz nicht (schmales Display, langer Titel), rutscht die
+   Meta-Angabe unter den Text, statt ihn zusammenzuquetschen. */
+.check-item .todo-main{
+  flex:1;min-width:0;display:flex;align-items:center;
+  gap:4px 10px;flex-wrap:wrap;
+}
+.check-item .todo-main .txt{flex:1 1 auto;min-width:14ch}
+.check-item .todo-main .meta{flex:0 0 auto;white-space:nowrap}
+
+/* ---------- Papierkorb-Zeilen ---------- */
+.trash-row{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;
+  background:var(--elev);border-radius:var(--radius-sm);border:1px solid var(--border-soft);
+}
+.trash-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.trash-info .txt{font-size:14px;overflow-wrap:break-word}
+.trash-row .btn{flex:none}
 
 /* streak flame chip */
 .streak{

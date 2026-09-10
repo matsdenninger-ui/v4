@@ -44,6 +44,7 @@ document.addEventListener("keydown", e=>{
   if(e.key === "Escape"){
     if($("confirmModal").classList.contains("open")) $("confirmCancel").click();
     else if($("focusPickModal").classList.contains("open")) $("focusPickSkip").click();
+    else if($("trashModal").classList.contains("open")) $("trashClose").click();
     else if($("exPickModal").classList.contains("open")) $("exPickModal").classList.remove("open");
   }
 });
@@ -88,4 +89,7 @@ $("dateLabel").textContent = new Date().toLocaleDateString("de-DE",{weekday:"lon
 
 /* ---------- SVG icons ---------- */
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+/* Pfeil zurück: "aus dem Board nehmen" — bewusst NICHT das X der To-Do-Liste,
+   das dort endgültig löscht. Die beiden wurden zu leicht verwechselt. */
+const ICON_UNPLAN = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 14 4 9l5-5"/><path stroke-linecap="round" stroke-linejoin="round" d="M4 9h11a5 5 0 0 1 0 10H8"/></svg>';
 const ICON_X = '<svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>';
