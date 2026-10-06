@@ -426,6 +426,23 @@ const DEMO_BASE = {
   "pushdown":30,"skullcrusher":25,"overhead-tri":25,"closegrip":55,
 };
 
+/* Level von Hand korrigieren — nötig, weil XP sich beim Abgleich sonst nur
+   nach oben bewegen und ein verfälschter Stand nicht zurückzudrehen wäre. */
+$("levelSetBtn").addEventListener("click", async ()=>{
+  const wunsch = parseInt($("levelSetInput").value);
+  if(!wunsch || wunsch < 1){ toast("Bitte ein Level ab 1 eintragen."); return; }
+  const jetzt = levelInfo(S.xp).lvl;
+  const ok = await customConfirm(
+    "Level " + jetzt + " → Level " + wunsch + " (" + xpFloorForLevel(wunsch).toLocaleString("de-DE")
+    + " XP). Die XP werden auf den Anfang dieses Levels gesetzt — auch auf deinen anderen Geräten.",
+    { okLabel:"Level setzen", danger: wunsch < jetzt });
+  if(!ok) return;
+  setLevel(wunsch);
+  $("levelSetInput").value = "";
+  renderLevel(true); renderProgressStats(true); checkBadges(); renderHero();
+  toast("Level auf " + wunsch + " gesetzt.");
+});
+
 $("demoBtn").addEventListener("click", async ()=>{
   const ok = await customConfirm("Demo-Daten laden? Bestehende Daten bleiben erhalten, Historie wird ergänzt.", {okLabel:"Laden"});
   if(!ok) return;
@@ -522,7 +539,7 @@ $("resetBtn").addEventListener("click", async ()=>{
 function renderAll(){
   renderLevel();
   renderTodos(); renderHabits(); renderHeatmap(); renderRoutines();
-  renderFocus(); renderWeek();
+  renderFocus(); syncTimerUI(); renderWeek();
   renderMacros(); renderMealPlan(); renderHydro(); renderSupps();
   $("mealPlan").value = S.mealPlan; $("gymPlan").value = S.gymPlan;
   renderWorkouts(); renderBodyCharts(); renderTraining();
@@ -536,8 +553,7 @@ function renderAll(){
 rolloverTodos();
 initTodoDrag();
 initWeekDragReorder();
-renderAll();
-if(S.timerStart) startTimerUI();          // laufende Session nach Reload fortsetzen
+renderAll();                              // zeichnet über syncTimerUI() auch eine laufende Session wieder
 checkBadges();
 initCloudSync();
 
