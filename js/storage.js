@@ -12,6 +12,11 @@ let memoryFallback = null;
    Zusammenführen NICHT durch Standardwerte ersetzt werden. */
 const V21_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions"];
 
+/* Felder, bei denen null ein echter Wert ist ("läuft nicht mehr") und nicht
+   "diese App-Version kennt das Feld nicht". Nur hier darf ein null aus der
+   Cloud einen lokalen Wert überschreiben, sofern es neuer ist. */
+const NULLABLE_FIELDS = ["timerStart","timerId"];
+
 /* ============================================================
    Zeitstempel pro Feld
    Vorher entschied EIN Zeitstempel (updatedAt), welcher Stand der
@@ -523,7 +528,12 @@ function mergeCloudState(local, remote){
       if(local[k] === undefined) return;
       const lt = fieldStamp(local, k, true);
       const rt = fieldStamp(remote, k, remoteCurrent);
-      const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
+      // Für die meisten Felder bedeutet null "kennt das Feld nicht" (ältere
+      // App-Version) — dann gewinnt der lokale Wert. Beim Timer ist null aber
+      // eine echte Aussage ("Session beendet"). Ohne diese Ausnahme blieb eine
+      // auf einem Gerät beendete Session auf dem anderen für immer "laufend".
+      const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k)
+        && (remote[k] != null || NULLABLE_FIELDS.includes(k));
       if(lt > rt || !remoteHasField){
         if(JSON.stringify(merged[k]) !== JSON.stringify(local[k])){ merged[k] = local[k]; plainKept = true; }
       }
