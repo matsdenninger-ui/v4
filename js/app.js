@@ -554,6 +554,7 @@ rolloverTodos();
 initTodoDrag();
 initWeekDragReorder();
 renderAll();                              // zeichnet über syncTimerUI() auch eine laufende Session wieder
+settleAbandonedSession(SEEN_AT_BOOT);     // Session, die eine geschlossene App überdauert hat, abrechnen statt weiterlaufen lassen
 checkBadges();
 initCloudSync();
 

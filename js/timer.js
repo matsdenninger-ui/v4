@@ -8,6 +8,19 @@
    63 Stunden "Fokus heute". */
 const MAX_FOCUS_MIN = 8 * 60;
 
+/* Lebenszeichen der geöffneten App. Der Timer rechnete bisher reine Uhrzeit ab
+   dem Start — auch die Zeit, in der die App gar nicht offen war. Zwei Stunden
+   geschlossene App ergaben beim nächsten Öffnen "02:00:00" und 120 XP.
+   Dieser Zeitstempel bleibt bewusst GERÄTELOKAL (eigener localStorage-Schlüssel,
+   nicht in S): wann diese App zuletzt lief, geht das andere Gerät nichts an. */
+const LS_SEEN_KEY = "ascend_timer_seen";
+const SEEN_GRACE_MS = 3 * 60000;   // kurzes Wegklicken zählt weiter mit
+function markSeen(){ try{ localStorage.setItem(LS_SEEN_KEY, String(Date.now())); }catch(e){} }
+function lastSeenMs(){
+  try{ const v = parseInt(localStorage.getItem(LS_SEEN_KEY)); return isFinite(v) ? v : 0; }
+  catch(e){ return 0; }
+}
+
 let timerInterval = null;
 
 /* Laufzeit der aktuellen Session in Minuten. Liefert null, wenn kein
@@ -30,11 +43,26 @@ function tickTimer(){
     syncTimerUI();
     return;
   }
+  heartbeat();
   const secs = Math.floor((Date.now() - start)/1000);
   const hh = String(Math.floor(secs/3600)).padStart(2,"0"),
         mm = String(Math.floor(secs%3600/60)).padStart(2,"0"),
         ss = String(secs%60).padStart(2,"0");
   $("clock").textContent = hh+":"+mm+":"+ss;
+}
+
+/* Alle 30 s ein Lebenszeichen schreiben. Reicht als Auflösung und belastet
+   weder localStorage noch den Cloud-Abgleich (bewusst kein save()).
+   NUR im sichtbaren Zustand: läuft die Seite im Hintergrund weiter, würde das
+   Lebenszeichen mitwandern und genau die Zeit beglaubigen, die nicht zählen
+   soll. */
+let letztesLebenszeichen = 0;
+function heartbeat(){
+  if(document.visibilityState !== "visible") return;
+  const now = Date.now();
+  if(now - letztesLebenszeichen < 30000) return;
+  letztesLebenszeichen = now;
+  markSeen();
 }
 
 /* Einzige Stelle, die das Aussehen des Timers festlegt — aus S.timerStart
@@ -135,6 +163,63 @@ async function stopFocusSession(){
   }
 }
 
+/* War die App zu, während eine Session lief? Dann darf der Timer beim Öffnen
+   NICHT einfach weiterlaufen: gezählt wird nur bis zum letzten Lebenszeichen,
+   und ob diese Zeit überhaupt zählt, entscheidest du. Ohne das bekam man für
+   eine über Nacht geschlossene App Fokuszeit und XP geschenkt. */
+/* Stand der Lebenszeichen beim Laden der Seite — MUSS hier festgehalten werden,
+   bevor der erste Heartbeat ihn auf "jetzt" schiebt. */
+const SEEN_AT_BOOT = lastSeenMs();
+
+let settling = false;
+async function settleAbandonedSession(gesehenMs){
+  if(settling) return false;
+  if(focusElapsedMin() === null) return false;
+
+  // Ohne Lebenszeichen (anderes Gerät, gelöschter Speicher) gilt der Start:
+  // dann gibt es keinen Beleg dafür, dass die App überhaupt offen war.
+  const gesehen = Math.max(gesehenMs || 0, S.timerStart);
+  if(Date.now() - gesehen <= SEEN_GRACE_MS) return false;   // nur kurz weg
+
+  settling = true;
+  try{
+    clearInterval(timerInterval); timerInterval = null;
+    const gemessen = Math.max(0, Math.floor((gesehen - S.timerStart)/60000));
+    const mins = Math.min(gemessen, MAX_FOCUS_MIN);
+    const startMs = S.timerStart, id = S.timerId;
+    const schonAngerechnet = id && id === S.lastFocusId;
+
+    S.timerStart = null; S.timerId = null;
+
+    if(mins >= 1 && !schonAngerechnet){
+      const ok = await customConfirm(
+        "Beim letzten Mal lief noch eine Session. Bis die App geschlossen wurde, sind "
+        + mins + " Min. zusammengekommen — die Zeit danach zählt nicht mit.",
+        { title:"Nicht beendete Session", okLabel:mins+" Min. anrechnen" });
+      if(ok){
+        creditFocus(startMs, mins);
+        S.lastFocusId = id || S.lastFocusId;
+        save(); syncTimerUI(); renderFocus();
+        addXP(mins, "Deep Work: "+mins+" Min. Fokus (nachgetragen)");
+        renderHero();
+        return true;
+      }
+    }
+    S.lastFocusId = id || S.lastFocusId;
+    save(); syncTimerUI(); renderFocus();
+    if(mins >= 1 && !schonAngerechnet) toast("Session verworfen — keine Fokuszeit angerechnet.");
+    return true;
+  } finally { settling = false; }
+}
+
+/* Lebenszeichen festhalten, sobald die App in den Hintergrund geht, und beim
+   Zurückkommen prüfen, ob die Pause zu lang war. */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden"){ markSeen(); }
+  else { settleAbandonedSession(lastSeenMs()); }   // Stand vom Wegklicken
+});
+window.addEventListener("pagehide", markSeen);
+
 let timerBtnBusy = false;    // verhindert Doppelklicks während des Dialogs
 $("timerBtn").addEventListener("click", async ()=>{
   if(timerBtnBusy) return;
@@ -144,6 +229,7 @@ $("timerBtn").addEventListener("click", async ()=>{
       await stopFocusSession();
     } else {
       S.timerStart = Date.now(); S.timerId = uid(); save();
+      markSeen();                 // Startpunkt der Lebenszeichen
       syncTimerUI();
     }
   } finally { timerBtnBusy = false; }
