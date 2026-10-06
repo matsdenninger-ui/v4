@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v27 · 2026-09-10 · Weekly Board: eigenes Symbol zum Ausplanen (löscht nicht mehr), To-Do-Zeilen brechen sauber um, Papierkorb + lokale Sicherungen für gelöschte To-Dos -->
+<!-- ASCEND DASHBOARD — v28 · 2026-10-06 · Deep Work Timer: vergessene Sessions werden nicht mehr in voller Länge angerechnet, Uhr und Knopf folgen immer dem Zustand, Fokuszeit wird tageweise verteilt, Level von Hand korrigierbar -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v27 · 10.09.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v28 · 06.10.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <button data-page="today" class="active">
@@ -80,6 +80,10 @@
         <small id="lvlXp">0 / 100 XP</small>
         <div class="xp-mini"><i id="xpMini" style="width:0%"></i></div>
       </div>
+    </div>
+    <div class="row-add" id="levelSetBox" style="margin:10px 0 0">
+      <input id="levelSetInput" type="number" min="1" max="999" placeholder="Level setzen" style="font-size:12px;padding:7px 9px">
+      <button class="btn sm" id="levelSetBtn">Setzen</button>
     </div>
     <button class="demo-btn" id="themeToggleBtn">🌙 Dunkles Theme</button>
     <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>

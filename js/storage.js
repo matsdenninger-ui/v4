@@ -4,7 +4,7 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 24;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 25;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die es vor der Trainings-App (v21) noch nicht gab. Ein Gerät mit
@@ -26,7 +26,7 @@ const V21_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault",
    für die übrigen Felder — darunter der Trainingsplan — entscheidet
    der Zeitstempel des Feldes, nicht der des ganzen Datenbestands.
    ============================================================ */
-const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","dedupedAt"];
+const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","dedupedAt","xpSetAt","xpFix"];
 /* Felder, die eintragsweise zusammengeführt werden (mergeCollections/mergeLogArrays)
    und deshalb NICHT feldweise überschrieben werden dürfen. */
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
@@ -110,6 +110,9 @@ function defaultState(){
     focusByDate: {},                 // {"date": minutes}
     sessionsByDate: {},              // {"date": count}
     timerStart: null,
+    timerId: null,                   // Kennung der laufenden Session
+    lastFocusId: null,               // zuletzt angerechnete Session — verhindert doppelte Gutschrift,
+                                      // wenn zwei Geräte dieselbe Session beenden
     nutrition: { extraKcal:0, extraPro:0, extraCarb:0, extraFat:0, tKcal:2800, tPro:220, tCarb:300, tFat:80, date: todayKey() },
     mealPlan: "",                    // freie Notizen (Ausnahmen, auswärts essen, ...)
     mealSlots: {                     // ausgewählte Variante + Uhrzeit je Slot
@@ -152,7 +155,25 @@ function defaultState(){
     appVersion: APP_STATE_VERSION,   // Datenmodell-Version — erkennt Stände, die von einer älteren App-Version stammen
     deletedIds: [],                  // Grabsteine: bewusst gelöschte Einträge kommen beim Sync nicht zurück
     trash: [],                       // gelöschte To-Dos, 30 Tage wiederherstellbar: {...todo, deletedAt}
+    xpSetAt: 0,                      // Zeitstempel der letzten bewussten XP-/Level-Korrektur
+    xpFix: null,                     // Kennung bereits angewandter einmaliger XP-Korrekturen
   };
+}
+
+/* ---------- Level von Hand setzen ----------
+   XP werden beim Abgleich sonst nur größer (siehe mergeXp). Eine Korrektur
+   braucht deshalb einen Zeitstempel, damit sie auf allen Geräten gewinnt. */
+function xpFloorForLevel(level){
+  let lvl = 1, need = 100, floor = 0;
+  while(lvl < level){ floor += need; lvl++; need = 100 + (lvl-1)*50; }
+  return floor;
+}
+function setLevel(level){
+  const lvl = Math.max(1, Math.min(999, Math.round(level) || 1));
+  S.xp = xpFloorForLevel(lvl);
+  S.xpSetAt = Date.now();
+  save();
+  return lvl;
 }
 
 /* Bewusst gelöschte Einträge merken, damit sie ein anderes Gerät
@@ -195,11 +216,27 @@ function dedupeDefaults(state){
   return state;
 }
 
+/* Einmalige Korrektur: der ungedeckelte Deep-Work-Timer rechnete vergessene
+   Sessions in voller Länge an (drei Tage = 4.320 XP). Das hat das Level
+   verfälscht — einmalig auf Level 10 zurücksetzen. Läuft über die Kennung
+   genau ein Mal, auch über mehrere Geräte hinweg. */
+const XP_FIX_ID = "timer-overflow-level10";
+let xpFixApplied = false;
+function applyXpFix(state){
+  if(state.xpFix === XP_FIX_ID) return state;
+  state.xp = xpFloorForLevel(10);
+  state.xpSetAt = Date.now();
+  state.xpFix = XP_FIX_ID;
+  xpFixApplied = true;
+  return state;
+}
+
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(raw){ return dedupeDefaults(Object.assign(defaultState(), JSON.parse(raw))); }
+    if(raw){ return applyXpFix(dedupeDefaults(Object.assign(defaultState(), JSON.parse(raw)))); }
   }catch(e){ /* localStorage nicht verfügbar (z. B. Sandbox) */ }
+  // Frischer Start: nichts zu korrigieren — ein neuer Stand beginnt bei Level 1.
   return memoryFallback ? memoryFallback : defaultState();
 }
 function save(){
@@ -375,6 +412,17 @@ function mergeJournal(baseDict, otherDict){
   return out;
 }
 
+/* XP wachsen normalerweise nur — beim Zusammenführen gewinnt deshalb der höhere
+   Wert, damit auf einem Gerät verdiente XP nicht verschwinden. Eine BEWUSSTE
+   Korrektur (Level von Hand gesetzt) muss aber kleiner werden dürfen: ohne
+   Sonderregel holt das andere Gerät den alten, zu hohen Stand sofort zurück.
+   Dafür trägt die Korrektur einen Zeitstempel; die jüngere gewinnt. */
+function mergeXp(base, other){
+  const bs = base.xpSetAt||0, os = other.xpSetAt||0;
+  if(bs !== os) return (bs > os ? base.xp : other.xp) || 0;
+  return Math.max(base.xp||0, other.xp||0);
+}
+
 /* Alle editierbaren Sammlungen an einer Stelle vereinigen (`base` = strukturell
    bevorzugte Seite bei Gleichstand, betrifft aber nur Metadaten wie Titel/Text —
    Häkchen, Level und XP gehen nie verloren). */
@@ -396,7 +444,7 @@ function mergeCollections(base, other, deleted){
     skills:  mergeSkills(base.skills, other.skills),
     badges:  mergeBadges(base.badges, other.badges),
     journal: mergeJournal(base.journal, other.journal),
-    xp: Math.max(base.xp||0, other.xp||0),
+    xp: mergeXp(base, other),
     // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
     trash: mergeById(base.trash, other.trash, null)
       .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
@@ -490,9 +538,16 @@ function mergeCloudState(local, remote){
   }
 
   merged.fieldTs = mergeFieldTs(local, remote);
+  // Marker der XP-Korrektur mitnehmen — sonst wiederholt das andere Gerät sie
+  // oder überschreibt den korrigierten Stand wieder mit dem alten.
+  merged.xpSetAt = Math.max(local.xpSetAt||0, remote.xpSetAt||0);
+  merged.xpFix = ((local.xpSetAt||0) >= (remote.xpSetAt||0) ? local.xpFix : remote.xpFix) || local.xpFix || remote.xpFix || null;
 
   merged.appVersion = Math.max(remoteVersion, localVersion, APP_STATE_VERSION);
-  const extras = rescued || plainKept || logsGrew(before, merged) || collectionsChanged(before, merged);
+  // Eine XP-Korrektur senkt die XP — collectionsChanged() sieht nur Zuwachs und
+  // würde sie übersehen, der korrigierte Stand käme nie in die Cloud.
+  const xpKorrigiert = (local.xpSetAt||0) > (remote.xpSetAt||0);
+  const extras = rescued || plainKept || xpKorrigiert || logsGrew(before, merged) || collectionsChanged(before, merged);
   return { state: merged, localExtras: extras };
 }
 
@@ -720,4 +775,7 @@ function initCloudSync(){
 let S = loadState();
 ensureFieldTs(S);        // ältere Stände auf Feld-Zeitstempel heben
 resetChangeTracking();   // ab hier zählt nur, was sich WIRKLICH ändert
+// Die einmalige XP-Korrektur sofort festschreiben, sonst liefe sie bei jedem
+// Start erneut und würde den Stand des anderen Geräts immer wieder überholen.
+if(xpFixApplied){ try{ localStorage.setItem(LS_KEY, JSON.stringify(S)); }catch(e){} }
 const $ = id => document.getElementById(id);
