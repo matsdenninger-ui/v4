@@ -1,8 +1,0 @@
-node_modules/
-.vercel
-.env
-.env.local
-.DS_Store
-
-# Lokale Test-/Serverlogs
-server.log
