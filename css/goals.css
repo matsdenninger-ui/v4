@@ -1,0 +1,101 @@
+/* ============================================================
+   ASCEND — goals.css
+   Goal-Karten, Meilensteine, Aktions-To-Dos
+   ============================================================ */
+/* ---------- Goals ---------- */
+.goal{background:var(--elev);border-radius:var(--radius-sm);padding:15px;margin-bottom:11px;border:1px solid var(--border-soft)}
+.goal-head{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.goal-head b{font-size:14px;font-weight:600;flex:1}
+.goal-type{font-size:10px;letter-spacing:.7px;text-transform:uppercase;font-weight:700;padding:3px 9px;border-radius:12px;flex:none}
+.t-fokus{background:var(--mint-soft);color:var(--mint)}
+.t-lang{background:var(--elev);color:var(--dim);border:1px solid var(--border)}
+.goal .bar{height:9px;margin:4px 0 8px}
+.goal .bar i{background:linear-gradient(90deg,var(--mint),#8ce8c6)}
+.milestones{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+.ms{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--dim);cursor:pointer}
+.ms .cbx{width:17px;height:17px;border-radius:5px}
+.ms.done{color:var(--text)}
+.goal-link{font-size:11px;color:var(--ac);margin-top:8px;display:inline-block}
+.goal-todos{margin-top:12px;padding-top:11px;border-top:1px solid var(--border-soft)}
+.goal-todos-lab{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+
+
+/* ---------- Glaubenssätze (hängt am Ziel, kein eigener Friedhof) ---------- */
+.belief-block{margin-top:12px;padding-top:11px;border-top:1px solid var(--border-soft)}
+.belief-head{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.belief-lab{flex:1;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);font-weight:700}
+.belief-empty{
+  font-size:12px;color:var(--dim);line-height:1.6;background:var(--surface);
+  border:1px dashed var(--border);border-radius:var(--radius-sm);padding:11px 12px;
+}
+/* Nächster Schritt statt Feature-Name — wird auch auf der Heute-Seite genutzt */
+.hint-next{display:block;margin-top:6px;color:var(--ac);font-weight:600}
+.belief{
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:12px;margin-bottom:9px;
+}
+.belief:last-child{margin-bottom:0}
+/* Der alte Satz ist Geschichte: durchgestrichen und zurückgenommen. */
+.belief-old-row{display:flex;align-items:flex-start;gap:8px}
+.belief-old{
+  flex:1;min-width:0;font-size:12.5px;color:var(--faint);line-height:1.5;
+  text-decoration:line-through;text-decoration-color:var(--border);overflow-wrap:break-word;
+}
+/* Der Ersatzsatz ist die aktive Aussage — Akzent, kräftiger, links angelegt. */
+.belief-new-row{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.belief-new{
+  flex:1 1 auto;min-width:0;font-size:14px;font-weight:600;color:var(--ac);line-height:1.45;
+  border-left:2px solid var(--ac);padding-left:9px;overflow-wrap:break-word;
+}
+/* Stärke 1–5 als Pips */
+.bdots{display:inline-flex;align-items:center;gap:3px;flex:none}
+.bdot{width:16px;height:5px;border-radius:3px;background:var(--track)}
+.bdot.on{background:var(--sec)}
+.belief-ev{margin-top:10px;display:flex;flex-direction:column;gap:5px}
+.belief-ev span{flex:1;min-width:0;overflow-wrap:break-word}
+.ev-row{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--text);line-height:1.5}
+/* Eigene Klasse statt !important, damit .belief-ev span{flex:1} nicht gewinnt */
+.belief-ev .ev-dot{flex:none;width:5px;height:5px;border-radius:50%;background:var(--mint);margin-top:6px}
+.belief-ev .ev-date{flex:none;font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums}
+.belief-ev.empty-ev{color:var(--dim);font-size:12px}
+.belief-ev-more{font-size:11px;color:var(--faint);margin-top:6px}
+.belief-actions{display:flex;gap:9px;margin-top:10px}
+.belief-actions input{flex:1;min-width:0}
+.belief-more{font-size:11px;color:var(--faint);line-height:1.5;margin-top:2px}
+/* Kompakt-Variante neben dem Fokus-Ziel auf der Heute-Seite */
+.goal-belief-mini{
+  margin-top:9px;padding:8px 10px;font-size:12px;color:var(--ac);
+  background:var(--ac-soft);border-radius:var(--radius-sm);line-height:1.5;overflow-wrap:break-word;
+}
+.goal-belief-mini.faint{color:var(--faint);background:none;border:1px dashed var(--border);font-style:italic}
+
+
+/* ---------- Wochen-Review: eine Karte statt Tagebuch ---------- */
+.rev-lab{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);font-weight:700;margin:0 0 8px}
+.rev-row{
+  display:flex;align-items:center;gap:12px;padding:11px 12px;margin-bottom:8px;
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+}
+.rev-main{flex:1;min-width:0}
+.rev-main b{display:block;font-size:13px;font-weight:600;color:var(--text);overflow-wrap:break-word}
+.rev-main small{font-size:11.5px;color:var(--dim)}
+.rev-exp{
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:12px;margin-bottom:9px;
+}
+.rev-exp-text{font-size:12.5px;color:var(--dim);line-height:1.6}
+.rev-exp-text b{color:var(--text);font-weight:600}
+.rev-exp-meta{font-size:10.5px;color:var(--faint);margin-top:7px}
+.rev-exp-actions{display:flex;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid var(--border-soft)}
+.rev-exp.done{opacity:.85}
+/* Behalten = Erfolg. Fallengelassen ist eine Entscheidung, kein Fehler — deshalb
+   gestrichelt und gedämpft statt rot. */
+.rev-exp.done.kept{border-color:rgba(52,211,153,.35);background:linear-gradient(165deg,var(--elev),var(--mint-soft))}
+.rev-exp.done.kept .rev-exp-meta{color:var(--mint);font-weight:600}
+.rev-exp.done.dropped{background:none;border-style:dashed}
+.rev-exp.done.dropped .rev-exp-meta{color:var(--dim)}
+
+
+/* ---------- Generische Modal-Aktionen (Pre-Flight, Debrief, Outcome, Belief) ---------- */
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+

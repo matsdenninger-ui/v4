@@ -1,0 +1,141 @@
+/* ============================================================
+   ASCEND — responsive.css
+   Alle Breakpoints — bewusst zuletzt geladen, damit Overrides greifen
+   ============================================================ */
+/* ---------- Responsive ---------- */
+/* Titel weicht dem fixen Burger-Button aus, sobald die Sidebar nicht
+   freistehend neben dem Inhalt liegt (zentriertes Layout) */
+@media (max-width:1320px){
+  .topbar{padding-left:54px}
+}
+@media (max-width:1024px){
+  .g3{grid-template-columns:1fr 1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .week-board{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:860px){
+  .g2,.g3{grid-template-columns:1fr}
+  .span2{grid-column:span 1}
+  .topbar h2{font-size:24px}
+  .topbar-badge{display:none}
+  .week-board{grid-template-columns:repeat(2,1fr)}
+}
+@media (max-width:480px){
+  .stat-strip{grid-template-columns:1fr 1fr;gap:10px}
+  .timer .clock{font-size:38px}
+  .main{padding:18px 14px 60px}
+  .seg-tabs button span{display:none}
+  .seg-tabs button{padding:11px 10px}
+
+  /* ---------- Mobile-Feinschliff: kompaktere Karten, größere Touch-Ziele ---------- */
+  .card{padding:20px 18px}
+  .day-header{padding:18px 18px}
+  .stat{padding:14px 16px}
+  .macro-inputs{grid-template-columns:1fr}
+  .greet-title{gap:5px}
+  .mission-card{padding:16px 18px;gap:12px}
+  .mission-icon{font-size:22px}
+
+  /* Kleine Icon-Buttons/Griffe: größere Tippfläche, ohne optisch zu wachsen */
+  .drag-handle{width:32px;height:32px;margin:-6px}
+  .icon-btn{width:38px;height:38px}
+  .wb-drag-handle,.wb-del{
+    width:22px;height:22px;margin:-4px;
+  }
+  .cbx{width:24px;height:24px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001s!important;transition-duration:.001s!important}
+}
+
+/* ============================================================
+   Neue Bausteine — Outcomes, Pre-Flight, Fokus-Overlay, Review
+   Reine Ergänzungen unterhalb der bestehenden Regeln; die Blöcke
+   darüber bleiben unverändert. Diese Datei wird zuletzt geladen,
+   ihre Regeln gewinnen also bei gleicher Spezifität.
+   ============================================================ */
+
+/* Lange Einzelwörter dürfen das Layout nicht auseinanderziehen.
+   break-word (nicht anywhere) — sonst drückt der Browser die
+   Mindestbreite des Textes auf ein einzelnes Zeichen. */
+@media (max-width:1400px){
+  .outcome-title,
+  .outcome-next-text,
+  .outcome-meta,
+  .rev-exp-text,
+  .belief-old,
+  .belief-new,
+  .pf-split span{overflow-wrap:break-word}
+}
+
+@media (max-width:1024px){
+  /* Outcome-Karten: Knopfreihen umbrechen und die Breite nutzen, statt
+     seitlich aus der Karte zu laufen. */
+  .outcome-foot{flex-wrap:wrap}
+  .outcome-foot .btn{flex:1 1 auto;justify-content:center}
+  .outcome-actions{flex-wrap:wrap}
+  .outcome-actions .btn{flex:1 1 auto;justify-content:center}
+  .outcome-waiting{flex-wrap:wrap}
+  .outcome-waiting .btn{flex:1 1 auto;justify-content:center}
+  .outcome-add{flex-wrap:wrap}
+
+  /* Review-Karte: „behalten / fallenlassen“ auf zwei halbe Zeilen */
+  .rev-exp-actions{flex-wrap:wrap}
+  .rev-exp-actions .btn{flex:1 1 auto;justify-content:center}
+
+  /* Pre-Flight: Auswahlreihen dürfen umbrechen */
+  .pf-row{flex-wrap:wrap}
+  .pf-row .pf-opt{flex:1 1 auto;min-width:88px}
+  .modal-actions{flex-wrap:wrap}
+  .modal-actions .btn{flex:1 1 auto;justify-content:center}
+}
+
+@media (max-width:860px){
+  /* Umgebungs-Toggles: eine Spalte statt zwei — sonst wird jedes Feld
+     zu schmal für „Notifications aus“. */
+  .pf-toggle-grid{grid-template-columns:1fr}
+
+  /* Outcome-Kopf: die beiden Icon-Knöpfe bleiben sichtbar, der Titel
+     bekommt die Restbreite und darf nicht mitskalieren. */
+  .outcome-head{flex-wrap:wrap}
+  .outcome-main{min-width:0;flex:1 1 auto}
+  .outcome-next{flex-wrap:wrap}
+  .outcome-next-text{min-width:0;flex:1 1 auto}
+  .outcome-subtasks .check-item.subtask .txt{min-width:0}
+
+  /* Glaubenssatz-Zeilen innerhalb des Pre-Flights */
+  .belief-inline{flex-wrap:wrap}
+  .belief-inline .btn{flex:1 1 auto;justify-content:center}
+
+  /* Fokus-Overlay: das Wenn-dann darf umbrechen */
+  .focus-tag{flex-wrap:wrap}
+  .focus-outcome{min-width:0}
+}
+
+/* Kurze Bildschirme (Laptop-Querformat, Handy im Landscape): der Pre-Flight
+   ist das längste Formular der App — er scrollt intern, statt überzulaufen. */
+@media (max-height:760px){
+  .modal-box.pf-box{max-height:88vh;overflow-y:auto;overscroll-behavior:contain}
+}
+
+@media (max-width:480px){
+  /* Zeitbox-Auswahl und Wenn-dann: volle Breite für die Tippfläche */
+  .pf-row .pf-opt{flex:1 1 100%}
+  .pf-split{flex-wrap:wrap}
+  .pf-split .btn{flex:1 1 auto;justify-content:center}
+  .pf-chips .pf-chip{flex:1 1 100%;justify-content:center;text-align:center}
+  .outcome-actions .btn,
+  .outcome-foot .btn{flex:1 1 100%}
+
+  /* Fokus-Overlay: Uhr skaliert mit der Viewport-Breite mit, damit sie
+     auch bei fünf Stellen ("+120:00") nicht über den Rand läuft. */
+  .focus-clock{font-size:min(20vw,84px)}
+  .focus-outcome{font-size:17px}
+}
+
+@media (max-width:380px){
+  /* Sehr schmal: die beiden Fokus-Knöpfe untereinander, volle Breite */
+  .focus-actions{flex-wrap:wrap}
+  .focus-actions .btn{flex:1 1 100%;justify-content:center}
+  .outcome-head .icon-btn{width:34px;height:34px}
+}

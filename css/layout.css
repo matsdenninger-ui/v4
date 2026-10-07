@@ -1,0 +1,148 @@
+/* ============================================================
+   ASCEND — layout.css
+   Sidebar (gruppiert), Burger, Topbar, Seg-Tabs, Grid/Stack-Systeme
+   ============================================================ */
+/* ---------- Layout: Sidebar zum Ausklappen (transparent) ---------- */
+.burger{
+  position:fixed;top:16px;left:16px;z-index:70;
+  width:44px;height:44px;border-radius:12px;
+  background:var(--overlay-1);border:1px solid var(--border-soft);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:grid;place-items:center;
+  transition:background .2s ease,opacity .35s ease,transform .35s ease;
+  opacity:1;
+}
+.burger:hover{background:var(--overlay-1-hover)}
+.burger.burger-hidden{opacity:0;transform:translateX(-10px);pointer-events:none}
+.burger svg{width:20px;height:20px;stroke:var(--text)}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:59;backdrop-filter:blur(2px)}
+.scrim.show{display:block}
+.sidebar{
+  position:fixed;inset:0 auto 0 0;width:var(--sidebar-w);
+  background:var(--overlay-2);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-right:1px solid var(--border-soft);
+  display:flex;flex-direction:column;padding:70px 16px 22px;gap:6px;z-index:60;
+  transform:translateX(-105%);
+  transition:transform .3s ease;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:var(--border) transparent;
+}
+.sidebar.open{transform:none}
+.sidebar::-webkit-scrollbar{width:6px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.sidebar::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+.brand{display:flex;align-items:center;gap:11px;margin-bottom:14px}
+.brand-mark{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  background:linear-gradient(135deg,var(--ac),var(--sec) 130%);
+  display:grid;place-items:center;font-family:var(--font-display);
+  font-weight:800;font-size:18px;color:#fff;letter-spacing:-.5px;
+  box-shadow:0 6px 18px var(--ac-soft);position:relative;
+}
+.brand h1{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.3px}
+.brand span{display:block;font-size:11px;color:var(--dim);font-weight:400;font-family:var(--font-body);letter-spacing:.4px}
+
+/* ---------- Gruppierte Navigation ---------- */
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-label{
+  font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--faint);padding:12px 12px 5px;
+}
+.nav-label:first-child{padding-top:2px}
+.nav button{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  color:var(--dim);font-size:14px;font-weight:500;text-align:left;
+  transition:background .15s,color .15s,box-shadow .2s;
+  position:relative;border-left:2px solid transparent;
+}
+.nav button svg{width:18px;height:18px;flex:none;stroke:currentColor}
+.nav button:hover{background:var(--nav-hover);color:var(--text)}
+.nav button.active{
+  background:var(--ac-soft);color:var(--ac);font-weight:600;
+  border-left-color:var(--ac);
+}
+.side-foot{margin-top:auto;padding:14px 0 2px;display:flex;flex-direction:column;gap:12px}
+
+/* Level ring — signature element */
+.level-card{
+  background:var(--overlay-3);
+  border:1px solid var(--border-soft);border-radius:var(--radius);
+  padding:14px;display:flex;align-items:center;gap:13px;
+  box-shadow:0 0 24px var(--sec-soft);
+}
+.ring{position:relative;width:58px;height:58px;flex:none}
+.level-card .ring{filter:drop-shadow(0 0 6px var(--sec))}
+.ring svg{transform:rotate(-90deg);width:100%;height:100%}
+.ring .track{stroke:var(--track);fill:none;stroke-width:5}
+.ring .bar{stroke:url(#secGrad);fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
+.ring .lvl{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--font-display);font-weight:800;font-size:19px;color:var(--sec);
+}
+.level-meta{min-width:0}
+.level-meta b{font-family:var(--font-display);font-size:14px;font-weight:700;display:block}
+.level-meta small{color:var(--dim);font-size:11.5px;display:block;margin-top:2px}
+.xp-mini{height:4px;border-radius:2px;background:var(--track);margin-top:7px;overflow:hidden}
+.xp-mini i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sec),var(--sec-light));transition:width .5s}
+
+.side-actions{display:flex;flex-direction:column;gap:7px}
+.demo-btn{
+  font-size:12px;color:var(--dim);padding:8px 10px;border-radius:var(--radius-sm);
+  border:1px dashed var(--border);width:100%;transition:color .15s,border-color .15s;
+  background:var(--overlay-4);
+}
+.demo-btn:hover{color:var(--text);border-color:var(--dim)}
+.export-import-box{display:flex;flex-direction:column;gap:7px}
+.sync-box{border-top:1px solid var(--border-soft);padding-top:12px;margin-top:2px}
+.sync-status{font-size:11px;color:var(--dim);margin-bottom:8px}
+.sync-status.ok{color:var(--mint)}
+.sync-status.err{color:var(--rose)}
+
+/* ---------- Topbar ---------- */
+.main{margin:0 auto;padding:32px 28px 90px;max-width:1200px}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:26px}
+.topbar h2{
+  font-family:var(--font-display);font-size:30px;font-weight:800;letter-spacing:-.7px;
+  background:linear-gradient(90deg,var(--text) 55%,var(--ac));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.topbar .date{color:var(--dim);font-size:13.5px;margin-top:3px}
+.topbar-badge{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);
+  background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:20px;padding:8px 15px;white-space:nowrap;
+}
+.tb-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex:none;box-shadow:0 0 8px var(--mint)}
+
+.page{display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- Seg-Tabs (Today-Seite) ---------- */
+.seg-tabs{
+  display:flex;gap:6px;margin:26px 0 22px;padding:5px;
+  background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:14px;overflow-x:auto;scrollbar-width:none;
+}
+.seg-tabs::-webkit-scrollbar{display:none}
+.seg-tabs button{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  white-space:nowrap;padding:11px 14px;border-radius:10px;
+  font-size:13.5px;font-weight:600;color:var(--dim);
+  transition:background .18s,color .18s;
+}
+.seg-tabs button svg{width:16px;height:16px;stroke:currentColor;flex:none}
+.seg-tabs button:hover{color:var(--text);background:var(--nav-hover)}
+.seg-tabs button.on{background:var(--ac-soft);color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac-soft)}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fade .25s ease}
+
+/* ---------- Grid-System ---------- */
+.grid{display:grid;gap:24px}
+.stack{display:flex;flex-direction:column;gap:24px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.span2{grid-column:span 2}

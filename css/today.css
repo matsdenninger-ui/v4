@@ -1,0 +1,396 @@
+/* ============================================================
+   ASCEND — today.css
+   Tages-Header/Mission, Timer, Heatmap, Weekly Board, Stat-Strip
+   ============================================================ */
+/* ---------- Tages-Header (Begrüßung + Tagesfortschritt) ---------- */
+.day-header{
+  background:linear-gradient(135deg,var(--surface),var(--elev));
+  border:1px solid var(--border-soft);border-radius:var(--radius);
+  padding:24px 26px;box-shadow:0 4px 18px rgba(0,0,0,.24);
+}
+.page-greet-row{display:flex;align-items:center;gap:16px}
+.greet-avatar{
+  font-size:38px;flex:none;line-height:1;
+  background:none;border:none;transition:transform .15s;
+}
+.greet-avatar:hover{transform:scale(1.12) rotate(-4deg)}
+.greet-text{flex:1;min-width:0}
+.greet-title{
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(26px,4.6vw,40px);letter-spacing:-1px;line-height:1.12;
+  background:linear-gradient(90deg,var(--text) 45%,var(--ac));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+.hero-name{
+  border-bottom:2px dashed var(--faint);cursor:pointer;color:var(--ac);
+  transition:border-color .15s;
+}
+.hero-name:hover{border-color:var(--ac)}
+.hero-name-edit-btn{
+  color:var(--dim);font-size:13px;opacity:.5;transition:opacity .15s;
+  -webkit-text-fill-color:var(--dim);
+}
+.hero-name-edit-btn:hover{opacity:1;color:var(--ac);-webkit-text-fill-color:var(--ac)}
+.hero-name-input{
+  font-family:var(--font-display);font-size:22px;font-weight:800;
+  padding:2px 8px;width:180px;
+}
+.hero-date{font-size:13.5px;color:var(--dim);margin-top:4px}
+.greet-ring{flex:none}
+.ring.ac-ring .bar{stroke:url(#acGrad)}
+.hero-time{display:none;padding-top:16px;max-width:420px}
+.hero-time.show{display:block}
+.hero-time-lab{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px}
+.hero-time-lab span:first-child{color:var(--text);font-weight:600}
+.hero-time-lab span:last-child{font-variant-numeric:tabular-nums;color:var(--sec)}
+.hero-time .bar i{background:linear-gradient(90deg,var(--sec),var(--sec-light))}
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 22px}
+.hchip{
+  display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);
+  background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:20px;padding:7px 13px;cursor:default;
+}
+.hchip b{color:var(--text);font-weight:600}
+.hchip.clickable{cursor:pointer;transition:border-color .15s}
+.hchip.clickable:hover{border-color:var(--ac)}
+
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:8px}
+.stat{
+  position:relative;overflow:hidden;
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  transition:border-color .2s;
+}
+.stat:hover{border-color:var(--border)}
+.stat b{font-family:var(--font-display);font-size:24px;font-weight:800;display:block;letter-spacing:-.5px;font-variant-numeric:tabular-nums;color:var(--text)}
+.stat small{color:var(--dim);font-size:12px}
+.stat .delta{font-size:11px;color:var(--mint);font-weight:600}
+
+
+/* ---------- Heatmap ---------- */
+.heatmap-wrap{overflow-x:auto;padding-bottom:4px}
+.heatmap{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,11px);gap:3px;width:max-content}
+.hm-cell{width:11px;height:11px;border-radius:3px;background:var(--hm-0)}
+.hm-1{background:#2b3a63}.hm-2{background:#41549b}.hm-3{background:#6773d6}.hm-4{background:#98a3ff}
+.hm-legend{display:flex;align-items:center;gap:5px;margin-top:10px;font-size:11px;color:var(--dim)}
+.hm-legend .hm-cell{width:10px;height:10px}
+
+
+/* ---------- Timer ---------- */
+.timer{
+  text-align:center;padding:10px 0 4px;
+}
+.timer .clock{
+  font-family:var(--font-display);font-size:46px;font-weight:800;letter-spacing:1px;
+  font-variant-numeric:tabular-nums;line-height:1.1;
+  transition:color .3s,text-shadow .3s;
+}
+.timer .clock.running{color:var(--mint);text-shadow:0 0 24px var(--mint-soft)}
+.timer .state{font-size:12px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin:4px 0 16px}
+.focus-stat{display:flex;justify-content:center;gap:26px;margin-top:18px;padding-top:15px;border-top:1px solid var(--border-soft)}
+.focus-stat div{text-align:center}
+.focus-stat b{font-family:var(--font-display);font-size:20px;font-weight:700;display:block;font-variant-numeric:tabular-nums}
+.focus-stat small{color:var(--dim);font-size:11.5px}
+
+
+/* ---------- Week board ---------- */
+.week-board{display:grid;grid-template-columns:repeat(7,1fr);gap:9px}
+.wb-day{background:var(--elev);border-radius:var(--radius-sm);padding:9px;min-height:120px;display:flex;flex-direction:column;gap:6px}
+.wb-day.today{outline:1.5px solid var(--ac)}
+.wb-day.drag-over{outline:1.5px dashed var(--sec);background:var(--sec-soft)}
+.wb-day h5{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--dim);text-align:center;margin-bottom:-2px}
+.wb-date{font-size:9.5px;color:var(--faint);text-align:center;margin-bottom:2px}
+.wb-item{font-size:12px;background:var(--surface);border:1px solid var(--border-soft);border-radius:7px;padding:5px 7px;display:flex;flex-direction:column;gap:3px;position:relative;touch-action:none}
+.wb-item.done{color:var(--dim);text-decoration:line-through}
+.wb-item.dragging{cursor:grabbing;z-index:5;border-color:var(--ac);box-shadow:0 8px 20px rgba(0,0,0,.4);opacity:.95}
+.wb-item-row{display:flex;gap:5px;align-items:flex-start}
+.wb-drag-handle{width:16px;height:16px;flex:none;color:var(--dim);cursor:grab;display:grid;place-items:center;margin-top:1px}
+.wb-drag-handle svg{width:13px;height:13px}
+.wb-txt{flex:1;min-width:0;cursor:pointer;overflow-wrap:anywhere}
+.wb-del{width:18px;height:18px;flex:none;color:var(--dim);display:grid;place-items:center;margin-top:0;border-radius:5px}
+.wb-del:hover{color:var(--rose);background:rgba(248,113,113,.12)}
+.wb-del svg{width:13px;height:13px}
+.wb-time{font-size:9.5px;color:var(--sec);font-weight:600;text-decoration:none;display:inline-block}
+.wb-add{font-size:15px;color:var(--dim);border:1px dashed var(--border);border-radius:7px;padding:2px;line-height:1.2}
+.wb-add:hover{color:var(--text)}
+
+
+/* ---------- Einklappbare Bereiche (Heatmap etc.) ---------- */
+.collapsible{margin-top:16px}
+.collapsible-toggle{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:12px 4px;font-size:13px;font-weight:600;color:var(--dim);
+  transition:color .15s;
+}
+.collapsible-toggle:hover{color:var(--text)}
+.collapsible-toggle svg{width:14px;height:14px;transition:transform .25s ease;flex:none}
+.collapsible.open .collapsible-toggle svg{transform:rotate(180deg)}
+.collapsible-body{display:none;flex-direction:column;gap:10px}
+.collapsible.open .collapsible-body{display:flex;animation:fadeDown .25s ease}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* ---------- Mission-Callout (prominentes Fokusziel) ---------- */
+.mission-card{
+  background:linear-gradient(135deg,var(--ac-soft),var(--sec-soft) 130%);
+  border:1px solid var(--border-soft);border-radius:var(--radius);
+  padding:18px 22px;margin:22px 0 8px;display:flex;align-items:center;gap:16px;
+}
+.mission-label{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);font-weight:700}
+.mission-text{font-family:var(--font-display);font-size:17px;font-weight:700;margin-top:3px;line-height:1.3}
+.mission-icon{font-size:28px;flex:none}
+
+
+/* ---------- Outcomes (max. 3 pro Tag) ---------- */
+.outcome-card{padding-bottom:22px}
+.outcome-list{display:flex;flex-direction:column;gap:12px}
+.outcome{
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:14px 16px;transition:border-color .15s,opacity .15s;
+}
+.outcome:hover{border-color:var(--border)}
+.outcome.done{opacity:.6}
+.outcome.done .outcome-title{text-decoration:line-through;color:var(--dim)}
+/* Unklar = kein offener Subtask. Die Farbe sagt: hier fehlt der nächste Schritt. */
+.outcome.unclear{border-color:rgba(248,113,113,.3)}
+.outcome-head{display:flex;align-items:center;gap:11px}
+.outcome-main{flex:1;min-width:0}
+.outcome-title{font-size:14.5px;font-weight:600;overflow-wrap:break-word}
+.outcome-meta{font-size:11.5px;color:var(--dim);margin-top:3px;overflow-wrap:break-word}
+.outcome-meta b{color:var(--text);font-variant-numeric:tabular-nums}
+.outcome-more{font-size:10px;color:var(--dim)}
+.outcome-bar{display:flex;align-items:center;gap:10px;margin:11px 0}
+.outcome-bar .bar{flex:1}
+.outcome-bar .bar i{background:linear-gradient(90deg,var(--ac),var(--ac-light))}
+.outcome-pct{font-size:11px;color:var(--dim);flex:none;font-variant-numeric:tabular-nums}
+
+/* Der eine Schritt, der jetzt dran ist — alles andere ist zugeklappt. */
+.outcome-next{
+  display:flex;align-items:center;gap:10px;padding:9px 11px;
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+}
+.outcome-next-text{display:flex;flex-direction:column;gap:1px;min-width:0}
+.outcome-next-text small{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint)}
+.outcome-next-text span{font-size:13px;overflow-wrap:break-word}
+.outcome-next.done{border-color:var(--mint-soft);color:var(--mint);font-size:13px;justify-content:center}
+.outcome-next.unclear{
+  border-color:rgba(241,90,41,.3);background:var(--sec-soft);
+  font-size:12.5px;color:var(--dim);line-height:1.5;display:block;
+}
+/* Alles getan, nur der Abschluss fehlt — grün und auf einen Klick erreichbar. */
+.outcome-next.ready{
+  border-color:var(--mint);background:var(--mint-soft);
+  justify-content:space-between;font-size:13px;color:var(--text);
+}
+.outcome-next.ready .ready-text{line-height:1.45}
+.outcome-next.ready .btn{
+  background:var(--mint);color:#06251d;flex:none;font-weight:600;
+}
+.outcome-next.ready .btn:hover{filter:brightness(1.06);box-shadow:0 6px 18px var(--mint-soft)}
+.ff-hint{color:var(--faint);font-size:11.5px;margin-left:2px}
+.outcome-subtasks{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.outcome-subtasks .subtask{padding:7px 10px;font-size:13px}
+.sub-dot{width:5px;height:5px;border-radius:50%;background:var(--border);flex:none;margin-left:2px}
+.outcome-subtasks .subtask.done .sub-dot{background:var(--mint)}
+.outcome-add{margin:10px 0 0}
+.outcome-add.collapsed input{background:var(--elev)}
+.outcome-actions{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;padding-top:11px;
+  border-top:1px solid var(--border-soft);
+}
+.outcome-foot{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+/* Derselbe Block im Backlog: etwas kompakter, weil er dort in einer Liste steht. */
+.outcome.in-backlog{padding:11px 13px}
+.outcome.in-backlog .outcome-title{font-size:13.5px}
+.outcome-head .drag-handle{width:16px;height:16px;margin-right:-3px}
+/* Kurze Angaben („Heute“/Nicht eingeplant) nicht mitten im Wort umbrechen;
+   das lange Zieltitel-Segment darf dagegen umbrechen und steht deshalb zuletzt. */
+.outcome-meta .no-wrap{white-space:nowrap}
+.outcome-meta .goal-here{display:block}
+.outcome-head .drag-handle svg{width:13px;height:13px}
+.outcome-overflow{
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--border-soft);
+  display:flex;flex-direction:column;gap:8px;
+}
+.outcome-waiting{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:12.5px;color:var(--dim);background:var(--elev);
+  border-radius:var(--radius-sm);padding:9px 12px;
+}
+
+/* Leerer Zustand nennt den nächsten Schritt, nicht den Feature-Namen. */
+.hint-next{display:block;margin-top:8px;font-size:11.5px;color:var(--ac);font-style:normal}
+.promote-btn{font-size:13px;filter:grayscale(1);opacity:.45;transition:opacity .15s,filter .15s,color .15s}
+.promote-btn:hover{filter:none;opacity:1;color:var(--ac)}
+
+/* Wenn-dann als Erinnerung in der Timer-Karte */
+.if-then-note{margin-top:14px;padding-top:13px;border-top:1px solid var(--border-soft)}
+.if-then-lab{font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);margin-bottom:4px}
+.if-then-text{font-size:12.5px;color:var(--dim);line-height:1.55}
+/* Ersatzsatz am Fokus-Ziel auf der Today-Seite (von hero.js gerendert) */
+.goal-belief-mini{
+  font-size:11.5px;color:var(--ac);margin-top:9px;padding-top:9px;
+  border-top:1px solid var(--border-soft);line-height:1.5;
+}
+.goal-belief-mini.faint{color:var(--faint)}
+.workout-gate{margin-bottom:16px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+
+/* ---------- Pre-Flight ---------- */
+.pf-box{max-height:90vh;overflow:auto}
+.pf-step{margin-bottom:16px}
+.pf-lab{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--dim);margin-bottom:7px;
+}
+.pf-req{
+  font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--rose);background:rgba(248,113,113,.12);padding:2px 8px;border-radius:20px;
+}
+.pf-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.pf-chip{
+  font-size:12px;padding:6px 12px;border-radius:20px;text-align:left;
+  background:var(--elev);border:1px solid var(--border-soft);color:var(--dim);
+  transition:background .15s,border-color .15s,color .15s;
+}
+.pf-chip:hover{border-color:var(--ac);color:var(--text)}
+.pf-chip.on{background:var(--ac-soft);border-color:var(--ac);color:var(--ac)}
+.pf-hint{font-size:11.5px;color:var(--faint);line-height:1.5}
+.pf-warn{
+  font-size:12px;color:var(--text);background:var(--sec-soft);
+  border:1px solid rgba(241,90,41,.3);border-radius:var(--radius-sm);
+  padding:10px 12px;line-height:1.55;
+}
+.pf-split{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:9px;font-size:12.5px;color:var(--dim);
+}
+.pf-row{display:flex;gap:8px}
+.pf-opt{
+  flex:1;font-size:13px;font-weight:600;padding:10px 8px;
+  border-radius:var(--radius-sm);background:var(--elev);
+  border:1.5px solid transparent;color:var(--dim);
+  transition:background .15s,border-color .15s,color .15s,transform .1s;
+}
+.pf-opt:hover{border-color:var(--border);color:var(--text)}
+.pf-opt:active{transform:scale(.98)}
+.pf-opt.on{background:var(--ac-soft);border-color:var(--ac);color:var(--ac)}
+
+/* Umgebungs-Toggles: alle Pflicht. Grün = erledigt, nicht gesetzt = offen. */
+.pf-toggle-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pf-toggle{
+  display:flex;align-items:center;gap:9px;text-align:left;
+  font-size:12.5px;font-weight:600;padding:11px 12px;border-radius:var(--radius-sm);
+  background:var(--elev);border:1.5px solid var(--border);color:var(--dim);
+  transition:background .15s,border-color .15s,color .15s;
+}
+.pf-toggle:hover{border-color:var(--dim)}
+.pf-toggle-ico{
+  width:20px;height:20px;flex:none;display:grid;place-items:center;
+  font-size:13px;border-radius:6px;background:var(--bg);
+}
+.pf-toggle.on{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
+.pf-toggle.on:hover{border-color:var(--mint)}
+.pf-toggle.on .pf-toggle-ico{background:var(--mint);color:var(--bg);font-weight:800}
+
+/* Glaubenssatz im Pre-Flight: alter Satz bleibt sichtbar, Ersatzsatz wird gesetzt */
+.pf-belief{margin-top:9px}
+.belief-inline{display:flex;flex-direction:column;gap:8px}
+.belief-old{
+  display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--dim);
+  background:var(--elev);border-radius:var(--radius-sm);padding:9px 11px;
+  border-left:2px solid var(--border);
+}
+.belief-old small{font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint)}
+
+
+/* ---------- Fullscreen-Fokus ----------
+   Während der Session gibt es nur Outcome, Timer und Wenn-dann. */
+.focus-overlay{display:none}
+.focus-overlay.open{
+  /* Unter den Dialogen (z-index 80) und Toasts (90), aber über Sidebar (60),
+     Burger (70) und Pausen-Leiste (75): so ist die Session zwar sichtbar
+     allein, aber eine Rückfrage aus der Session heraus bleibt klickbar. */
+  display:flex;position:fixed;inset:0;z-index:76;padding:24px;
+  justify-content:center;text-align:center;
+  /* scrollbar statt abschneidend: auf kurzen Fenstern (Laptop, Handy quer) war
+     der Inhalt höher als das Fenster und die beiden Knöpfe lagen unerreichbar
+     unter dem Rand — body.focus-mode{overflow:hidden} ließ nichts scrollen. */
+  overflow-y:auto;overflow-x:hidden;
+  background:radial-gradient(ellipse 700px 520px at 50% 0%,var(--ac-soft),transparent 60%),var(--bg);
+}
+/* margin:auto zentriert vertikal, wenn Platz ist, und schneidet nichts ab,
+   wenn nicht — genau das kann align-items:center in einem Scrollcontainer nicht. */
+.focus-inner{display:flex;flex-direction:column;align-items:center;gap:18px;max-width:760px;width:100%;margin:auto 0}
+.focus-tag{
+  font-size:12px;color:var(--dim);background:var(--elev);
+  border:1px solid var(--border-soft);border-radius:20px;padding:7px 15px;max-width:100%;
+}
+.focus-tag span{color:var(--ac);font-weight:700}
+.focus-tag .focus-if-lab{
+  font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;
+  color:var(--faint);font-weight:700;margin-right:8px;
+}
+.focus-tag .focus-noif{color:var(--faint);font-weight:400;font-style:italic}
+.if-then-text b{color:var(--dim);font-weight:700}
+.focus-outcome{
+  font-family:var(--font-display);font-size:clamp(20px,3.4vw,34px);font-weight:800;
+  letter-spacing:-.6px;line-height:1.2;color:var(--text);overflow-wrap:break-word;
+}
+.focus-clock{
+  font-family:var(--font-display);font-size:clamp(56px,12vw,132px);font-weight:800;
+  letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums;color:var(--dim);
+  transition:color .3s,text-shadow .3s;
+}
+.focus-clock.running{color:var(--mint);text-shadow:0 0 40px var(--mint-soft)}
+.focus-clock.over{color:var(--rose)}
+.focus-state{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint)}
+.focus-actions{display:flex;gap:10px;margin-top:8px}
+
+/* ---------- Untertodos als Ablauf im Fokus ----------
+   Beim Start einer Session verschwindet das Dashboard — auch die Subtasks. Genau
+   beim Arbeiten braucht man sie aber: dieser Ablauf zeigt nur den aktuellen Block,
+   Schritt für Schritt, und lässt den aktuellen Haken direkt abhaken. */
+.focus-flow{display:none}
+.focus-flow.show{display:block;width:100%;max-width:520px;text-align:left;flex:none}
+.ff-head{
+  display:flex;justify-content:space-between;gap:10px;font-size:11px;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;color:var(--faint);margin-bottom:9px;
+}
+.ff-now{color:var(--ac);text-transform:none;letter-spacing:0;font-size:12px;overflow-wrap:break-word;text-align:right}
+.ff-done{color:var(--mint)}
+/* Lange Ketten bekommen eine eigene Scrollfläche — so bleibt der Timer und die
+   Knöpfe immer im Bild, egal wie viele Subtasks am Block hängen. */
+.ff-list{
+  list-style:none;display:flex;flex-direction:column;gap:0;
+  max-height:min(34vh,280px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+}
+.ff-step{display:flex;align-items:center;gap:11px;position:relative;padding:7px 0}
+/* Verbindungslinie zwischen den Schritten — der „Fluss" der Aufgabe */
+.ff-step:not(:last-child)::before{
+  content:"";position:absolute;left:10px;top:26px;bottom:-7px;width:2px;
+  background:var(--border);border-radius:2px;
+}
+.ff-step.done:not(:last-child)::before{background:var(--mint-soft)}
+.ff-cbx{
+  width:21px;height:21px;border-radius:50%;flex:none;position:relative;z-index:1;
+  border:2px solid var(--border);background:var(--surface);
+  display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff;
+  transition:border-color .15s,background .15s,transform .1s;
+}
+.ff-cbx:hover{border-color:var(--mint)}
+.ff-cbx:active{transform:scale(.9)}
+.ff-step.done .ff-cbx{background:var(--mint);border-color:var(--mint)}
+.ff-text{font-size:14px;color:var(--dim);overflow-wrap:break-word}
+.ff-step.done .ff-text{color:var(--faint);text-decoration:line-through}
+/* Der aktuelle Schritt ist der einzige helle — alles andere tritt zurück. */
+.ff-step.current .ff-cbx{border-color:var(--ac);border-width:3px}
+.ff-step.current .ff-text{color:var(--text);font-weight:600;font-size:15px}
+
+/* Die Sperre: der Rest des Dashboards ist nicht nur versteckt, sondern weg. */
+body.focus-mode{overflow:hidden}
+body.focus-mode .sidebar,body.focus-mode .burger,body.focus-mode .scrim,body.focus-mode .topbar{display:none!important}

@@ -1,0 +1,125 @@
+/* ============================================================
+   ASCEND — nutrition.css
+   Makros, Hydration, Mahlzeitenplan, Supplement-Stack
+   ============================================================ */
+/* ---------- Macros / bars ---------- */
+.macro{margin-bottom:14px}
+.macro .lab{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.macro .lab b{font-weight:600}
+.macro .lab span{color:var(--dim);font-variant-numeric:tabular-nums}
+.bar{height:8px;background:var(--elev);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:5px;transition:width .45s ease}
+.bar .kcal{background:linear-gradient(90deg,var(--sec),#f2d68b)}
+.bar .pro{background:linear-gradient(90deg,var(--ac),#aeb4ff)}
+.bar .carb{background:linear-gradient(90deg,var(--sky),#93dbff)}
+.bar .fat{background:linear-gradient(90deg,var(--rose),#ffa3b5)}
+.macro-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.macro-inputs label{font-size:11px;color:var(--dim);display:block;margin-bottom:3px}
+.macro-inputs input{width:100%;padding:7px 9px;font-size:13px}
+
+
+/* ---------- Hydration ---------- */
+/* ---------- Hydration ---------- */
+.glasses{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px}
+.glass{
+  width:34px;height:44px;border-radius:6px 6px 10px 10px;
+  border:2px solid var(--border);position:relative;overflow:hidden;
+  transition:border-color .2s;background:var(--bg);cursor:pointer;
+}
+.glass::after{
+  content:"";position:absolute;inset:auto 0 0 0;height:0;
+  background:linear-gradient(180deg,#6fcdf5,#3d9fd6);transition:height .3s ease;
+}
+.glass.full{border-color:var(--sky)}
+.glass.full::after{height:82%}
+
+
+/* ---------- Meal planner ---------- */
+/* ---------- Meal planner ---------- */
+.disclaimer-note{
+  font-size:11.5px;color:var(--rose);background:rgba(248,113,113,.08);
+  border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);
+  padding:9px 12px;line-height:1.55;margin-bottom:14px;
+}
+.macro-sub-note{font-size:11px;color:var(--faint);margin-top:2px}
+.meal-card2{
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  margin-bottom:10px;overflow:hidden;transition:border-color .15s;
+}
+.meal-card2:hover{border-color:var(--border)}
+.meal-card2-head{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer}
+.meal-icon2{
+  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  font-size:19px;flex:none;
+}
+.meal-card2-title{flex:1;min-width:0}
+.meal-card2-title b{font-size:13.5px;font-weight:600;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meal-card2-title small{font-size:11.5px;color:var(--dim)}
+.meal-slot-badge2{
+  font-size:9.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--ac);background:var(--ac-soft);padding:2px 7px;border-radius:10px;margin-left:6px;
+}
+.meal-kcal2{font-size:13px;font-weight:700;color:var(--ac);flex:none;font-variant-numeric:tabular-nums}
+.meal-chevron2{width:16px;height:16px;color:var(--dim);transition:transform .2s;flex:none}
+.meal-card2.open .meal-chevron2{transform:rotate(180deg)}
+.meal-card2-body{display:none;padding:0 14px 15px}
+.meal-card2.open .meal-card2-body{display:block;animation:fade .2s ease}
+.meal-card2.eaten .meal-card2-head{background:linear-gradient(90deg,var(--mint-soft),transparent)}
+.meal-card2.eaten .meal-icon2{filter:none}
+.meal-card2.eaten .meal-card2-title b{color:var(--mint)}
+.food-row2{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border-soft);font-size:12.5px}
+.food-row2:last-child{border-bottom:none}
+.food-dot2{width:5px;height:5px;border-radius:50%;background:var(--ac);margin-top:6px;flex:none}
+.food-name2{flex:1;color:var(--text)}
+.food-detail2{color:var(--dim);font-size:11px;text-align:right;max-width:44%;line-height:1.4}
+.tagrow2{display:flex;flex-wrap:wrap;gap:6px;margin:11px 0}
+.mtag{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:700;letter-spacing:.2px}
+.mtag.mg{background:var(--mint-soft);color:var(--mint)}
+.mtag.mb{background:rgba(96,165,250,.14);color:var(--sky)}
+.mtag.ma{background:rgba(245,158,11,.14);color:#f0a93a}
+.mtag.mp{background:var(--sec-soft);color:var(--sec)}
+.meal-macro-row2{display:flex;gap:18px;font-size:12px;color:var(--dim);padding-top:9px;border-top:1px solid var(--border-soft)}
+.meal-macro-row2 b{color:var(--text);font-variant-numeric:tabular-nums}
+.meal-foot2{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border-soft)}
+.meal-foot2 .time-edit2{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim)}
+.meal-foot2 input[type=time]{padding:5px 8px;font-size:12px}
+.meal-shuffle-btn{
+  display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
+  color:var(--dim);background:var(--bg);border:1px solid var(--border);border-radius:20px;
+  padding:5px 11px;transition:color .15s,border-color .15s;
+}
+.meal-shuffle-btn:hover{color:var(--ac);border-color:var(--ac)}
+.variant-dots2{display:flex;gap:3px;align-items:center;margin-left:auto;font-size:10.5px;color:var(--faint)}
+.vdot{width:5px;height:5px;border-radius:50%;background:var(--border);flex:none}
+.vdot.on{background:var(--ac)}
+.meal-eat-check{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim);cursor:pointer;font-weight:600}
+.meal-eat-check input{width:16px;height:16px;accent-color:var(--mint);cursor:pointer}
+
+
+/* ---------- Supplement stack ---------- */
+/* ---------- Supplement stack ---------- */
+.supp-card2{
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  padding:15px;margin-bottom:10px;transition:border-color .15s,opacity .15s;
+}
+.supp-card2:hover{border-color:var(--border)}
+.supp-card2.taken{border-color:rgba(52,211,153,.35)}
+.supp-head2{display:flex;align-items:flex-start;gap:12px;margin-bottom:9px}
+.supp-ico2{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  font-size:17px;flex:none;
+}
+.supp-name2{font-size:13.5px;font-weight:600;line-height:1.3}
+.supp-dose2{font-size:11.5px;color:var(--ac);font-weight:700;margin-top:2px}
+.supp-del2{margin-left:auto}
+.supp-when2{font-size:11px;color:var(--dim);margin-bottom:7px}
+.supp-body2{font-size:11.5px;color:var(--dim);line-height:1.55;margin-bottom:11px}
+.supp-foot2{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-top:11px;border-top:1px solid var(--border-soft);
+}
+.supp-take-check{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer}
+.supp-take-check input{width:17px;height:17px;accent-color:var(--mint);cursor:pointer}
+.supp-time-edit{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--dim)}
+.supp-time-edit input[type=time]{padding:4px 7px;font-size:11.5px}
+
