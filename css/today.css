@@ -3,14 +3,10 @@
    Tages-Header/Mission, Timer, Heatmap, Weekly Board, Stat-Strip
    ============================================================ */
 /* ---------- Tages-Header (Begrüßung + Tagesfortschritt) ---------- */
-.day-header{
-  background:linear-gradient(135deg,var(--surface),var(--elev));
-  border:1px solid var(--border-soft);border-radius:var(--radius);
-  padding:24px 26px;box-shadow:0 4px 18px rgba(0,0,0,.24);
-}
+.day-header{margin-bottom:16px}
 .page-greet-row{display:flex;align-items:center;gap:16px}
 .greet-avatar{
-  font-size:38px;flex:none;line-height:1;
+  font-size:34px;flex:none;line-height:1;
   background:none;border:none;transition:transform .15s;
 }
 .greet-avatar:hover{transform:scale(1.12) rotate(-4deg)}
@@ -39,13 +35,13 @@
 .hero-date{font-size:13.5px;color:var(--dim);margin-top:4px}
 .greet-ring{flex:none}
 .ring.ac-ring .bar{stroke:url(#acGrad)}
-.hero-time{display:none;padding-top:16px;max-width:420px}
+.hero-time{display:none;padding-top:14px;max-width:420px}
 .hero-time.show{display:block}
 .hero-time-lab{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:6px}
 .hero-time-lab span:first-child{color:var(--text);font-weight:600}
 .hero-time-lab span:last-child{font-variant-numeric:tabular-nums;color:var(--sec)}
 .hero-time .bar i{background:linear-gradient(90deg,var(--sec),var(--sec-light))}
-.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 22px}
+.hero-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
 .hchip{
   display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);
   background:var(--surface);border:1px solid var(--border-soft);
@@ -55,7 +51,7 @@
 .hchip.clickable{cursor:pointer;transition:border-color .15s}
 .hchip.clickable:hover{border-color:var(--ac)}
 
-.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:8px}
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:30px}
 .stat{
   position:relative;overflow:hidden;
   background:var(--surface);
@@ -86,9 +82,8 @@
 .timer .clock{
   font-family:var(--font-display);font-size:46px;font-weight:800;letter-spacing:1px;
   font-variant-numeric:tabular-nums;line-height:1.1;
-  transition:color .3s,text-shadow .3s;
 }
-.timer .clock.running{color:var(--mint);text-shadow:0 0 24px var(--mint-soft)}
+.timer .clock.running{color:var(--mint)}
 .timer .state{font-size:12px;color:var(--dim);letter-spacing:1.5px;text-transform:uppercase;margin:4px 0 16px}
 .focus-stat{display:flex;justify-content:center;gap:26px;margin-top:18px;padding-top:15px;border-top:1px solid var(--border-soft)}
 .focus-stat div{text-align:center}
@@ -119,7 +114,7 @@
 
 
 /* ---------- Einklappbare Bereiche (Heatmap etc.) ---------- */
-.collapsible{margin-top:16px}
+.collapsible{margin-top:4px}
 .collapsible-toggle{
   display:flex;align-items:center;gap:8px;width:100%;
   padding:12px 4px;font-size:13px;font-weight:600;color:var(--dim);
@@ -128,7 +123,7 @@
 .collapsible-toggle:hover{color:var(--text)}
 .collapsible-toggle svg{width:14px;height:14px;transition:transform .25s ease;flex:none}
 .collapsible.open .collapsible-toggle svg{transform:rotate(180deg)}
-.collapsible-body{display:none;flex-direction:column;gap:10px}
+.collapsible-body{display:none;flex-direction:column;gap:20px}
 .collapsible.open .collapsible-body{display:flex;animation:fadeDown .25s ease}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 
@@ -136,7 +131,7 @@
 .mission-card{
   background:linear-gradient(135deg,var(--ac-soft),var(--sec-soft) 130%);
   border:1px solid var(--border-soft);border-radius:var(--radius);
-  padding:18px 22px;margin:22px 0 8px;display:flex;align-items:center;gap:16px;
+  padding:20px 24px;margin-bottom:22px;display:flex;align-items:center;gap:16px;
 }
 .mission-label{font-size:10.5px;letter-spacing:1px;text-transform:uppercase;color:var(--dim);font-weight:700}
 .mission-text{font-family:var(--font-display);font-size:17px;font-weight:700;margin-top:3px;line-height:1.3}

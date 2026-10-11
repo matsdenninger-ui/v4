@@ -29,7 +29,6 @@
 
   /* ---------- Mobile-Feinschliff: kompaktere Karten, größere Touch-Ziele ---------- */
   .card{padding:20px 18px}
-  .day-header{padding:18px 18px}
   .stat{padding:14px 16px}
   .macro-inputs{grid-template-columns:1fr}
   .greet-title{gap:5px}
