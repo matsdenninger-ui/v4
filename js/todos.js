@@ -12,8 +12,9 @@ function addTodo(){
   if(!v) return;
   const mins = parseInt($("todoMinutes").value) || null;
   const tk = todayKey();
-  S.todos.push({id:uid(), text:v, done:false, date:tk, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now()});
-  $("todoInput").value = ""; $("todoMinutes").value = ""; save(); renderTodos(); renderWeek(); renderHero();
+  S.todos.push({id:uid(), text:v, done:false, date:tk, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now(),
+    parent_id:null, is_outcome:false, scheduled_date:tk, status:"open"});
+  $("todoInput").value = ""; $("todoMinutes").value = ""; save(); renderTodos(); renderWeek(); renderOutcomes(); renderHero();
 }
 $("todoAdd").addEventListener("click", addTodo);
 $("todoInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addTodo(); });
@@ -32,15 +33,23 @@ function todoDayLabel(t){
 function renderTodos(){
   const list = $("todoList");
   const tk = todayKey();
-  const todos = [...S.todos].sort((a,b)=>{
+  // Der Backlog zeigt jeden eigenständigen Punkt — auch einen Aufgabenblock, der
+  // gerade nicht auf Heute steht. Ausgeblendet ist nur, was Heute schon als
+  // Outcome zeigt (sonst stünde dieselbe Aufgabe zweimal auf dem Schirm) und
+  // alles, was selbst ein Subtask ist.
+  const todos = S.todos.filter(t=>!t.parent_id && !(t.is_outcome && t.date === tk)).sort((a,b)=>{
     const da = a.date || "9999-99-99", db = b.date || "9999-99-99";
     if(da !== db) return da.localeCompare(db);
     return (a.order??0)-(b.order??0);
   });
   if(!todos.length){
-    list.innerHTML = '<div class="empty">✨ <b>Alles frei.</b><br>Füge oben deine erste Aufgabe hinzu — kleine Schritte zählen.</div>';
+    list.innerHTML = '<div class="empty">✨ <b>Backlog ist leer.</b><br>Lege oben den nächsten Punkt an — oder mach einen davon zum Outcome für heute.</div>';
   } else {
-    list.innerHTML = todos.map(t=>`
+    // Eine Aufgabe MIT Subtasks wird als Block gerendert — dieselbe Darstellung
+    // wie auf Heute. Nur so bleiben ihre Subtasks sichtbar, während sie im Backlog
+    // liegt. Ohne das verschwanden sie beim Verschieben (oder mussten abgeschnitten
+    // werden, was die Definition of Done zerstörte).
+    list.innerHTML = todos.map(t=>hasSubtasks(t) ? groupBlockHTML(t, "backlog") : `
       <div class="check-item draggable-item ${t.done?"done":""}" data-id="${t.id}">
         <button class="drag-handle" aria-label="Ziehen zum Umsortieren">${DRAG_ICON}</button>
         <button class="cbx ${t.done?"on":""}" data-act="todo-toggle" data-id="${t.id}" aria-label="Abhaken">${ICON_CHECK}</button>
@@ -48,10 +57,11 @@ function renderTodos(){
           <span class="txt">${esc(t.text)}</span>
           <span class="meta">${todoDayLabel(t)}${t.estMinutes ? ` · ⏱ ${t.focusedMinutes||0}/${t.estMinutes} Min.` : ""}</span>
         </div>
+        <button class="icon-btn promote-btn" data-act="todo-promote" data-id="${t.id}" title="Zum Outcome für heute machen" aria-label="Zum Outcome machen">🎯</button>
         <button class="icon-btn del" data-act="todo-del" data-id="${t.id}" aria-label="Löschen">${ICON_X}</button>
       </div>`).join("");
   }
-  const todayTodos = S.todos.filter(t=>t.date===tk);
+  const todayTodos = S.todos.filter(t=>t.date===tk && !t.parent_id);
   $("stTodos").textContent = todayTodos.filter(t=>t.done).length + "/" + todayTodos.length;
 }
 
@@ -202,24 +212,71 @@ function initWeekDragReorder(){
 }
 
 // Geteilte Logik für Today-Liste UND Weekly Board (beide arbeiten auf S.todos)
-function toggleTodoDone(id){
+async function toggleTodoDone(id){
   const t = S.todos.find(t=>t.id===id); if(!t) return;
-  t.done = !t.done; t.touched = Date.now(); save();
-  if(t.done) addXP(5, "To-Do erledigt");
-  renderTodos(); renderWeek(); renderHero();
+  // Einen Block schließt man nicht versehentlich ab, solange er noch offene
+  // Subtasks hat — sonst ist ein halbfertiges Ergebnis „erledigt".
+  if(!t.parent_id && !t.done && t.is_outcome){
+    const offenKinder = outcomeChildren(id).filter(k=>!k.done);
+    if(offenKinder.length){
+      const ok = await customConfirm(
+        `„${t.text}“ hat noch ${offenKinder.length} offene${offenKinder.length===1?"n Subtask":" Subtasks"}. Trotzdem abschließen?`,
+        { title:"Block abschließen", okLabel:"Abschließen" });
+      if(!ok) return;
+    }
+  }
+  const warOutcome = !!t.is_outcome;
+  t.done = !t.done; t.status = t.done ? "done" : "open"; t.touched = Date.now(); save();
+  if(t.done) addXP(t.parent_id ? 2 : 5, t.parent_id ? "Subtask erledigt" : "To-Do erledigt");
+  renderTodos(); renderWeek(); renderOutcomes(); renderHero();
+  // Parent ist erledigt, wenn alle Kinder erledigt sind — aber nur mit Bestätigung.
+  if(!t.parent_id && t.is_outcome) renderOutcomes();
+  if(t.parent_id && t.done) maybeCompleteParent(t.parent_id);
+  if(warOutcome && t.done) renderOutcomes();
 }
+
+/* Ein Outcome, dessen Subtasks alle erledigt sind, wird nicht automatisch
+   abgeschlossen — der Abschluss ist eine Aussage über das Ergebnis und wird
+   deshalb bestätigt. */
+let parentConfirmLäuft = false;
+async function completeOutcome(parentId, still){
+  const parent = S.todos.find(x=>x.id===parentId);
+  if(!parent || parent.done) return;
+  if(!still){
+    const ok = await customConfirm(
+      "Alle Subtasks von „" + parent.text + "“ sind erledigt. Aufgabe abschließen?",
+      { title:"Aufgabe abschließen", okLabel:"Abschließen" });
+    if(!ok) return;
+  }
+  parent.done = true; parent.status = "done"; parent.touched = Date.now(); save();
+  addXP(15, "Ergebnis erreicht: " + parent.text);
+  toast("🎯 Abgeschlossen: " + parent.text);
+  renderOutcomes(); renderTodos(); renderWeek(); renderHero(); checkBadges();
+}
+async function maybeCompleteParent(parentId){
+  if(parentConfirmLäuft) return;
+  const parent = S.todos.find(x=>x.id===parentId);
+  if(!parent || parent.done) return;
+  const kids = outcomeChildren(parentId);
+  if(!kids.length || kids.some(k=>!k.done)) return;
+  parentConfirmLäuft = true;
+  try { await completeOutcome(parentId, false); }
+  finally { parentConfirmLäuft = false; }
+}
+
 function deleteTodo(id){
   const t = S.todos.find(x=>x.id===id);
-  S.todos = S.todos.filter(x=>x.id!==id); tombstone(id);
-  if(t){
-    // 30 Tage im Papierkorb aufheben, damit ein Fehlgriff nichts kostet
-    if(!Array.isArray(S.trash)) S.trash = [];
-    S.trash.unshift(Object.assign({}, t, { deletedAt: Date.now() }));
-    const grenze = Date.now() - 30*864e5;
-    S.trash = S.trash.filter(x=>(x.deletedAt||0) > grenze).slice(0, 100);
-  }
+  // Ein Outcome nimmt seine Subtasks mit — sonst bleiben Waisen im Backlog stehen.
+  const kinder = t ? outcomeChildren(id) : [];
+  const weg = new Set([id, ...kinder.map(k=>k.id)]);
+  S.todos = S.todos.filter(x=>!weg.has(x.id));
+  weg.forEach(tombstone);
+  if(!Array.isArray(S.trash)) S.trash = [];
+  kinder.concat(t ? [t] : []).forEach(x=>S.trash.unshift(Object.assign({}, x, {deletedAt: Date.now()})));
+  const grenze = Date.now() - 30*864e5;
+  S.trash = S.trash.filter(x=>(x.deletedAt||0) > grenze).slice(0, 100);
   save();
-  renderTodos(); renderWeek(); renderHero();
+  renderTodos(); renderWeek(); renderOutcomes(); renderHero();
   if(t) toast("„"+t.text+"“ gelöscht — im Papierkorb wiederherstellbar.");
 }
 
@@ -229,7 +286,8 @@ function restoreTodo(text, estMinutes){
   if(!text) return null;
   const t = { id: uid(), text, done:false, date:null,
               estMinutes: estMinutes||0, focusedMinutes:0,
-              order: nextTodoOrder(), touched: Date.now() };
+              order: nextTodoOrder(), touched: Date.now(),
+              parent_id:null, is_outcome:false, scheduled_date:null, status:"open" };
   S.todos.push(t);
   const key = String(text).trim().toLowerCase();
   S.trash = (S.trash||[]).filter(x=>String(x.text).trim().toLowerCase() !== key);
@@ -299,10 +357,267 @@ function rolloverTodos(){
   const tk = todayKey();
   let changed = false;
   S.todos.forEach(t=>{
-    if(!t.done && t.date && t.date < tk){ t.date = tk; t.touched = Date.now(); changed = true; }
+    if(!t.done && t.date && t.date < tk){ t.date = tk; t.scheduled_date = tk; t.touched = Date.now(); changed = true; }
   });
-  const before = S.todos.length;
-  S.todos = S.todos.filter(t => !(t.done && t.date && t.date < tk));
-  if(S.todos.length !== before) changed = true;
+  // Erledigte To-Dos vergangener Tage verschwinden — ein abgeschlossenes Outcome
+  // nimmt seine Subtasks mit, sonst blieben sie als Waisen im Backlog stehen.
+  const weg = S.todos.filter(t => t.done && t.date && t.date < tk);
+  if(weg.length){
+    changed = true;
+    const ids = new Set();
+    weg.forEach(t=>{ ids.add(t.id); if(t.is_outcome) outcomeChildren(t.id).forEach(k=>ids.add(k.id)); });
+    S.todos = S.todos.filter(t=>!ids.has(t.id));
+  }
   if(changed) save();
+}
+
+/* ============================================================
+   OUTCOMES & SUBTASKS
+
+   Ein Outcome ist ein Ergebnis mit Definition of Done. Seine Subtasks sind
+   KEINE eigenen Backlog-Punkte — sie hängen am Outcome und erscheinen nur dort.
+   Ein Outcome ohne offenen Subtask ist unklar und kommt nicht auf Heute:
+   dann fehlt der nächste Schritt, nicht die Motivation.
+   ============================================================ */
+const MAX_OUTCOMES = 3;
+const expandedGroups = new Set();   // ids der aufgeklappten Aufgabenblücke (nur Anzeige)
+
+/* Kinder EINES Aufgabenblocks — egal, ob er gerade auf Heute als Outcome steht
+   oder im Backlog liegt. Der Block ist der Ort, an dem sie sichtbar sind. */
+function outcomeChildren(id){ return S.todos.filter(t=>t.parent_id===id).sort((a,b)=>(a.order??0)-(b.order??0)); }
+function hasSubtasks(t){ return !t.parent_id && S.todos.some(x=>x.parent_id===t.id); }
+function outcomeProgress(o){
+  const kids = outcomeChildren(o.id);
+  const done = kids.filter(k=>k.done).length;
+  return { done, total:kids.length, pct: kids.length ? Math.round(done/kids.length*100) : 0 };
+}
+function nextOpenSubtask(o){ return outcomeChildren(o.id).find(k=>!k.done) || null; }
+/* „Klar" = mindestens ein Subtask ist noch offen. Alles andere ist eine Absicht,
+   kein Ergebnis — solche Outcomes gehören in den Backlog, nicht auf Heute. */
+function outcomeIsClear(o){ return !!nextOpenSubtask(o); }
+function outcomeGoal(o){ return S.goals.find(g=>g.id===o.goal_id) || null; }
+
+function todayOutcomes(){ return S.todos.filter(t=>t.is_outcome && t.date===todayKey()); }
+function openOutcomes(){ return todayOutcomes().filter(o=>!o.done); }
+function clearTodayOutcomes(){ return openOutcomes().filter(outcomeIsClear); }
+/* Der Deckel zählt ALLE offenen Outcomes des Tages — auch ein noch unklares
+   besetzt einen Platz, sonst wären vier Outcomes über die Hintertür möglich. */
+function outcomeSlotsLeft(){ return Math.max(0, MAX_OUTCOMES - openOutcomes().length); }
+
+function addSubtask(parentId, text, opts){
+  text = String(text||"").trim();
+  if(!text) return null;
+  const parent = S.todos.find(t=>t.id===parentId);
+  // Jede eigenständige Aufgabe darf Subtasks haben — auch eine im Backlog.
+  // Nur ein Subtask selbst kann keine eigenen Subtasks bekommen (keine zweite Ebene).
+  if(!parent || parent.parent_id) return null;
+  const kind = { id:uid(), text, done:false, date:null, scheduled_date:null,
+    estMinutes:0, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now(),
+    parent_id:parentId, is_outcome:false, status:"open" };
+  if(opts && opts.beforeId){
+    const anker = S.todos.find(t=>t.id===opts.beforeId);
+    if(anker) kind.order = anker.order - 0.5;
+  }
+  if(opts && opts.afterId){
+    const anker = S.todos.find(t=>t.id===opts.afterId);
+    if(anker) kind.order = (anker.order ?? 0) + 0.5;
+  }
+  S.todos.push(kind);
+  parent.touched = Date.now();
+  return kind;
+}
+
+/* ============================================================
+   EIN Renderer für jede Aufgabe mit Subtasks
+
+   Der Block sieht auf Heute und im Backlog identisch aus — nur die Aktionen
+   unterscheiden sich („in den Backlog“ gibt es nur auf Heute, den Zieh-Griff
+   und „🎯 auf Heute“ nur im Backlog). Vorher gab es zwei getrennte Renderer,
+   und genau dadurch wurden Subtasks beim Verschieben unsichtbar: der Backlog
+   blendet alles mit parent_id aus, hatte aber keinen Weg, sie zu zeigen.
+   ============================================================ */
+function groupBlockHTML(t, mode){
+  const imBacklog = mode === "backlog";
+  const p = outcomeProgress(t);
+  const next = nextOpenSubtask(t);
+  const kids = outcomeChildren(t.id);
+  const offen = expandedGroups.has(t.id);
+  const goal = outcomeGoal(t);
+  // Drei verschiedene Zustände, die vorher zwei waren: keine Definition of Done
+  // (gelb), alle Subtasks fertig aber noch nicht abgeschlossen (grün, ein Klick),
+  // oder ein nächster Schritt steht an. Vorher galt „alle fertig" fälschlich als
+  // „Subtask fehlt" und beschuldigte den Nutzer für getane Arbeit.
+  const alleKinderFertig = p.total > 0 && p.done === p.total;
+  const unklar = !t.done && p.total === 0;
+  return `<div class="outcome ${imBacklog?"in-backlog draggable-item":""} ${t.done?"done":""} ${unklar?"unclear":""}" data-id="${t.id}">
+    <div class="outcome-head">
+      ${imBacklog ? `<button class="drag-handle" aria-label="Ziehen zum Umsortieren">${DRAG_ICON}</button>` : ""}
+      <button class="cbx ${t.done?"on":""}" data-act="todo-toggle" data-id="${t.id}" aria-label="Abhaken">${ICON_CHECK}</button>
+      <div class="outcome-main">
+        <div class="outcome-title">${esc(t.text)}</div>
+        <div class="outcome-meta">
+          ${p.total ? `<b>${p.done}/${p.total}</b> Subtasks` : "<b>0 Subtasks</b> — Definition of Done fehlt"}
+          ${imBacklog ? ` · <span class="no-wrap">${todoDayLabel(t)}</span>` : ""}
+          ${t.focusedMinutes ? ` · ⏱ ${t.focusedMinutes} Min.` : ""}
+          ${goal ? `<span class="goal-here">🎯 ${esc(goal.title)}</span>` : ""}
+        </div>
+      </div>
+      <button class="icon-btn outcome-more" data-act="group-expand" data-id="${t.id}" aria-label="Subtasks anzeigen">${offen?"▲":"▼"}</button>
+      ${imBacklog ? `<button class="icon-btn promote-btn" data-act="todo-promote" data-id="${t.id}" title="Auf Heute als Outcome" aria-label="Auf Heute setzen">🎯</button>` : ""}
+      <button class="icon-btn del" data-act="todo-del" data-id="${t.id}" aria-label="Löschen">${ICON_X}</button>
+    </div>
+    ${p.total ? `<div class="outcome-bar"><div class="bar"><i style="width:${p.pct}%"></i></div><span class="outcome-pct">${p.pct}%</span></div>` : ""}
+    ${t.done ? `<div class="outcome-next done">✓ ${imBacklog ? "Abgeschlossen" : "Outcome abgeschlossen"}</div>`
+      : next ? `<div class="outcome-next">
+          <button class="cbx" data-act="todo-toggle" data-id="${next.id}" aria-label="Subtask abhaken">${ICON_CHECK}</button>
+          <div class="outcome-next-text"><small>Nächster offener Subtask</small><span>${esc(next.text)}</span></div>
+        </div>`
+      : alleKinderFertig ? `<div class="outcome-next ready">
+          <span class="ready-text">✓ <b>Alle ${p.total} Subtasks erledigt.</b> Ergebnis abschließen?</span>
+          <button class="btn agree sm" data-act="outcome-complete" data-id="${t.id}">Abschließen</button>
+        </div>`
+      : `<div class="outcome-next unclear">⚠️ <b>Subtask fehlt.</b> Ohne nächsten Schritt ist das eine Absicht — benenne ihn unten.</div>`}
+    ${offen ? `<div class="outcome-subtasks">${kids.map(k=>`
+        <div class="check-item subtask ${k.done?"done":""}" data-id="${k.id}">
+          <span class="sub-dot"></span>
+          <button class="cbx ${k.done?"on":""}" data-act="todo-toggle" data-id="${k.id}" aria-label="Abhaken">${ICON_CHECK}</button>
+          <span class="txt">${esc(k.text)}</span>
+          <button class="icon-btn del" data-act="todo-del" data-id="${k.id}" aria-label="Löschen">${ICON_X}</button>
+        </div>`).join("")}</div>` : ""}
+    <div class="row-add outcome-add ${offen?"":"collapsed"}">
+      <input data-act="subtask-input" data-id="${t.id}" placeholder="Nächster Subtask — klein genug für 25 Min." maxlength="120">
+      <button class="btn sm" data-act="subtask-add" data-id="${t.id}">+</button>
+    </div>
+    ${!t.done ? `<div class="outcome-actions">
+      ${next ? `<button class="btn violet sm" data-act="session-preflight" data-id="${t.id}">▶ Session zu diesem ${imBacklog?"Ergebnis":"Outcome"}</button>` : ""}
+      ${imBacklog ? "" : `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>`}
+    </div>` : ""}
+  </div>`;
+}
+
+function renderOutcomes(){
+  const box = $("outcomeList");
+  if(!box) return;
+  const alle = todayOutcomes();
+  const offen = alle.filter(o=>!o.done);
+  // Über dem Deckel (kommt nur nach Cloud-Merge oder Import vor) wäre „5 / 3"
+  // schlicht falsch zu lesen — dort nennt das Label die Zahl und die Grenze.
+  $("outcomeCount").textContent = offen.length > MAX_OUTCOMES
+    ? offen.length + " offen · max. " + MAX_OUTCOMES
+    : offen.length + " / " + MAX_OUTCOMES + " Outcomes";
+
+  if(!alle.length){
+    box.innerHTML = `<div class="empty outcome-empty">🎯 <b>Noch kein Outcome für heute.</b><br>
+      Wähle das eine Ergebnis, das den Tag gewonnen macht — nicht zehn Aufgaben.<br>
+      <span class="hint-next">Nächster Schritt: „Outcome für heute“ antippen.</span></div>`;
+    return;
+  }
+
+  box.innerHTML = alle.map(o=>groupBlockHTML(o, "today")).join("") + renderOutcomeOverflow(alle);
+}
+
+/* Der Deckel ist hart: mehr als 3 offene Outcomes sind keine Priorisierung mehr,
+   sondern eine Liste. Der Rest bleibt sichtbar, damit nichts verloren geht. */
+function renderOutcomeOverflow(alle){
+  const zuviel = alle.filter(o=>!o.done).slice(MAX_OUTCOMES);
+  if(!zuviel.length) return "";
+  return `<div class="outcome-overflow">
+    <div class="pf-lab">Über dem Deckel — erst wenn oben eines abgeschlossen ist (max. ${MAX_OUTCOMES})</div>
+    ${zuviel.map(o=>`<div class="outcome-waiting">
+      <span>${esc(o.text)}</span>
+      <button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${o.id}">→ Backlog</button>
+    </div>`).join("")}
+  </div>`;
+}
+
+function goalOptionsHTML(selected){
+  return ['<option value="">Kein Ziel</option>'].concat(
+    S.goals.map(g=>`<option value="${g.id}" ${g.id===selected?"selected":""}>${esc(g.title)}</option>`)
+  ).join("");
+}
+
+function addOutcome(title, subtaskTexts, goalId){
+  title = String(title||"").trim();
+  if(!title){ toast("Ein Outcome braucht einen Namen."); return null; }
+  if(!outcomeSlotsLeft()){
+    toast("Es sind schon " + MAX_OUTCOMES + " offene Outcomes auf Heute — schließe erst eines ab, oder nutze den Backlog.");
+    return null;
+  }
+  const o = { id:uid(), text:title, done:false, date:todayKey(), scheduled_date:todayKey(),
+    estMinutes:0, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now(),
+    parent_id:null, is_outcome:true, status:"open", goal_id: goalId || null };
+  S.todos.push(o);
+  String(subtaskTexts||"").split(",").map(s=>s.trim()).filter(Boolean)
+    .forEach(s=>addSubtask(o.id, s));
+  save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
+  toast("🎯 Outcome für heute: " + title);
+  return o;
+}
+
+function openOutcomeModal(){
+  $("outcomeTitleInput").value = "";
+  $("outcomeSubtasks").value = "";
+  $("outcomeGoal").innerHTML = goalOptionsHTML(null);
+  $("outcomeModal").classList.add("open");
+  $("outcomeTitleInput").focus();
+}
+function closeOutcomeModal(){ $("outcomeModal").classList.remove("open"); }
+
+/* Einen bestehenden Backlog-Punkt zum Outcome machen (statt doppelt zu tippen) */
+function promoteTodoToOutcome(id){
+  const t = S.todos.find(x=>x.id===id);
+  if(!t) return;
+  if(!outcomeSlotsLeft()){
+    toast("Es sind schon " + MAX_OUTCOMES + " offene Outcomes auf Heute — schließe erst eines ab.");
+    return;
+  }
+  const kinder = outcomeChildren(id);
+  t.is_outcome = true; t.parent_id = null;
+  t.date = todayKey(); t.scheduled_date = todayKey();
+  t.done = false; t.status = "open"; t.touched = Date.now();
+  save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
+  toast(kinder.length
+    ? "🎯 „" + t.text + "“ steht heute — die " + kinder.length + " Subtasks sind wieder sichtbar."
+    : "🎯 „" + t.text + "“ ist jetzt ein Outcome für heute — ergänze die Definition of Done.");
+}
+
+/* Outcome zurück in den Backlog: Datum löschen, is_outcome aufheben.
+   Die Subtasks bleiben als eigenständige Punkte erhalten — nichts geht verloren. */
+function demoteOutcome(id){
+  const t = S.todos.find(x=>x.id===id);
+  if(!t || !t.is_outcome) return;
+  const kinder = outcomeChildren(id);
+  // NUR den Bezug zu Heute lösen. Die Subtasks bleiben dran — sie SIND die
+  // Definition of Done. Sie einzeln in den Backlog zu streuen würde genau das
+  // zerstören, was am Outcome den Wert ausmacht.
+  t.is_outcome = false; t.date = null; t.scheduled_date = null; t.touched = Date.now();
+  if(kinder.length) expandedGroups.add(id);   // gleich sichtbar, dass nichts verloren ging
+  save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
+  toast("„" + t.text + "“ liegt jetzt im Backlog" + (kinder.length ? " — die " + kinder.length + " Subtasks bleiben dran." : "."));
+}
+
+/* „Fertig für heute": offene Outcomes wandern auf morgen. Danach steht hier nichts
+   mehr offen — bewusst ohne Schuld-Badge und ohne Reste. */
+function finishDay(){
+  const offen = openOutcomes();
+  if(!offen.length){ toast("Für heute ist nichts mehr offen."); return; }
+  const morgen = todayKey(addDays(new Date(),1));
+  offen.forEach(o=>{ o.date = morgen; o.scheduled_date = morgen; o.touched = Date.now(); });
+  save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
+  toast("🌙 " + offen.length + (offen.length===1 ? " Outcome" : " Outcomes") + " auf morgen verschoben. Feierabend.");
+}
+
+/* To-Do aus dem Backlog einem Tag zuweisen — auch als Outcome (max. 3 offen) */
+function openOutcomePicker(){
+  const frei = S.todos.filter(t=>!t.is_outcome && !t.parent_id && !t.done);
+  $("outcomePickList").innerHTML = frei.length
+    ? frei.slice(0,30).map(t=>`<button class="pf-chip" data-pick="${t.id}">${esc(t.text)}</button>`).join("")
+    : '<div class="empty">Der Backlog ist leer — lege oben einen Punkt an.</div>';
+  $("outcomePickModal").classList.add("open");
+  $("outcomePickList").querySelectorAll("[data-pick]").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      promoteTodoToOutcome(b.dataset.pick);
+      $("outcomePickModal").classList.remove("open");
+    });
+  });
 }

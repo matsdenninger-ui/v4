@@ -120,7 +120,6 @@ textarea{resize:vertical;min-height:90px;width:100%}
 
 
 /* ---------- Buttons ---------- */
-/* ---------- Buttons ---------- */
 .btn{
   display:inline-flex;align-items:center;gap:7px;
   background:linear-gradient(135deg,var(--ac),var(--ac-2));color:#fff;font-weight:600;font-size:13.5px;
@@ -142,4 +141,3 @@ textarea{resize:vertical;min-height:90px;width:100%}
 .icon-btn:hover{background:var(--elev);color:var(--text)}
 .icon-btn.del:hover{color:var(--rose)}
 .icon-btn svg{width:15px;height:15px;stroke:currentColor}
-

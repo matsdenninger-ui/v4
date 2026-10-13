@@ -1,4 +1,4 @@
-<!-- ASCEND DASHBOARD — v29 · 2026-10-06 · Deep Work Timer zählt keine Zeit mehr, in der die App geschlossen war; auf einem Gerät beendete Session verschwindet jetzt auch auf dem anderen -->
+<!-- ASCEND DASHBOARD — v30 · 2026-10-06 · UI-Relaunch: Today-Seite in klare Tabs (Heute · Gewohnheiten · Wochenplan) gegliedert, Sidebar gruppiert, Design-System vereinheitlicht — keine Funktion entfernt -->
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -9,19 +9,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/layout.css">
-<link rel="stylesheet" href="css/cards.css">
-<link rel="stylesheet" href="css/today.css">
-<link rel="stylesheet" href="css/nutrition.css">
-<link rel="stylesheet" href="css/body.css">
-<link rel="stylesheet" href="css/training.css">
-<link rel="stylesheet" href="css/mind.css">
-<link rel="stylesheet" href="css/progress.css">
-<link rel="stylesheet" href="css/goals.css">
-<link rel="stylesheet" href="css/components.css">
-<link rel="stylesheet" href="css/responsive.css">
-<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/base.css?v=36">
+<link rel="stylesheet" href="css/layout.css?v=36">
+<link rel="stylesheet" href="css/cards.css?v=36">
+<link rel="stylesheet" href="css/today.css?v=36">
+<link rel="stylesheet" href="css/nutrition.css?v=36">
+<link rel="stylesheet" href="css/body.css?v=36">
+<link rel="stylesheet" href="css/training.css?v=36">
+<link rel="stylesheet" href="css/mind.css?v=36">
+<link rel="stylesheet" href="css/progress.css?v=36">
+<link rel="stylesheet" href="css/goals.css?v=36">
+<link rel="stylesheet" href="css/components.css?v=36">
+<link rel="stylesheet" href="css/responsive.css?v=36">
+<link rel="stylesheet" href="css/animations.css?v=36">
 </head>
 <body>
 
@@ -44,30 +44,34 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v29 · 06.10.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v30 · 06.10.2026</span></div>
   </div>
   <nav class="nav" id="nav">
+    <span class="nav-label">Übersicht</span>
     <button data-page="today" class="active">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2m6.4.6-1.4 1.4M21 12h-2M5 12H3m3-5-1.4-1.4M12 21a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z"/></svg>
       Today</button>
+    <span class="nav-label">Körper</span>
     <button data-page="nutrition">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c0-3 2-5 5-5 0 3-2 5-5 5Zm0 0C12 5 10 3 7 3c0 3 2 5 5 5Zm0 0v2m-5.5 1C4 11 3 13 3 15c0 3.5 2.5 6 5.5 6 1.2 0 2.4-.4 3.5-1.2 1.1.8 2.3 1.2 3.5 1.2 3 0 5.5-2.5 5.5-6 0-2-1-4-3.5-4-1.9 0-3.5.8-5.5.8S8.4 11 6.5 11Z"/></svg>
       Nutrition</button>
     <button data-page="body">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.5 6.5v11m11-11v11M4 9v6m16-6v6M6.5 12h11"/></svg>
-      Body</button>
+      Body &amp; Training</button>
+    <span class="nav-label">Kopf</span>
     <button data-page="mind">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.5 3A6.5 6.5 0 0 0 5 14.2V17a2 2 0 0 0 2 2h1v2h6v-3.5a6.5 6.5 0 0 0 4-6A6.5 6.5 0 0 0 11.5 5 6.5 6.5 0 0 0 9.5 3Z"/></svg>
       Mind</button>
+    <button data-page="knowledge">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5C4 4.7 4.7 4 5.5 4H11a1 1 0 0 1 1 1v15a1 1 0 0 0-1-1H5.5A1.5 1.5 0 0 1 4 17.5V5.5ZM20 5.5c0-.8-.7-1.5-1.5-1.5H13a1 1 0 0 0-1 1v15a1 1 0 0 1 1-1h5.5a1.5 1.5 0 0 0 1.5-1.5V5.5Z"/></svg>
+      Knowledge</button>
+    <span class="nav-label">Fortschritt</span>
     <button data-page="progress">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 20V10m6 10V4m6 16v-7m4 7H2"/></svg>
       Progress</button>
     <button data-page="goals">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
       Goals</button>
-    <button data-page="knowledge">
-      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5.5C4 4.7 4.7 4 5.5 4H11a1 1 0 0 1 1 1v15a1 1 0 0 0-1-1H5.5A1.5 1.5 0 0 1 4 17.5V5.5ZM20 5.5c0-.8-.7-1.5-1.5-1.5H13a1 1 0 0 0-1 1v15a1 1 0 0 1 1-1h5.5a1.5 1.5 0 0 0 1.5-1.5V5.5Z"/></svg>
-      Knowledge</button>
   </nav>
   <div class="side-foot">
     <div class="level-card">
@@ -85,13 +89,15 @@
       <input id="levelSetInput" type="number" min="1" max="999" placeholder="Level setzen" style="font-size:12px;padding:7px 9px">
       <button class="btn sm" id="levelSetBtn">Setzen</button>
     </div>
-    <button class="demo-btn" id="themeToggleBtn">🌙 Dunkles Theme</button>
-    <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>
-    <button class="demo-btn" id="resetBtn" style="border-color:rgba(248,113,113,.35);color:var(--rose)">🗑 Alles zurücksetzen</button>
-    <div class="export-import-box">
-      <button class="demo-btn" id="exportBtn">⬇️ Exportieren (JSON)</button>
-      <input type="file" id="importFile" accept=".json" style="display:none">
-      <button class="demo-btn" id="importBtn">⬆️ Importieren (JSON)</button>
+    <div class="side-actions">
+      <button class="demo-btn" id="themeToggleBtn">🌙 Dunkles Theme</button>
+      <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>
+      <div class="export-import-box">
+        <button class="demo-btn" id="exportBtn">⬇️ Exportieren (JSON)</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+        <button class="demo-btn" id="importBtn">⬆️ Importieren (JSON)</button>
+      </div>
+      <button class="demo-btn" id="resetBtn" style="border-color:rgba(248,113,113,.35);color:var(--rose)">🗑 Alles zurücksetzen</button>
     </div>
     <div class="sync-box" id="syncBox">
       <div class="sync-status" id="syncStatus">☁️ Nicht verbunden</div>
@@ -114,7 +120,9 @@
 
   <!-- ================= TODAY ================= -->
   <section class="page active" id="page-today">
-    <div class="page-greet" id="pageGreet">
+
+    <!-- Tages-Header -->
+    <div class="day-header" id="pageGreet">
       <div class="page-greet-row">
         <button class="greet-avatar" id="heroAvatarBtn" data-act="hero-avatar" title="Avatar wechseln">🔥</button>
         <div class="greet-text">
@@ -137,6 +145,7 @@
       </div>
     </div>
 
+    <!-- Mission -->
     <div class="mission-card" id="missionCard">
       <div class="mission-icon" id="missionIcon">🎯</div>
       <div>
@@ -145,8 +154,10 @@
       </div>
     </div>
 
+    <!-- Glance-Chips -->
     <div class="hero-chips" id="heroChips"></div>
 
+    <!-- Kennzahlen -->
     <div class="stat-strip">
       <div class="stat"><b id="stTodos">0/0</b><small>To-Dos erledigt</small></div>
       <div class="stat"><b id="stHabits">0/0</b><small>Habits heute</small></div>
@@ -154,89 +165,129 @@
       <div class="stat"><b id="stStreak">0</b><small>Längste Streak</small></div>
     </div>
 
-    <div class="stack">
-      <div class="card">
-        <h3>🎯 Aktuelle Fokus-Ziele</h3>
-        <p class="sub">Woran du gerade arbeitest — direkt aus den Goals gespiegelt.</p>
-        <div id="todayFocusGoals"></div>
-      </div>
+    <!-- Tabs: klare Gliederung statt endloser Scroll-Strecke -->
+    <div class="seg-tabs" id="todayTabs">
+      <button data-ttab="day" class="on">
+        <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 11l3 3 6-6M4 7h16M4 12h4M4 17h10"/></svg>
+        Heute</button>
+      <button data-ttab="habits">
+        <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 12a8 8 0 1 0 8-8M12 7v5l3 2"/></svg>
+        Gewohnheiten</button>
+      <button data-ttab="week">
+        <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path stroke-linecap="round" d="M3 10h18M8 3v4m8-4v4"/></svg>
+        Wochenplan</button>
+    </div>
 
-      <div class="card">
-        <h3>Deep Work Timer <span class="tag">+1 XP / min</span></h3>
-        <p class="sub">Eine Aufgabe. Kein Handy. Volle Konzentration.</p>
-        <div class="timer">
-          <div class="clock" id="clock">00:00:00</div>
-          <div class="state" id="timerState">Bereit</div>
-          <button class="btn violet" id="timerBtn">▶ Session starten</button>
-          <div class="focus-stat">
-            <div><b id="focusToday">0,0 h</b><small>Heute</small></div>
-            <div><b id="focusWeek">0,0 h</b><small>Diese Woche</small></div>
-            <div><b id="focusSessions">0</b><small>Sessions heute</small></div>
-          </div>
+    <!-- ---------- TAB: HEUTE ---------- -->
+    <div class="tab-pane active" id="ttab-day">
+
+      <!-- Drei Outcomes — mehr passt nicht in einen Tag. Alles andere liegt im Backlog. -->
+      <div class="card outcome-card">
+        <h3>🎯 Heute <span class="tag" id="outcomeCount">0 / 3 Outcomes</span></h3>
+        <p class="sub">Ein Outcome ist ein <b>Ergebnis</b>, seine Subtasks sind die Definition of Done. Ein Outcome ohne offenen Subtask ist unklar — dann benenne den nächsten Schritt, oder es wandert in den Backlog.</p>
+        <div id="outcomeList" class="outcome-list"></div>
+        <div class="outcome-foot">
+          <button class="btn" id="outcomeAddBtn">+ Outcome für heute</button>
+          <button class="btn ghost" id="outcomePickBtn">Aus Backlog</button>
+          <button class="btn ghost" id="finishDayBtn" title="Offene Outcomes wandern auf morgen — ohne Rest und ohne Schuld-Badge.">🌙 Fertig für heute</button>
         </div>
       </div>
 
-      <div class="card">
-        <h3>To-Do Liste <span class="tag">+5 XP</span></h3>
-        <p class="sub">Alle deine Aufgaben — nicht nur heutige. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
-        <div class="row-add">
-          <input id="todoInput" placeholder="Neue Aufgabe eintragen …" maxlength="120">
-          <input id="todoMinutes" type="number" min="0" step="5" placeholder="Min." style="width:64px;flex:none">
-          <button class="btn" id="todoAdd">+</button>
+      <div class="grid g2">
+        <div class="card">
+          <h3>📥 Backlog &amp; diese Woche <span class="tag">+5 XP</span></h3>
+          <p class="sub">Alles, was noch kein Outcome ist. Ziehe Punkte ins Wochenboard, um sie einem Tag zuzuweisen — am Griff ⠿ ändern.</p>
+          <div class="row-add">
+            <input id="todoInput" placeholder="Neue Aufgabe in den Backlog …" maxlength="120">
+            <input id="todoMinutes" type="number" min="0" step="5" placeholder="Min." style="width:64px;flex:none">
+            <button class="btn" id="todoAdd">+</button>
+          </div>
+          <div class="check-list" id="todoList"></div>
+          <button class="btn ghost sm" id="trashBtn" style="margin-top:12px">🗑 Gelöschte To-Dos wiederherstellen</button>
         </div>
-        <div class="check-list" id="todoList"></div>
-        <button class="btn ghost sm" id="trashBtn" style="margin-top:12px">🗑 Gelöschte To-Dos wiederherstellen</button>
+
+        <div class="stack">
+          <div class="card">
+            <h3>⏱ Deep Work Session <span class="tag">+1 XP / min</span></h3>
+            <p class="sub">Startet nur über das Pre-Flight: Outcome, Umgebung, Wenn-dann, Zeitbox. Danach blendet sich der Rest des Dashboards aus.</p>
+            <div class="timer">
+              <div class="clock" id="clock">00:00:00</div>
+              <div class="state" id="timerState">Bereit</div>
+              <button class="btn violet" id="timerBtn">▶ Session starten</button>
+              <div id="lastIfThen" class="if-then-note"></div>
+              <div class="focus-stat">
+                <div><b id="focusToday">0,0 h</b><small>Heute</small></div>
+                <div><b id="focusWeek">0,0 h</b><small>Diese Woche</small></div>
+                <div><b id="focusSessions">0</b><small>Sessions heute</small></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>🎯 Aktuelle Fokus-Ziele</h3>
+            <p class="sub">Woran du gerade arbeitest — direkt aus den Goals gespiegelt.</p>
+            <div id="todayFocusGoals"></div>
+          </div>
+        </div>
       </div>
+    </div>
 
-      <div class="collapsible" id="moreCollapsible">
-        <button class="collapsible-toggle" id="moreToggle">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
-          <span id="moreToggleLabel">Mehr anzeigen</span>
-        </button>
-        <div class="collapsible-body">
-          <div class="card">
-            <h3>Morgenroutine <span class="tag">+2 XP</span></h3>
-            <p class="sub">Gewinne den Morgen, gewinne den Tag. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
-            <div class="row-add">
-              <input id="routineAMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
-              <button class="btn sm" data-act="routine-add" data-list="am">+</button>
-            </div>
-            <div class="check-list" id="routineAM"></div>
+    <!-- ---------- TAB: GEWOHNHEITEN ---------- -->
+    <div class="tab-pane" id="ttab-habits">
+      <div class="grid g2">
+        <div class="card">
+          <h3>🔁 Habit Tracker <span class="tag">+10 XP</span></h3>
+          <p class="sub">Kleine Handlungen, täglich wiederholt, verändern alles.</p>
+          <div class="row-add">
+            <input id="habitInput" placeholder="Neuen Habit anlegen, z. B. „10 Min. Lesen“ …" maxlength="60">
+            <button class="btn" id="habitAdd">Anlegen</button>
           </div>
+          <div class="check-list" id="habitList"></div>
 
-          <div class="card">
-            <h3>Weekly Planning Board</h3>
-            <p class="sub">Ziehe To-Dos zwischen den Tagen, tippe „+“ um bestehende zuzuweisen. Nicht erledigte Punkte rutschen automatisch auf heute nach.</p>
-            <div class="week-board" id="weekBoard"></div>
-          </div>
-
-          <div class="card">
-            <h3>Habit Tracker <span class="tag">+10 XP</span></h3>
-            <p class="sub">Kleine Handlungen, täglich wiederholt, verändern alles.</p>
-            <div class="row-add">
-              <input id="habitInput" placeholder="Neuen Habit anlegen, z. B. „10 Min. Lesen“ …" maxlength="60">
-              <button class="btn" id="habitAdd">Anlegen</button>
+          <div class="collapsible" id="moreCollapsible">
+            <button class="collapsible-toggle" id="moreToggle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+              <span id="moreToggleLabel">Mehr anzeigen</span>
+            </button>
+            <div class="collapsible-body">
+              <h3 style="font-size:13.5px">Konsistenz der letzten 26 Wochen</h3>
+              <p class="sub">Jede Zelle ist ein Tag — je heller, desto mehr Habits erledigt.</p>
+              <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
+              <div class="hm-legend">Weniger
+                <span class="hm-cell"></span><span class="hm-cell hm-1"></span><span class="hm-cell hm-2"></span><span class="hm-cell hm-3"></span><span class="hm-cell hm-4"></span>
+              Mehr</div>
             </div>
-            <div class="check-list" id="habitList"></div>
-            <div class="divider"></div>
-            <h3 style="font-size:13.5px">Konsistenz der letzten 26 Wochen</h3>
-            <p class="sub">Jede Zelle ist ein Tag — je dunkler zu hell, desto mehr Habits erledigt.</p>
-            <div class="heatmap-wrap"><div class="heatmap" id="heatmap"></div></div>
-            <div class="hm-legend">Weniger
-              <span class="hm-cell"></span><span class="hm-cell hm-1"></span><span class="hm-cell hm-2"></span><span class="hm-cell hm-3"></span><span class="hm-cell hm-4"></span>
-            Mehr</div>
-          </div>
-
-          <div class="card">
-            <h3>Abendroutine <span class="tag">+2 XP</span></h3>
-            <p class="sub">Runterfahren, reflektieren, regenerieren. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
-            <div class="row-add">
-              <input id="routinePMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
-              <button class="btn sm" data-act="routine-add" data-list="pm">+</button>
-            </div>
-            <div class="check-list" id="routinePM"></div>
           </div>
         </div>
+
+        <div class="card">
+          <h3>☀️ Morgenroutine <span class="tag">+2 XP</span></h3>
+          <p class="sub">Gewinne den Morgen, gewinne den Tag. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
+          <div class="row-add">
+            <input id="routineAMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
+            <button class="btn sm" data-act="routine-add" data-list="am">+</button>
+          </div>
+          <div class="check-list" id="routineAM"></div>
+
+          <div class="divider"></div>
+
+          <h3>🌙 Abendroutine <span class="tag">+2 XP</span></h3>
+          <p class="sub">Runterfahren, reflektieren, regenerieren. Am Griff ⠿ ziehen, um die Reihenfolge zu ändern.</p>
+          <div class="row-add">
+            <input id="routinePMInput" placeholder="Eigenen Punkt hinzufügen …" maxlength="80">
+            <button class="btn sm" data-act="routine-add" data-list="pm">+</button>
+          </div>
+          <div class="check-list" id="routinePM"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---------- TAB: WOCHENPLAN ---------- -->
+    <div class="tab-pane" id="ttab-week">
+      <div class="card">
+        <h3>📅 Weekly Planning Board</h3>
+        <p class="sub">Ziehe To-Dos zwischen den Tagen, tippe „+“ um bestehende zuzuweisen. Nicht erledigte Punkte rutschen automatisch auf heute nach.</p>
+        <div class="week-board" id="weekBoard"></div>
       </div>
     </div>
   </section>
@@ -245,7 +296,7 @@
   <section class="page" id="page-nutrition">
     <div class="grid g2">
       <div class="card span2">
-        <h3>Makro-Übersicht <span class="tag">automatisch aus Plan</span></h3>
+        <h3>🥗 Makro-Übersicht <span class="tag">automatisch aus Plan</span></h3>
         <p class="sub" id="macroSub">Berechnet aus den heute abgehakten Mahlzeiten, plus optionalen Extras.</p>
         <div id="macroBars"></div>
         <div class="macro-inputs">
@@ -261,27 +312,27 @@
       </div>
 
       <div class="card span2">
-        <h3>Mahlzeitenplan <span class="tag">6 Slots · 60 Varianten</span></h3>
+        <h3>🍽 Mahlzeitenplan <span class="tag">6 Slots · 60 Varianten</span></h3>
         <p class="sub">Antippen zum Aufklappen, mit „🔀 Andere Option“ durch Alternativen wechseln, Uhrzeit anpassen und als gegessen abhaken — fließt automatisch in die Makros oben ein.</p>
         <div id="mealPlanList"></div>
       </div>
 
       <div>
         <div class="card" style="margin-bottom:20px">
-          <h3>Hydration <span class="tag">+2 XP</span></h3>
+          <h3>💧 Hydration <span class="tag">+2 XP</span></h3>
           <p class="sub" id="hydroSub">0 von 8 Gläsern</p>
           <div class="glasses" id="glasses"></div>
           <button class="btn ghost sm" id="hydroReset">Zurücksetzen</button>
         </div>
         <div class="card">
-          <h3>Notizen</h3>
+          <h3>📝 Notizen</h3>
           <p class="sub">Freier Platz für Ausnahmen, Restaurantbesuche oder Anpassungen.</p>
           <textarea id="mealPlan" rows="5" placeholder="z. B. Samstag: auswärts essen, Makros grob schätzen …"></textarea>
         </div>
       </div>
 
       <div class="card">
-        <h3>Supplement-Stack <span class="tag">+2 XP</span></h3>
+        <h3>💊 Supplement-Stack <span class="tag">+2 XP</span></h3>
         <p class="sub">Evidenzbasiert, mit fester Uhrzeit — tippe zum Abhaken. Reset um Mitternacht.</p>
         <div class="disclaimer-note">⚠️ Ersetzt keine ärztliche Beratung. Vorher Blutwerte checken lassen: Vitamin D, Zink, Ferritin, Testosteron, TSH.</div>
         <div class="row-add">
@@ -306,6 +357,11 @@
 
     <!-- ---------- TAB: TRAINING ---------- -->
     <div class="body-tab active" id="btab-train">
+      <div class="card workout-gate">
+        <h3>⚡ Workout-Session</h3>
+        <p class="sub">Derselbe Rahmen wie beim Deep Work — nur andere Pflicht-Toggles: Schuhe an, Fläche frei, Timer sichtbar.</p>
+        <button class="btn violet" data-act="workout-preflight">▶ Pre-Flight öffnen</button>
+      </div>
       <div class="tr-strip">
         <div class="stat"><b id="trWeek">0 / 0</b><small id="trWeekSub">Einheiten diese Woche</small></div>
         <div class="stat"><b id="trVolume">0 kg</b><small>Volumen (7 Tage)</small></div>
@@ -391,7 +447,7 @@
         </div>
 
         <div class="card span2">
-          <h3>Schnell-Log <span class="tag">+20 XP</span></h3>
+          <h3>⚡ Schnell-Log <span class="tag">+20 XP</span></h3>
           <p class="sub">Für Einheiten, die du nicht live mitgeloggt hast — Übung, Sätze × Wiederholungen, Gewicht.</p>
           <div class="quick-log">
             <input id="exName" placeholder="Übung" style="flex:2;min-width:130px">
@@ -421,7 +477,7 @@
         </div>
 
         <div class="card">
-          <h3>Schlaf-Tracker <span class="tag">+5 XP</span></h3>
+          <h3>😴 Schlaf-Tracker <span class="tag">+5 XP</span></h3>
           <p class="sub">Dauer &amp; Qualität der letzten Nacht.</p>
           <div class="row-add">
             <input id="sleepH" type="number" step="0.25" min="0" max="16" placeholder="Stunden" style="width:110px">
@@ -463,7 +519,7 @@
   <section class="page" id="page-mind">
     <div class="grid g2">
       <div class="card">
-        <h3>Journal <span class="tag">+10 XP</span></h3>
+        <h3>📓 Journal <span class="tag">+10 XP</span></h3>
         <p class="sub" id="journalDate"></p>
         <div id="journalFields"></div>
         <button class="btn" id="jSave" style="margin-top:12px">Eintrag speichern</button>
@@ -472,7 +528,7 @@
 
       <div>
         <div class="card" style="margin-bottom:20px">
-          <h3>Mood Log <span class="tag">+5 XP</span></h3>
+          <h3>🙂 Mood Log <span class="tag">+5 XP</span></h3>
           <p class="sub">Wie fühlst du dich gerade?</p>
           <div class="mood-row" id="moodRow">
             <button class="mood-btn" data-m="1">😞</button>
@@ -489,7 +545,7 @@
         </div>
 
         <div class="card">
-          <h3>Social Check-ins</h3>
+          <h3>💬 Social Check-ins</h3>
           <p class="sub">Beziehungen brauchen Pflege. Wann hast du dich zuletzt gemeldet?</p>
           <div class="row-add">
             <input id="personInput" placeholder="Name, z. B. Mama" maxlength="40">
@@ -500,7 +556,7 @@
       </div>
 
       <div class="card">
-        <h3>Learning Tracker <span class="tag">+5 XP</span></h3>
+        <h3>📚 Learning Tracker <span class="tag">+5 XP</span></h3>
         <p class="sub">Bücher &amp; Kurse — Fortschritt per Regler aktualisieren.</p>
         <div class="row-add">
           <input id="learnInput" placeholder="Titel, z. B. „Atomic Habits“" style="flex:2">
@@ -511,7 +567,7 @@
       </div>
 
       <div class="card">
-        <h3>Skill Tree <span class="tag">Level-Up durch Ziele</span></h3>
+        <h3>🌳 Skill Tree <span class="tag">Level-Up durch Ziele</span></h3>
         <p class="sub">Deine Kompetenz-Landkarte. Level steigen automatisch, wenn ein verknüpftes Goal zu 100% erreicht ist.</p>
         <div class="skill-cols" id="skillTree"></div>
       </div>
@@ -540,23 +596,31 @@
       </div>
 
       <div class="card span2">
-        <h3>Badges &amp; Achievements</h3>
+        <h3>🏅 Badges &amp; Achievements</h3>
         <p class="sub">Schwer zu bekommen — und genau deshalb wertvoll.</p>
         <div class="badges" id="badgeGrid"></div>
       </div>
 
       <div class="card">
-        <h3>Korrelations-Analyse</h3>
+        <h3>🔗 Korrelations-Analyse</h3>
         <p class="sub">Zusammenhänge in deinen eigenen Daten (Pearson r, ab 5 Datenpaaren).</p>
         <div id="corrBox"></div>
         <div class="chart-box" style="margin-top:14px"><canvas id="chCorr"></canvas></div>
       </div>
 
       <div class="card">
-        <h3>Weekly Report</h3>
+        <h3>📋 Weekly Report</h3>
         <p class="sub">Eine ehrliche Zusammenfassung deiner Woche — auf Knopfdruck.</p>
         <div class="empty" style="margin-bottom:14px">📋 Der Report fasst To-Dos, Habits, Fokuszeit,<br>Workouts, Schlaf und Stimmung der letzten 7 Tage zusammen.</div>
         <button class="btn violet" id="reportBtn">Weekly Report erzeugen</button>
+      </div>
+
+      <div class="card span2">
+        <h3>🧭 Wochen-Review</h3>
+        <p class="sub">Eine Karte statt Tagebuch: welche Glaubenssätze diese Woche Beweise bekommen haben, und welche Wenn-dann-Experimente bleiben oder fallen.</p>
+        <div id="reviewEvidence"></div>
+        <div class="divider"></div>
+        <div id="reviewExperiments"></div>
       </div>
     </div>
   </section>
@@ -565,7 +629,7 @@
   <section class="page" id="page-goals">
     <div class="grid g2">
       <div class="card span2">
-        <h3>Neues Ziel</h3>
+        <h3> Neues Ziel</h3>
         <p class="sub">Fokus-Ziele: 4–12 Wochen. Langfristig: 1 Jahr und mehr. Meilensteine machen Fortschritt messbar.</p>
         <div class="row-add" style="flex-wrap:wrap">
           <input id="goalTitle" placeholder="Ziel, z. B. „100 kg Bankdrücken“" style="flex:2;min-width:180px">
@@ -594,7 +658,7 @@
   <section class="page" id="page-knowledge">
     <div class="grid g2">
       <div class="card span2">
-        <h3>Neues Thema</h3>
+        <h3> Neues Thema</h3>
         <p class="sub">Lege ein Thema an und sammle Wissen, Taktiken und offene Aufgaben dazu.</p>
         <div class="row-add">
           <input id="knowTopicTitle" placeholder="Thema, z. B. „Verhandlungstechnik“" maxlength="60">
@@ -722,6 +786,147 @@
   <button class="btn sm" id="restSkip">Weiter</button>
 </div>
 
+<!-- ================= SESSION-RAHMEN (Deep Work & Workout) =================
+     Ein Rahmen, zwei Kontexte. Der Start ist eine Sperre: erst wenn Outcome
+     benannt, alle Umgebungs-Toggles gesetzt und eine Zeitbox gewählt ist,
+     wird "Session starten" aktiv. -->
+<div class="modal" id="preflightModal" role="dialog" aria-labelledby="pfTitle">
+  <div class="modal-box pf-box">
+    <h3 id="pfTitle">⚡ Pre-Flight</h3>
+    <p class="sub" id="pfSub">Sechs Angaben, dann läuft es. Kein Menü, kein Nachdenken.</p>
+
+    <div class="pf-step">
+      <div class="pf-lab">1 · Outcome <span class="pf-req" id="pfOutcomeReq">Pflicht</span></div>
+      <input id="pfOutcome" maxlength="120" placeholder="Ein Ergebnis in einem Satz — nicht „am Projekt arbeiten“">
+      <div class="pf-chips" id="pfOutcomePick"></div>
+    </div>
+
+    <div class="pf-step">
+      <div class="pf-lab">2 · Ziel</div>
+      <select id="pfGoal"></select>
+      <div class="pf-belief" id="pfBeliefBox"></div>
+    </div>
+
+    <div class="pf-step">
+      <div class="pf-lab">3 · Anspruch</div>
+      <div class="pf-row" id="pfChallenge">
+        <button class="pf-opt" data-pf="challenge" data-v="too_easy">zu leicht</button>
+        <button class="pf-opt on" data-pf="challenge" data-v="matched">passend</button>
+        <button class="pf-opt" data-pf="challenge" data-v="too_hard">zu schwer</button>
+      </div>
+      <div class="pf-hint" id="pfChallengeHint"></div>
+    </div>
+
+    <div class="pf-step">
+      <div class="pf-lab">4 · Umgebung <span class="pf-req" id="pfToggleCount">0 / 6</span></div>
+      <div class="pf-toggle-grid" id="pfToggles"></div>
+    </div>
+
+    <div class="pf-step">
+      <div class="pf-lab">5 · Wenn-dann gegen Ablenkung</div>
+      <input id="pfIfThen" maxlength="140" placeholder="Wenn ich zum Handy greife, dann stelle ich es in den anderen Raum.">
+    </div>
+
+    <div class="pf-step">
+      <div class="pf-lab">6 · Zeitbox</div>
+      <div class="pf-row" id="pfTimebox">
+        <button class="pf-opt" data-pf="timebox" data-v="25">25 Min.</button>
+        <button class="pf-opt on" data-pf="timebox" data-v="50">50 Min.</button>
+        <button class="pf-opt" data-pf="timebox" data-v="90">90 Min.</button>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn ghost" id="pfCancel">Abbrechen</button>
+      <button class="btn" id="pfStart" disabled>Session starten</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fullscreen: während der Session gibt es nur Outcome, Timer und Wenn-dann -->
+<div class="focus-overlay" id="focusOverlay" aria-hidden="true">
+  <div class="focus-inner">
+    <div class="focus-tag" id="focusIfThen"></div>
+    <div class="focus-outcome" id="focusOutcomeText"></div>
+    <div class="focus-clock" id="focusClock">00:00</div>
+    <div class="focus-state" id="focusState">Bereit</div>
+    <!-- Der Ablauf der Aufgabe: beim Start verschwindet das Dashboard mit den
+         Subtasks — hier läuft er Schritt für Schritt weiter. -->
+    <div class="focus-flow" id="focusFlow"></div>
+    <div class="focus-actions">
+      <button class="btn ghost" id="focusAbortBtn">Abbrechen</button>
+      <button class="btn" id="focusEndBtn">Session beenden</button>
+    </div>
+  </div>
+</div>
+
+<!-- Pflicht-Debrief: 20 Sekunden, bevor es zurückgeht -->
+<div class="modal" id="debriefModal" role="dialog" aria-labelledby="debriefTitle">
+  <div class="modal-box" style="max-width:470px">
+    <h3 id="debriefTitle">🧠 20 Sekunden festhalten</h3>
+    <p class="sub" id="debriefSub">Das ist der Teil, der Verhalten zu Beweisen macht.</p>
+    <div class="pf-lab">Flow <span id="debriefFlowVal">7 / 10</span></div>
+    <input type="range" id="debriefFlow" min="1" max="10" value="7">
+    <div class="pf-lab">Ein Beweis-Satz</div>
+    <input id="debriefEvidence" maxlength="160" placeholder="Was hat heute bewiesen, dass der neue Satz stimmt?">
+    <div class="pf-lab">Nächster Subtask</div>
+    <input id="debriefNext" maxlength="120" placeholder="Kleinster nächster Schritt">
+    <div class="modal-actions">
+      <button class="btn" id="debriefSave" disabled>Speichern <span id="debriefCountWrap">(<span id="debriefCount">20</span> s)</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- Neues Outcome anlegen -->
+<div class="modal" id="outcomeModal" role="dialog" aria-labelledby="outcomeTitle">
+  <div class="modal-box" style="max-width:460px">
+    <h3 id="outcomeTitle">🎯 Neues Outcome</h3>
+    <p class="sub">Ein Ergebnis, keine Tätigkeit. Die Subtasks darunter sind die Definition of Done — ohne offenen Subtask kommt das Outcome nicht auf Heute.</p>
+    <div class="pf-lab">Outcome</div>
+    <input id="outcomeTitleInput" maxlength="120" placeholder="z. B. Angebot an Müller versendet">
+    <div class="pf-lab">Subtask (Definition of Done) — mit Komma trennen</div>
+    <input id="outcomeSubtasks" placeholder="z. B. Preise kalkulieren, PDF bauen, Mail schreiben">
+    <div class="pf-lab">Ziel</div>
+    <select id="outcomeGoal"></select>
+    <div class="modal-actions">
+      <button class="btn ghost" id="outcomeCancel">Abbrechen</button>
+      <button class="btn" id="outcomeSave">Anlegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Bestehendes To-Do zum Outcome machen -->
+<div class="modal" id="outcomePickModal" role="dialog" aria-labelledby="outcomePickTitle">
+  <div class="modal-box" style="max-width:440px">
+    <h3 id="outcomePickTitle">🎯 Backlog-Punkt zum Outcome machen</h3>
+    <p class="sub">Wähle einen Punkt und ergänze die Definition of Done.</p>
+    <div id="outcomePickList" class="pf-chips"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="outcomePickCancel">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Glaubenssatz erfassen — nur von einem Ziel oder aus dem Pre-Flight -->
+<div class="modal" id="beliefModal" role="dialog" aria-labelledby="beliefTitle">
+  <div class="modal-box" style="max-width:480px">
+    <h3 id="beliefTitle">🧩 Glaubenssatz</h3>
+    <p class="sub">Der alte Satz wird nicht gelöscht, sondern ersetzt. Beweise sammeln sich Stück für Stück.</p>
+    <div class="pf-lab">Alter Satz</div>
+    <input id="beliefOld" maxlength="140" placeholder="z. B. Ich bin einfach nicht diszipliniert.">
+    <div class="pf-lab">Ersatzsatz</div>
+    <input id="beliefNew" maxlength="140" placeholder="z. B. Ich bin diszipliniert, wenn der nächste Schritt klein genug ist.">
+    <div class="pf-lab">Stärke <span id="beliefStrengthVal">3 / 5</span></div>
+    <input type="range" id="beliefStrength" min="1" max="5" value="3">
+    <div class="pf-lab">Ziel</div>
+    <select id="beliefGoalSel"></select>
+    <div class="modal-actions">
+      <button class="btn ghost" id="beliefCancel">Abbrechen</button>
+      <button class="btn" id="beliefSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="toasts" id="toasts"></div>
 
 <!-- Level-Up-Feier (Phase 4) -->
@@ -734,26 +939,26 @@
   </div>
 </div>
 
-<script src="js/helpers.js"></script>
-<script src="js/data.js"></script>
-<script src="js/exercisedb.js"></script>
-<script src="js/storage.js"></script>
-<script src="js/theme.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/xp.js"></script>
-<script src="js/hero.js"></script>
-<script src="js/todos.js"></script>
-<script src="js/habits.js"></script>
-<script src="js/timer.js"></script>
-<script src="js/nutrition.js"></script>
-<script src="js/charts.js"></script>
-<script src="js/workouts.js"></script>
-<script src="js/training.js"></script>
-<script src="js/mind.js"></script>
-<script src="js/goals.js"></script>
-<script src="js/knowledge.js"></script>
-<script src="js/progress.js"></script>
-<script src="js/export.js"></script>
-<script src="js/app.js"></script>
+<script src="js/helpers.js?v=36"></script>
+<script src="js/data.js?v=36"></script>
+<script src="js/exercisedb.js?v=36"></script>
+<script src="js/storage.js?v=36"></script>
+<script src="js/theme.js?v=36"></script>
+<script src="js/ui.js?v=36"></script>
+<script src="js/xp.js?v=36"></script>
+<script src="js/hero.js?v=36"></script>
+<script src="js/todos.js?v=36"></script>
+<script src="js/habits.js?v=36"></script>
+<script src="js/timer.js?v=36"></script>
+<script src="js/nutrition.js?v=36"></script>
+<script src="js/charts.js?v=36"></script>
+<script src="js/workouts.js?v=36"></script>
+<script src="js/training.js?v=36"></script>
+<script src="js/mind.js?v=36"></script>
+<script src="js/goals.js?v=36"></script>
+<script src="js/knowledge.js?v=36"></script>
+<script src="js/progress.js?v=36"></script>
+<script src="js/export.js?v=36"></script>
+<script src="js/app.js?v=36"></script>
 </body>
 </html>

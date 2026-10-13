@@ -18,9 +18,13 @@ function greetingWord(){
 function dayProgress(){
   const tk = todayKey();
   const checks = S.routineChecks[tk] || {};
-  const todos = S.todos.filter(t=>t.date===tk);
+  // Heute zählt über Outcomes UND ihre Subtasks — ein erledigter Subtask ist
+  // echter Fortschritt am Ergebnis, ein vierter Backlog-Punkt dagegen nicht.
+  const todos = S.todos.filter(t=>t.date===tk && !t.parent_id);
+  const subs = todayOutcomes().flatMap(o=>outcomeChildren(o.id));
   let total = 0, done = 0;
   total += todos.length; done += todos.filter(t=>t.done).length;
+  subs.forEach(k=>{ total++; if(k.done) done++; });
   total += S.habits.length; done += S.habits.filter(h=>h.dates[tk]).length;
   total += S.routineAM.length; done += S.routineAM.filter(it=>checks[it.id]).length;
   total += S.routinePM.length; done += S.routinePM.filter(it=>checks[it.id]).length;
@@ -37,7 +41,22 @@ function todayTimeProgress(){
 
 function getNextOpenItem(){
   const tk = todayKey();
-  const openTodo = S.todos.filter(t=>t.date===tk && !t.done).sort((a,b)=>(a.order??0)-(b.order??0))[0];
+  // Der nächste offene Subtask eines heutigen Outcomes schlägt jeden Backlog-Punkt:
+  // er ist der kleinste Schritt am Ergebnis, das den Tag gewinnen soll.
+  for(const o of clearTodayOutcomes()){
+    const k = nextOpenSubtask(o);
+    if(k) return {icon:"🎯", text:k.text + "  ·  " + o.text};
+  }
+  // Auch ein Aufgabenblock, der nur für heute terminiert ist (ohne Outcome-Status),
+  // hat einen nächsten Schritt — der gehört in die Leiste.
+  const heutigeGruppen = S.todos.filter(t=>t.date===tk && !t.parent_id && !t.is_outcome && hasSubtasks(t));
+  for(const g of heutigeGruppen){
+    const k = nextOpenSubtask(g);
+    if(k) return {icon:"◧", text:k.text + "  ·  " + g.text};
+  }
+  const offenesOutcome = openOutcomes().find(o=>!outcomeIsClear(o));
+  if(offenesOutcome) return {icon:"⚠️", text:"Subtask fehlt: " + offenesOutcome.text};
+  const openTodo = S.todos.filter(t=>t.date===tk && !t.parent_id && !t.is_outcome && !t.done).sort((a,b)=>(a.order??0)-(b.order??0))[0];
   if(openTodo) return {icon:"✅", text:openTodo.text};
   const openHabit = S.habits.find(h=>!h.dates[tk]);
   if(openHabit) return {icon:"🔁", text:openHabit.name};
@@ -188,11 +207,15 @@ function renderTodayFocusGoals(){
   }
   $("todayFocusGoals").innerHTML = gs.map(g=>{
     const p = goalProgress(g);
+    // Der Ersatzsatz steht direkt neben dem Ziel — dort, wo er beim Planen hilft.
+    const b = activeBeliefsForGoal(g.id)[0];
     return `<div class="goal" data-act="goto-goals" style="cursor:pointer">
       <div class="goal-head"><b>${esc(g.title)}</b><span class="goal-type t-fokus">Fokus</span></div>
       <div class="lab" style="display:flex;justify-content:space-between;font-size:12px;color:var(--dim)">
         <span>Fortschritt</span><span>${p} %${p===100?" · Erreicht 🏆":""}</span></div>
       <div class="bar"><i style="width:${p}%"></i></div>
+      ${b ? `<div class="goal-belief-mini">🧩 ${esc(b.replacement_statement)}</div>`
+          : `<div class="goal-belief-mini faint">Noch kein Glaubenssatz an diesem Ziel.</div>`}
     </div>`;
   }).join("");
 }
@@ -207,7 +230,7 @@ function renderWeek(){
   const tk = todayKey();
   $("weekBoard").innerHTML = WD.map((name,i)=>{
     const dateKey = dates[i];
-    const items = S.todos.filter(t=>t.date===dateKey).sort((a,b)=>(a.order??0)-(b.order??0));
+    const items = S.todos.filter(t=>t.date===dateKey && !t.parent_id).sort((a,b)=>(a.order??0)-(b.order??0));
     return `<div class="wb-day ${dateKey===tk?"today":""}" data-day="${i}">
       <h5>${name}</h5>
       <div class="wb-date">${fmtShort(dateKey)}</div>
@@ -218,6 +241,7 @@ function renderWeek(){
             <span class="wb-txt" data-act="wb-toggle" data-id="${it.id}">${esc(it.text)}</span>
             <button class="wb-del" data-act="wb-unassign" data-id="${it.id}" title="Aus dem Board nehmen — bleibt in der To-Do-Liste" aria-label="Aus dem Board nehmen, bleibt in der To-Do-Liste">${ICON_UNPLAN}</button>
           </div>
+          ${hasSubtasks(it) ? `<span class="wb-time">◧ ${(()=>{const p=outcomeProgress(it); return p.done+"/"+p.total;})()} Subtasks</span>` : ""}
           ${it.estMinutes ? `<span class="wb-time">⏱ ${it.focusedMinutes||0}/${it.estMinutes} Min.</span>` : ""}
         </div>`;
       }).join("")}
@@ -229,7 +253,9 @@ function renderWeek(){
 /* To-Do zuweisen: bestehende Einträge aus der Liste auswählen (Alternative zum Ziehen) */
 function openTodoAssignPicker(day){
   const dateKey = weekDates()[day];
-  const available = [...S.todos].filter(t=>t.date!==dateKey).sort((a,b)=>{
+  // Subtasks gehören zu ihrem Block und werden nie einzeln einem Tag zugewiesen —
+  // sonst stünden sie gleichzeitig im Board und in ihrem Block.
+  const available = [...S.todos].filter(t=>!t.parent_id && t.date!==dateKey).sort((a,b)=>{
     const da = a.date || "9999-99-99", db = b.date || "9999-99-99";
     return da.localeCompare(db);
   });

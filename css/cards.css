@@ -1,3 +1,7 @@
+/* ============================================================
+   ASCEND — cards.css
+   Karten, Listen/Checkboxen, Drag-Handles — gemeinsame Bausteine
+   ============================================================ */
 /* ---------- Card (Grundbaustein, überall identisch) ---------- */
 .card{
   position:relative;
@@ -24,10 +28,6 @@
 }
 .empty b{color:var(--text);font-weight:600}
 
-/* ============================================================
-   ASCEND — cards.css
-   Karten, Listen/Checkboxen, Drag-Handles — gemeinsame Bausteine
-   ============================================================ */
 /* ---------- Lists & checks ---------- */
 .row-add{display:flex;gap:9px;margin-bottom:13px}
 .row-add input{flex:1;min-width:0}

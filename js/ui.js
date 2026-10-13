@@ -78,11 +78,25 @@ window.addEventListener("scroll", ()=>{
 }, { passive:true });
 $("scrim").addEventListener("click", closeSidebar);
 
-/* ---------- Einklappbarer "Mehr anzeigen"-Bereich (Phase 1/3) ---------- */
+/* ---------- Einklappbarer "Mehr anzeigen"-Bereich (Heatmap & Co.) ---------- */
 $("moreToggle").addEventListener("click", ()=>{
   const box = $("moreCollapsible");
   const open = box.classList.toggle("open");
   $("moreToggleLabel").textContent = open ? "Weniger anzeigen" : "Mehr anzeigen";
+});
+
+/* ---------- Today-Seite: Seg-Tabs (Heute · Gewohnheiten · Wochenplan) ----------
+   Die Seite war vorher eine endlose Scroll-Strecke. Die Tabs gliedern dieselben
+   Bereiche nur neu — alle Funktionen bleiben unverändert erreichbar. */
+function switchTodayTab(tab){
+  document.querySelectorAll("#todayTabs button").forEach(b=>b.classList.toggle("on", b.dataset.ttab === tab));
+  document.querySelectorAll("#page-today .tab-pane").forEach(p=>p.classList.toggle("active", p.id === "ttab-"+tab));
+  // Beim Öffnen des Wochenplans neu zeichnen, damit Drag&Drop-Maße stimmen
+  if(tab === "week") renderWeek();
+  if(tab === "habits") renderHeatmap();
+}
+document.querySelectorAll("#todayTabs button").forEach(btn=>{
+  btn.addEventListener("click", ()=>switchTodayTab(btn.dataset.ttab));
 });
 
 $("dateLabel").textContent = new Date().toLocaleDateString("de-DE",{weekday:"long", day:"numeric", month:"long", year:"numeric"});

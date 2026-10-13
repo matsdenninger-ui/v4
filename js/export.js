@@ -43,7 +43,7 @@ $("importFile").addEventListener("change", async (e)=>{
     );
     if(!ok) return;
     backupLocalState();
-    S = Object.assign(defaultState(), data.state);
+    S = normalizeTodos(Object.assign(defaultState(), data.state));
     S.updatedAt = Date.now();
     S.wipeAt = 0;
     S.appVersion = APP_STATE_VERSION;

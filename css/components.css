@@ -2,7 +2,7 @@
    ASCEND — components.css
    Modal & Toast — auf allen Seiten gemeinsam genutzt
    ============================================================ */
-/* ---------- Report modal ---------- */
+/* ---------- Modal ---------- */
 .modal{position:fixed;inset:0;z-index:80;display:none;place-items:center;background:rgba(5,8,15,.68);backdrop-filter:blur(3px);padding:20px}
 .modal.open{display:grid}
 .modal-box{
@@ -17,7 +17,6 @@
 
 
 /* ---------- Toast ---------- */
-/* ---------- Toast ---------- */
 .toasts{position:fixed;bottom:22px;right:22px;z-index:90;display:flex;flex-direction:column;gap:8px}
 .toast{
   background:var(--elev);border:1px solid var(--border);color:var(--text);
@@ -29,12 +28,3 @@
 .toast.out{animation:toastOut .3s ease forwards}
 @keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
 @keyframes toastOut{to{opacity:0;transform:translateX(30px)}}
-
-.chart-box{position:relative;height:230px}
-.chart-box.tall{height:280px}
-.pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.divider{height:1px;background:var(--border-soft);margin:16px 0}
-.note{font-size:12px;color:var(--dim);line-height:1.6}
-.corr-val{font-family:var(--font-display);font-weight:800;font-size:26px;letter-spacing:-.5px}
-.corr-pos{color:var(--mint)} .corr-neg{color:var(--rose)} .corr-neu{color:var(--dim)}
-

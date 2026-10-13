@@ -4,13 +4,16 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 25;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 26;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
-/* Felder, die es vor der Trainings-App (v21) noch nicht gab. Ein Gerät mit
+/* Felder, die erst spätere App-Versionen eingeführt haben. Ein Gerät mit
    älterer App-Version schickt sie gar nicht mit — dann dürfen sie beim
-   Zusammenführen NICHT durch Standardwerte ersetzt werden. */
-const V21_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions"];
+   Zusammenführen NICHT durch Standardwerte ersetzt werden.
+     v21: Trainings-App
+     v26: Glaubenssätze/Experimente/Beweise + Session-Rahmen (Pre-Flight) */
+const RESCUE_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions",
+  "beliefs","evidence","experiments","focusSessions"];
 
 /* Felder, bei denen null ein echter Wert ist ("läuft nicht mehr") und nicht
    "diese App-Version kennt das Feld nicht". Nur hier darf ein null aus der
@@ -36,7 +39,8 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
    und deshalb NICHT feldweise überschrieben werden dürfen. */
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
-  "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash"];
+  "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash",
+  "beliefs","evidence","experiments","focusSessions"];
 /* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
    oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
    jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
@@ -92,9 +96,12 @@ function resetChangeTracking(){ lastSnapshot = snapshotOf(S); }
 function defaultState(){
   return {
     xp: 0,
-    todos: [],                       // {id, text, done, date, estMinutes, focusedMinutes, order}
+    todos: [],                       // {id, text, done, date, estMinutes, focusedMinutes, order,
+                                      //  parent_id|null, is_outcome, scheduled_date, status}
                                       // date = zugewiesener Tag (YYYY-MM-DD) ODER null = nicht eingeplant
-                                      // Weekly Board zeigt To-Dos gruppiert nach date; To-Do-Liste zeigt IMMER alle
+                                      // Weekly Board zeigt To-Dos gruppiert nach date; die Liste zeigt den Backlog
+                                      // Outcomes: is_outcome=true, kein parent_id. Subtasks: parent_id = Outcome-id.
+                                      // „Klar" ist ein Outcome nur mit mindestens einem OFFENEN Subtask.
     habits: [
       {id: "def-habit-lesen",   name: "10 Minuten lesen", dates: {}, note: ""},
       {id: "def-habit-bewegung",name: "Bewegung / Training", dates: {}, note: ""},
@@ -162,7 +169,37 @@ function defaultState(){
     trash: [],                       // gelöschte To-Dos, 30 Tage wiederherstellbar: {...todo, deletedAt}
     xpSetAt: 0,                      // Zeitstempel der letzten bewussten XP-/Level-Korrektur
     xpFix: null,                     // Kennung bereits angewandter einmaliger XP-Korrekturen
+    /* ---------- Verhalten → Beweise (v26) ----------
+       Beliefs hängen an Zielen, Evidence hängt an Beliefs und Sessions,
+       Experiments koppeln Wenn-dann an einen Kontext (deep_work | workout | general). */
+    beliefs: [],                     // {id, old_statement, replacement_statement, strength 1-5, goal_id|null, active, touched}
+    evidence: [],                    // {id, belief_id, session_id|null, text, created_at, touched}
+    experiments: [],                 // {id, if_text, then_text, context, started_on, duration_days, status, touched}
+    focusSessions: [],               // {id, context, outcome_task_id, goal_id, belief_id, challenge, duration_min,
+                                      //  distraction_plan, preflight{6 Toggles}, started_at, ended_at,
+                                      //  flow_score, evidence_text, next_subtask_text, touched}
   };
+}
+
+/* ---------- Migration: Todos um die Outcome-Felder ergänzen ----------
+   Bestehende Einträge bekommen parent_id/is_outcome/scheduled_date/status
+   nachgetragen — alte Daten bleiben vollständig erhalten und werden nur
+   beschrieben, nicht umgedeutet. `date`/`done` bleiben führend; `status`
+   und `scheduled_date` werden daraus gespiegelt. */
+function normalizeTodo(t){
+  if(!t || typeof t !== "object") return t;
+  if(!Object.prototype.hasOwnProperty.call(t, "parent_id")) t.parent_id = null;
+  if(t.is_outcome === undefined) t.is_outcome = false;
+  if(!Object.prototype.hasOwnProperty.call(t, "scheduled_date")) t.scheduled_date = t.date || null;
+  const soll = t.done ? "done" : "open";
+  if(t.status !== soll) t.status = soll;
+  // Ein Subtask kann kein Outcome sein — sonst zählt er doppelt auf Heute.
+  if(t.parent_id) t.is_outcome = false;
+  return t;
+}
+function normalizeTodos(state){
+  if(state && Array.isArray(state.todos)) state.todos.forEach(normalizeTodo);
+  return state;
 }
 
 /* ---------- Level von Hand setzen ----------
@@ -239,7 +276,7 @@ function applyXpFix(state){
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(raw){ return applyXpFix(dedupeDefaults(Object.assign(defaultState(), JSON.parse(raw)))); }
+    if(raw){ return applyXpFix(dedupeDefaults(normalizeTodos(Object.assign(defaultState(), JSON.parse(raw))))); }
   }catch(e){ /* localStorage nicht verfügbar (z. B. Sandbox) */ }
   // Frischer Start: nichts zu korrigieren — ein neuer Stand beginnt bei Level 1.
   return memoryFallback ? memoryFallback : defaultState();
@@ -450,12 +487,21 @@ function mergeCollections(base, other, deleted){
     badges:  mergeBadges(base.badges, other.badges),
     journal: mergeJournal(base.journal, other.journal),
     xp: mergeXp(base, other),
+    // Verhalten → Beweise: pro Eintrag nach `touched` vereinigen, damit weder
+    // Glaubenssätze noch Beweise oder eine auf dem anderen Gerät beendete
+    // Session beim Abgleich verloren gehen. Nur anhängen wäre falsch — eine
+    // Session wird beim Beenden in place ergänzt (ended_at, flow_score).
+    beliefs:      mergeById(base.beliefs, other.beliefs, deleted),
+    evidence:     mergeById(base.evidence, other.evidence, deleted),
+    experiments:  mergeById(base.experiments, other.experiments, deleted),
+    focusSessions: mergeById(base.focusSessions, other.focusSessions, deleted),
     // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
     trash: mergeById(base.trash, other.trash, null)
       .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
   };
 }
-const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge"];
+const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
+  "beliefs","evidence","experiments","focusSessions"];
 function collectionsChanged(before, after){
   return COLLECTION_KEYS.some(k=>arrChanged(before[k], after[k]))
     || JSON.stringify(before.routineChecks) !== JSON.stringify(after.routineChecks)
@@ -492,7 +538,7 @@ function mergeCloudState(local, remote){
   // 1) Neue Felder retten, wenn die Cloud sie (noch) nicht kennt
   let rescued = false;
   if(!remoteWipedLocal){
-    V21_FIELDS.forEach(k=>{
+    RESCUE_FIELDS.forEach(k=>{
       const remoteHasField = Object.prototype.hasOwnProperty.call(remote, k) && remote[k] != null;
       if(!remoteHasField || remoteVersion < localVersion){
         if(local[k] != null){ merged[k] = local[k]; rescued = true; }
@@ -558,7 +604,9 @@ function mergeCloudState(local, remote){
   // würde sie übersehen, der korrigierte Stand käme nie in die Cloud.
   const xpKorrigiert = (local.xpSetAt||0) > (remote.xpSetAt||0);
   const extras = rescued || plainKept || xpKorrigiert || logsGrew(before, merged) || collectionsChanged(before, merged);
-  return { state: merged, localExtras: extras };
+  // Ein Cloud-Stand von einer App-Version vor v26 kennt die Outcome-Felder an den
+  // Todos nicht — nachtragen, damit Heute/Backlog auch mit alten Ständen sauber sind.
+  return { state: normalizeTodos(merged), localExtras: extras };
 }
 
 /* Dieses Gerät ist neuer: nur die Protokolle der Cloud dazunehmen, damit auf

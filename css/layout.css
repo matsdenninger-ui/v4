@@ -1,6 +1,6 @@
 /* ============================================================
    ASCEND — layout.css
-   Sidebar, Burger, Topbar, Grid/Stack-Systeme
+   Sidebar (gruppiert), Burger, Topbar, Seg-Tabs, Grid/Stack-Systeme
    ============================================================ */
 /* ---------- Layout: Sidebar zum Ausklappen (transparent) ---------- */
 .burger{
@@ -33,6 +33,7 @@
 .sidebar::-webkit-scrollbar-track{background:transparent}
 .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .sidebar::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+.brand{display:flex;align-items:center;gap:11px;margin-bottom:14px}
 .brand-mark{
   width:34px;height:34px;border-radius:10px;flex:none;
   background:linear-gradient(135deg,var(--ac),var(--sec) 130%);
@@ -42,7 +43,14 @@
 }
 .brand h1{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.3px}
 .brand span{display:block;font-size:11px;color:var(--dim);font-weight:400;font-family:var(--font-body);letter-spacing:.4px}
+
+/* ---------- Gruppierte Navigation ---------- */
 .nav{display:flex;flex-direction:column;gap:2px}
+.nav-label{
+  font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--faint);padding:12px 12px 5px;
+}
+.nav-label:first-child{padding-top:2px}
 .nav button{
   display:flex;align-items:center;gap:11px;width:100%;
   padding:10px 12px;border-radius:var(--radius-sm);
@@ -80,17 +88,20 @@
 .xp-mini{height:4px;border-radius:2px;background:var(--track);margin-top:7px;overflow:hidden}
 .xp-mini i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--sec),var(--sec-light));transition:width .5s}
 
+.side-actions{display:flex;flex-direction:column;gap:7px}
 .demo-btn{
   font-size:12px;color:var(--dim);padding:8px 10px;border-radius:var(--radius-sm);
   border:1px dashed var(--border);width:100%;transition:color .15s,border-color .15s;
   background:var(--overlay-4);
 }
 .demo-btn:hover{color:var(--text);border-color:var(--dim)}
+.export-import-box{display:flex;flex-direction:column;gap:7px}
 .sync-box{border-top:1px solid var(--border-soft);padding-top:12px;margin-top:2px}
 .sync-status{font-size:11px;color:var(--dim);margin-bottom:8px}
 .sync-status.ok{color:var(--mint)}
 .sync-status.err{color:var(--rose)}
 
+/* ---------- Topbar ---------- */
 .main{margin:0 auto;padding:32px 28px 90px;max-width:1200px}
 .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:28px}
 .topbar h2{
@@ -99,15 +110,39 @@
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
 .topbar .date{color:var(--dim);font-size:13.5px;margin-top:3px}
+.topbar-badge{
+  display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);
+  background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:20px;padding:8px 15px;white-space:nowrap;
+}
+.tb-dot{width:7px;height:7px;border-radius:50%;background:var(--mint);flex:none;box-shadow:0 0 8px var(--mint)}
 
 .page{display:none;animation:fade .25s ease}
 .page.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
+/* ---------- Seg-Tabs (Today-Seite) ---------- */
+.seg-tabs{
+  display:flex;gap:6px;margin:0 0 22px;padding:5px;
+  background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:14px;overflow-x:auto;scrollbar-width:none;
+}
+.seg-tabs::-webkit-scrollbar{display:none}
+.seg-tabs button{
+  flex:1;display:flex;align-items:center;justify-content:center;gap:8px;
+  white-space:nowrap;padding:11px 14px;border-radius:10px;
+  font-size:13.5px;font-weight:600;color:var(--dim);
+  transition:background .18s,color .18s;
+}
+.seg-tabs button svg{width:16px;height:16px;stroke:currentColor;flex:none}
+.seg-tabs button:hover{color:var(--text);background:var(--nav-hover)}
+.seg-tabs button.on{background:var(--ac-soft);color:var(--ac);box-shadow:inset 0 0 0 1px var(--ac-soft)}
+.tab-pane{display:none}
+.tab-pane.active{display:block;animation:fade .25s ease}
+
+/* ---------- Grid-System ---------- */
 .grid{display:grid;gap:28px}
 .stack{display:flex;flex-direction:column;gap:28px}
 .g2{grid-template-columns:1fr 1fr}
 .g3{grid-template-columns:repeat(3,1fr)}
 .span2{grid-column:span 2}
-
-

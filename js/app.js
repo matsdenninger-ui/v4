@@ -12,11 +12,95 @@ document.body.addEventListener("click", e=>{
 
   switch(act){
     case "todo-toggle":
+    case "outcome-toggle":
       toggleTodoDone(id);
+      break;
+    /* Ein Schritt direkt aus dem Fokus-Overlay abhaken — das Dashboard ist dort
+       ausgeblendet, der Ablauf bleibt bedienbar. */
+    case "ff-toggle":
+      toggleFocusFlowStep(id);
       break;
     case "todo-del":
       deleteTodo(id);
       break;
+
+    /* ---------- Outcomes & Subtasks ---------- */
+    case "todo-promote":
+      promoteTodoToOutcome(id);
+      break;
+    /* Alle Subtasks sind durch — der Block meldet sich selbst zum Abschluss.
+       Der Klick ist die Bestätigung, deshalb hier ohne Rückfrage. */
+    case "outcome-complete":
+      completeOutcome(id, true);
+      break;
+    case "group-expand":
+      if(expandedGroups.has(id)) expandedGroups.delete(id); else expandedGroups.add(id);
+      // Der Block kann auf Heute ODER im Backlog stehen — beide Ansichten zeichnen.
+      renderOutcomes(); renderTodos();
+      break;
+    case "outcome-to-backlog":
+      demoteOutcome(id);
+      break;
+    case "subtask-add": {
+      const input = document.querySelector(`[data-act="subtask-input"][data-id="${id}"]`);
+      const text = input ? input.value : "";
+      if(!String(text).trim()) break;
+      addSubtask(id, text); save(); renderOutcomes(); renderTodos(); renderHero();
+      const again = document.querySelector(`[data-act="subtask-input"][data-id="${id}"]`);
+      if(again) again.focus();
+      break; }
+    case "subtask-split": {
+      // „zu schwer" heißt: der nächste Schritt war zu groß. Halbieren statt
+      // durchbeißen — der Timer startet erst danach.
+      const k = S.todos.find(t=>t.id===id);
+      if(!k) break;
+      const kurz = k.text.length > 60 ? k.text.slice(0, 60) + "…" : k.text;
+      k.text = kurz + " (Hälfte 1)"; k.touched = Date.now();
+      addSubtask(k.parent_id, kurz + " (Hälfte 2)", { afterId: k.id });
+      save(); renderOutcomes(); renderTodos();
+      if(pf) renderPreflight();
+      toast("Subtask halbiert — zwei machbare Schritte statt einem zu großen.");
+      break; }
+    case "session-preflight":
+      openPreflight("deep_work", id);
+      break;
+    case "workout-preflight":
+      openPreflight("workout", null);
+      break;
+    case "pf-add-belief":
+      // Zweiter erlaubter Erfassungsweg neben dem Ziel. Das Ziel ist vorbelegt,
+      // das Formular steht also nicht im Nirgendwo.
+      openBeliefModal(pf ? pf.goalId : null);
+      break;
+    case "pf-adopt-belief": {
+      const b = pf ? beliefForGoal(pf.goalId) : null;
+      const feld = $("pfReplacement");
+      if(b && feld){ feld.value = b.replacement_statement; toast("Ersatzsatz übernommen."); }
+      break; }
+
+    /* ---------- Glaubenssätze, Beweise, Experimente ---------- */
+    case "belief-add":
+      openBeliefModal(id);
+      break;
+    case "belief-del":
+      customConfirm("Diesen Glaubenssatz archivieren? Die gesammelten Beweise bleiben erhalten.",
+        {okLabel:"Archivieren", danger:true}).then(ok=>{
+        if(!ok) return;
+        const b = (S.beliefs||[]).find(x=>x.id===id);
+        if(b){ b.active = false; b.touched = Date.now(); save(); renderGoals(); renderReview(); }
+      });
+      break;
+    case "evidence-add": {
+      const input = document.querySelector(`[data-act="evidence-input"][data-id="${id}"]`);
+      if(input && String(input.value).trim()) addEvidence(id, input.value);
+      break; }
+    case "experiment-set": {
+      const e = (S.experiments||[]).find(x=>x.id===id);
+      if(!e) break;
+      e.status = el.dataset.v === "kept" ? "kept" : "dropped";
+      e.touched = Date.now(); save(); renderReview();
+      toast(e.status === "kept" ? "✓ Experiment behalten." : "✗ Experiment fallengelassen — auch das ist ein Ergebnis.");
+      break; }
 
     case "habit-toggle": {
       const hb = S.habits.find(h=>h.id===id); if(!hb) break;
@@ -317,8 +401,44 @@ document.body.addEventListener("click", e=>{
       "meal-eat","meal-shuffle","supp-toggle","goal-del","ms-toggle","glass"].includes(act)){
     renderHero();
   }
-  if(["goal-del","ms-toggle"].includes(act)) renderTodayFocusGoals();
+  if(["goal-del","ms-toggle","belief-del","evidence-add"].includes(act)) renderTodayFocusGoals();
 });
+
+/* Enter in den Inline-Feldern (Subtask, Beweis) speichert wie der Plus-Knopf */
+document.body.addEventListener("keydown", e=>{
+  const t = e.target;
+  if(!t || !t.dataset || e.key !== "Enter") return;
+  const act = t.dataset.act, id = t.dataset.id;
+  if(act === "subtask-input" || act === "evidence-add"){
+    e.preventDefault();
+    const btn = document.querySelector(`[data-act="${act === "subtask-input" ? "subtask-add" : "evidence-add"}"][data-id="${id}"]`);
+    if(btn) btn.click();
+  }
+  if(act === "evidence-input"){
+    e.preventDefault();
+    const btn = document.querySelector(`[data-act="evidence-add"][data-id="${id}"]`);
+    if(btn) btn.click();
+  }
+  if(t.id === "outcomeTitleInput" || t.id === "outcomeSubtasks") $("outcomeSave").click();
+  if(t.id === "pfOutcome" && pf){ $("pfIfThen").focus(); }
+});
+
+/* Statische Knöpfe des Outcome-/Glaubenssatz-Bereichs */
+$("outcomeAddBtn").addEventListener("click", openOutcomeModal);
+$("outcomePickBtn").addEventListener("click", openOutcomePicker);
+$("finishDayBtn").addEventListener("click", finishDay);
+$("outcomeCancel").addEventListener("click", closeOutcomeModal);
+$("outcomeModal").addEventListener("click", e=>{ if(e.target === $("outcomeModal")) closeOutcomeModal(); });
+$("outcomeSave").addEventListener("click", ()=>{
+  const o = addOutcome($("outcomeTitleInput").value, $("outcomeSubtasks").value, $("outcomeGoal").value || null);
+  if(o) closeOutcomeModal();
+});
+$("outcomePickCancel").addEventListener("click", ()=>$("outcomePickModal").classList.remove("open"));
+$("outcomePickModal").addEventListener("click", e=>{ if(e.target === $("outcomePickModal")) $("outcomePickModal").classList.remove("open"); });
+$("beliefCancel").addEventListener("click", closeBeliefModal);
+$("beliefModal").addEventListener("click", e=>{ if(e.target === $("beliefModal")) closeBeliefModal(); });
+$("beliefSave").addEventListener("click", saveBelief);
+$("beliefStrength").addEventListener("input", ()=>{ $("beliefStrengthVal").textContent = $("beliefStrength").value + " / 5"; });
 
 /* Startwert einer Slider-Bewegung, damit XP nur einmal beim Loslassen zählen */
 const learnDragFrom = {};
@@ -538,7 +658,8 @@ $("resetBtn").addEventListener("click", async ()=>{
    ============================================================ */
 function renderAll(){
   renderLevel();
-  renderTodos(); renderHabits(); renderHeatmap(); renderRoutines();
+  renderTodos(); renderOutcomes();
+  renderHabits(); renderHeatmap(); renderRoutines();
   renderFocus(); syncTimerUI(); renderWeek();
   renderMacros(); renderMealPlan(); renderHydro(); renderSupps();
   $("mealPlan").value = S.mealPlan; $("gymPlan").value = S.gymPlan;
@@ -546,7 +667,7 @@ function renderAll(){
   loadJournalToday(); renderJournalHist(); renderMoodHist();
   renderLearning(); renderSkills(); renderPeople();
   renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation();
-  renderGoals(); renderGoalSkillSel();
+  renderGoals(); renderGoalSkillSel(); renderReview();
   renderKnowledge();
   renderHero(); renderTodayFocusGoals();
 }
