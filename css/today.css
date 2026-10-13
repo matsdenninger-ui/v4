@@ -286,7 +286,7 @@
 .pf-toggle:hover{border-color:var(--dim)}
 .pf-toggle-ico{
   width:20px;height:20px;flex:none;display:grid;place-items:center;
-  font-size:13px;border-radius:6px;background:var(--bg);
+  font-size:13px;border-radius:6px;background:var(--field,var(--bg));
 }
 .pf-toggle.on{background:var(--mint-soft);border-color:var(--mint);color:var(--mint)}
 .pf-toggle.on:hover{border-color:var(--mint)}

@@ -24,7 +24,7 @@
 .glass{
   width:34px;height:44px;border-radius:6px 6px 10px 10px;
   border:2px solid var(--border);position:relative;overflow:hidden;
-  transition:border-color .2s;background:var(--bg);cursor:pointer;
+  transition:border-color .2s;background:var(--field,var(--bg));cursor:pointer;
 }
 .glass::after{
   content:"";position:absolute;inset:auto 0 0 0;height:0;
@@ -85,7 +85,7 @@
 .meal-foot2 input[type=time]{padding:5px 8px;font-size:12px}
 .meal-shuffle-btn{
   display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;
-  color:var(--dim);background:var(--bg);border:1px solid var(--border);border-radius:20px;
+  color:var(--dim);background:var(--field,var(--bg));border:1px solid var(--border);border-radius:20px;
   padding:5px 11px;transition:color .15s,border-color .15s;
 }
 .meal-shuffle-btn:hover{color:var(--ac);border-color:var(--ac)}

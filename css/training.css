@@ -113,7 +113,7 @@
 .sx-body{display:none;padding:0 14px 14px}
 .sx.open .sx-body{display:block}
 .sx-last,.sx-cue,.sx-note{
-  font-size:11.5px;color:var(--dim);background:var(--bg);
+  font-size:11.5px;color:var(--dim);background:var(--field,var(--bg));
   border-radius:8px;padding:8px 10px;margin-bottom:8px;line-height:1.5;
 }
 .sx-cue{color:var(--faint)}
@@ -139,7 +139,7 @@
 .set-field{position:relative;display:block}
 .set-field input{
   width:100%;padding:9px 34px 9px 11px;font-size:15px;font-weight:600;
-  font-variant-numeric:tabular-nums;background:var(--bg);
+  font-variant-numeric:tabular-nums;background:var(--field,var(--bg));
 }
 .set-field span{
   position:absolute;right:10px;top:50%;transform:translateY(-50%);
@@ -148,7 +148,7 @@
 .set-row.done .set-field input{border-color:var(--mint);color:var(--mint)}
 .set-check{
   width:40px;height:38px;border-radius:10px;border:2px solid var(--border);
-  display:grid;place-items:center;transition:all .16s;background:var(--bg);
+  display:grid;place-items:center;transition:all .16s;background:var(--field,var(--bg));
 }
 .set-check svg{width:15px;height:15px;stroke:var(--faint);stroke-width:3;opacity:.55}
 .set-check:hover{border-color:var(--mint)}
@@ -195,7 +195,7 @@
 .sc-badge{font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--sec);background:var(--sec-soft);padding:2px 7px;border-radius:20px}
 .split-card p{font-size:11.5px;color:var(--dim);line-height:1.5}
 .sc-days{display:flex;flex-wrap:wrap;gap:5px}
-.sc-days span{font-size:10.5px;color:var(--faint);background:var(--bg);border-radius:6px;padding:2px 7px}
+.sc-days span{font-size:10.5px;color:var(--faint);background:var(--field,var(--bg));border-radius:6px;padding:2px 7px}
 .sc-active{font-size:11px;font-weight:700;color:var(--ac)}
 .sc-apply{font-size:11px;font-weight:600;color:var(--faint)}
 
@@ -268,7 +268,7 @@
 .hs-ex b{font-weight:600;flex:none}
 .hs-sets{color:var(--dim);font-size:11.5px;margin-left:auto;text-align:right;font-variant-numeric:tabular-nums}
 .hs-feel,.hs-note{font-size:12px;color:var(--dim);margin-top:9px}
-.hs-note{background:var(--bg);border-radius:8px;padding:8px 10px;line-height:1.5}
+.hs-note{background:var(--field,var(--bg));border-radius:8px;padding:8px 10px;line-height:1.5}
 .hs-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
 
 /* ---------- Rekorde ---------- */

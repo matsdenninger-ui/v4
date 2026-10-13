@@ -1,0 +1,200 @@
+/* ============================================================
+   ASCEND — glass.css
+   Liquid-Glass-Ebene über dem animierten Shader-Hintergrund.
+   Wird zuletzt geladen und überschreibt nur Optik (Flächen, Ränder,
+   Schatten) — Layout, Abstände und Funktion bleiben unverändert.
+   Quellen: shadergradient (Hintergrund + Grain), liquid-glass-js
+   (Rim-Licht, Kantenbrechung, Tönung), liquid-logo (Brand-Mark).
+   ============================================================ */
+
+/* ---------- Tokens: Flächen werden durchscheinend ---------- */
+:root{
+  --surface:rgba(20,17,32,.50);
+  --elev:rgba(255,255,255,.045);
+  --field:rgba(6,5,12,.42);
+  --border:rgba(255,255,255,.14);
+  --border-soft:rgba(255,255,255,.075);
+  --overlay-1:rgba(22,19,34,.42);
+  --overlay-1-hover:rgba(30,26,46,.62);
+  --overlay-2:rgba(12,10,20,.52);
+  --overlay-3:rgba(255,255,255,.04);
+  --overlay-4:rgba(255,255,255,.025);
+  --nav-hover:rgba(255,255,255,.06);
+
+  --glass-blur:20px;
+  --glass-sat:165%;
+  /* Tönung wie tintOpacity in liquid-glass-js: oben heller, unten klarer */
+  --glass-tint:linear-gradient(160deg,rgba(255,255,255,.085) 0%,rgba(255,255,255,.02) 42%,rgba(255,255,255,.035) 100%);
+  /* Rim-Licht: helle Kante oben links, schwächerer Gegenschein unten rechts */
+  --glass-rim:linear-gradient(140deg,rgba(255,255,255,.42) 0%,rgba(255,255,255,.08) 22%,rgba(255,255,255,0) 50%,rgba(255,255,255,.06) 78%,rgba(255,255,255,.24) 100%);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 22px 44px -18px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.18);
+  --glass-sheen:rgba(255,255,255,.07);
+}
+:root[data-theme="light"]{
+  --surface:rgba(255,255,255,.52);
+  --elev:rgba(255,255,255,.55);
+  --field:rgba(255,255,255,.72);
+  --border:rgba(60,40,120,.16);
+  --border-soft:rgba(255,255,255,.65);
+  --overlay-1:rgba(255,255,255,.5);
+  --overlay-1-hover:rgba(255,255,255,.8);
+  --overlay-2:rgba(255,255,255,.5);
+  --overlay-3:rgba(255,255,255,.45);
+  --overlay-4:rgba(255,255,255,.35);
+  --nav-hover:rgba(255,255,255,.55);
+  --glass-tint:linear-gradient(160deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.18) 45%,rgba(255,255,255,.3) 100%);
+  --glass-rim:linear-gradient(140deg,rgba(255,255,255,1) 0%,rgba(255,255,255,.5) 25%,rgba(255,255,255,.15) 55%,rgba(255,255,255,.45) 100%);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 20px 40px -20px rgba(45,30,100,.28),0 2px 6px rgba(45,30,100,.06);
+  --glass-sheen:rgba(255,255,255,.45);
+}
+
+/* ---------- Hintergrund: Shader-Canvas + Lesbarkeits-Schleier + Grain ---------- */
+#bgGradient{
+  position:fixed;inset:0;width:100%;height:100%;z-index:-1;
+  pointer-events:none;opacity:0;transition:opacity 1.2s ease;display:block;
+}
+#bgGradient.ready{opacity:1}
+html.has-shader-bg body{background:#06050b}
+html.has-shader-bg[data-theme="light"] body{background:#f3f0fb}
+/* ersetzt die statischen Radial-Verläufe: dunkelt Mitte/unten leicht ab, damit Text ruhig liegt */
+html.has-shader-bg body::before{
+  background:
+    radial-gradient(ellipse 120% 90% at 50% 30%,rgba(4,3,10,.30) 0%,rgba(4,3,10,.55) 100%),
+    linear-gradient(180deg,rgba(4,3,10,0) 0%,rgba(4,3,10,.35) 100%);
+}
+html.has-shader-bg[data-theme="light"] body::before{
+  background:radial-gradient(ellipse 120% 90% at 50% 30%,rgba(255,255,255,.28) 0%,rgba(255,255,255,.05) 100%);
+}
+/* Film-Grain wie die PostProcessing-Stufe von shadergradient (grain: on) */
+body::after{
+  content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1.2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+:root[data-theme="light"] body::after{opacity:.12}
+
+/* ---------- Glas-Grundmaterial ---------- */
+.card,.stat,.hchip,.seg-tabs,.body-tabs,.mission-card,.level-card,
+.modal-box,.toast,.topbar-badge,.levelup-card,.burger,.goal,.focus-tag{
+  background:var(--glass-tint),var(--surface);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-color:var(--border-soft);
+  box-shadow:var(--glass-shadow);
+}
+.mission-card{
+  position:relative;
+  background:var(--glass-tint),linear-gradient(135deg,var(--ac-soft),var(--sec-soft) 130%),var(--surface);
+}
+.goal{background:var(--glass-tint),var(--elev);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.toast,.modal-box,.levelup-card,.hchip,.level-card,.topbar-badge,.focus-tag{position:relative}
+.toast,.modal-box{--surface:rgba(22,19,34,.72)}
+:root[data-theme="light"] .toast,:root[data-theme="light"] .modal-box{--surface:rgba(255,255,255,.82)}
+
+/* Rim-Licht als 1-px-Verlaufskante (Maske schneidet die Innenfläche aus) */
+.card::before,.stat::before,.hchip::before,.seg-tabs::before,.body-tabs::before,
+.mission-card::before,.level-card::before,.modal-box::before,.toast::before,
+.topbar-badge::before,.levelup-card::before,.burger::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;
+  background:var(--glass-rim);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  z-index:0;
+}
+.seg-tabs,.body-tabs{position:relative}
+
+/* Glanzlicht folgt dem Zeiger (js/fx/liquid-glass.js setzt --mx/--my) */
+.card::after,.stat::after,.mission-card::after,.hchip::after,.level-card::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(260px circle at var(--mx,50%) var(--my,0%),var(--glass-sheen),transparent 65%);
+  opacity:0;transition:opacity .35s ease;z-index:0;
+}
+.card.lg-lit::after,.stat.lg-lit::after,.mission-card.lg-lit::after,.hchip.lg-lit::after,.level-card.lg-lit::after{opacity:1}
+.card:hover{border-color:var(--border-soft);transform:translateY(-2px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 28px 50px -20px rgba(0,0,0,.7),0 2px 6px rgba(0,0,0,.2)}
+:root[data-theme="light"] .card:hover{box-shadow:inset 0 1px 0 #fff,0 26px 46px -20px rgba(45,30,100,.32)}
+
+/* Echte Kantenbrechung (Chromium) — Filter-ID setzt liquid-glass.js */
+html.lg-chromium .lg-refract{
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:var(--lg-refract) blur(12px) saturate(var(--glass-sat)) brightness(1.04);
+}
+
+/* ---------- Sidebar & Burger ---------- */
+.sidebar{
+  background:var(--glass-tint),var(--overlay-2);
+  -webkit-backdrop-filter:blur(28px) saturate(170%);
+  backdrop-filter:blur(28px) saturate(170%);
+  border-right:1px solid var(--border-soft);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.05),24px 0 60px -30px rgba(0,0,0,.6);
+}
+.burger{border-radius:14px}
+.nav button.active{
+  background:linear-gradient(135deg,var(--ac-soft),rgba(255,255,255,.03));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 0 0 1px var(--ac-soft);
+}
+.level-card{box-shadow:var(--glass-shadow),0 0 30px -6px var(--sec-soft)}
+
+/* ---------- Brand-Mark in flüssigem Metall (js/fx/liquid-logo.js) ---------- */
+.brand-mark{width:40px;height:40px;border-radius:12px;font-size:19px;overflow:hidden}
+.brand-mark.is-liquid{
+  color:transparent;
+  background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.14),transparent 60%),linear-gradient(160deg,#1b1828,#08070d);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(255,255,255,.08),0 8px 20px -6px var(--ac-soft),0 0 18px -4px var(--ac-soft);
+}
+.brand-liquid{position:absolute;inset:3px;width:calc(100% - 6px);height:calc(100% - 6px);display:block}
+
+/* ---------- Seg-Tabs: aktiver Tab als Glastropfen ---------- */
+.seg-tabs button.on,.body-tabs button.on{
+  background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),var(--ac-soft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px var(--ac-soft),0 6px 16px -8px var(--ac);
+}
+:root[data-theme="light"] .seg-tabs button.on,:root[data-theme="light"] .body-tabs button.on{
+  background:linear-gradient(160deg,#fff,rgba(255,255,255,.6)),var(--ac-soft);
+  box-shadow:inset 0 1px 0 #fff,inset 0 0 0 1px var(--ac-soft),0 6px 16px -10px var(--ac);
+}
+.seg-tabs button,.body-tabs button{position:relative;z-index:1}
+
+/* ---------- Buttons: Glaskante + Akzentschein ---------- */
+.btn{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.12),0 8px 20px -10px var(--ac);
+}
+.btn.violet{box-shadow:inset 0 1px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(0,0,0,.12),0 8px 20px -10px var(--sec)}
+.btn.danger{box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 8px 20px -10px var(--rose)}
+.btn.ghost{
+  background:var(--glass-tint),var(--elev);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-color:var(--border-soft);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+.btn.ghost:hover{border-color:var(--border)}
+
+/* ---------- Eingabefelder & Listen ---------- */
+input,textarea,select{background:var(--field);border-color:var(--border-soft)}
+input:focus,textarea:focus,select:focus{border-color:var(--ac)}
+.check-item{background:var(--elev);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
+.draggable-item.dragging{background:var(--glass-tint),var(--surface);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.demo-btn{-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+
+/* ---------- Dialoge & Fokus-Modus ---------- */
+.modal{background:rgba(5,4,12,.45);-webkit-backdrop-filter:blur(10px) saturate(140%);backdrop-filter:blur(10px) saturate(140%)}
+:root[data-theme="light"] .modal{background:rgba(240,236,250,.4)}
+html.has-shader-bg .focus-overlay.open{
+  background:radial-gradient(ellipse 700px 520px at 50% 0%,var(--ac-soft),transparent 60%),rgba(6,5,11,.62);
+  -webkit-backdrop-filter:blur(30px) saturate(150%);backdrop-filter:blur(30px) saturate(150%);
+}
+html.has-shader-bg[data-theme="light"] .focus-overlay.open{
+  background:radial-gradient(ellipse 700px 520px at 50% 0%,var(--ac-soft),transparent 60%),rgba(246,244,252,.62);
+}
+
+/* ---------- Typo: Überschriften mit feinem Glanz ---------- */
+.topbar h2,.greet-title{text-shadow:none;filter:drop-shadow(0 2px 14px rgba(0,0,0,.25))}
+:root[data-theme="light"] .topbar h2,:root[data-theme="light"] .greet-title{filter:none}
+
+/* ---------- Barrierefreiheit: weniger Transparenz gewünscht → satte Flächen ---------- */
+@media (prefers-reduced-transparency:reduce){
+  :root{--surface:#141220;--elev:#1c1a28;--overlay-2:#0d0b15}
+  :root[data-theme="light"]{--surface:#F6F4FC;--elev:#FFFFFF;--overlay-2:#F6F4FC}
+  .card,.stat,.hchip,.seg-tabs,.body-tabs,.mission-card,.level-card,.modal-box,.toast,
+  .topbar-badge,.levelup-card,.burger,.sidebar,.goal,.focus-tag{-webkit-backdrop-filter:none;backdrop-filter:none}
+}
