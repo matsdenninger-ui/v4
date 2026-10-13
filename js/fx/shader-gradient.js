@@ -1,26 +1,33 @@
 "use strict";
 /* ============================================================
-   ASCEND fx/shader-gradient.js — animierter 3D-Verlauf im Hintergrund
-   Port des „Halo“-Presets aus shadergradient (defaults/plane-Shader):
-   eine 10×10-Ebene mit 1×192 Segmenten wird per Perlin-Noise entlang
-   ihrer Normalen verformt und mit drei Farben eingefärbt. Statt
-   three.js/React läuft hier reines WebGL — gleiche Mathematik, kein
-   Bundle. Farben folgen den Theme-Tokens (--ac/--sec, Hell/Dunkel).
+   ASCEND fx/shader-gradient.js — lebendige 3D-Flüssigkeit im Hintergrund
+   Basis: „Universe“-Preset aus shadergradient (waterPlane, defaults-
+   Shader): ein 192×192-Gitter wird per Perlin-Noise zu echten Wellen
+   verformt und mit drei Farben eingefärbt. Darüber hinaus:
+   - Licht wie auf nasser Seide: Glanzpunkte, Fresnel-Rand und
+     schillernde Dünnschicht-Farben (Idee aus dem cosmic-Shader)
+   - Kamera schwebt langsam, folgt sanft Maus und Scrollen (Parallaxe)
+   - XP-Gewinn lässt die Wellen kurz anschwellen und leuchten,
+     ein Level-Up löst eine große Welle aus
+   Reines WebGL, kein three.js. Farben folgen --ac/--sec und Hell/Dunkel.
    ============================================================ */
 (function(){
   const canvas = document.getElementById("bgGradient");
   if(!canvas) return;
   const gl = canvas.getContext("webgl", { antialias:true, alpha:false, premultipliedAlpha:false, powerPreference:"low-power" });
   if(!gl){ canvas.remove(); return; }
-  document.documentElement.classList.add("has-shader-bg");
+  const root = document.documentElement;
+  root.classList.add("has-shader-bg");
 
-  /* ---------- Shader: Vertex = shadergradient defaults/plane (cnoise-Verformung) ---------- */
+  /* ---------- Vertex: Verformung wie shadergradient + Normale per Differenzen ---------- */
   const VERT = `
 precision highp float;
 attribute vec3 aPos;
 uniform mat4 uProj, uView, uModel;
-uniform float uTime, uSpeed, uNoiseDensity, uNoiseStrength;
+uniform float uTime, uSpeed, uNoiseDensity, uNoiseStrength, uSurge;
 varying vec3 vPos;
+varying vec3 vWorld;
+varying vec3 vNormal;
 
 vec3 mod289(vec3 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
 vec4 mod289(vec4 x){ return x - floor(x * (1.0 / 289.0)) * 289.0; }
@@ -72,28 +79,61 @@ float cnoise(vec3 P){
   return 2.2 * mix(n_yz.x, n_yz.y, fade_xyz.x);
 }
 
+/* Höhe an Punkt p: Formel aus shadergradient defaults (0.75 · cnoise(0.43 · p · density + t)) */
+float height(vec2 p, float t){
+  return 0.75 * cnoise(vec3(0.43 * p * uNoiseDensity, 0.0) + t) * uNoiseStrength * (1.0 + 0.35 * uSurge);
+}
+
 void main(){
   float t = uTime * uSpeed;
-  vec3 noisePos = 0.43 * aPos * uNoiseDensity;
-  float distortion = 0.75 * cnoise(noisePos + t);
-  vec3 pos = aPos + vec3(0.0, 0.0, 1.0) * distortion * uNoiseStrength;
+  vec2 p = aPos.xy;
+  float h = height(p, t);
+  float e = 0.06;
+  vec3 dx = vec3(e, 0.0, height(p + vec2(e, 0.0), t) - h);
+  vec3 dy = vec3(0.0, e, height(p + vec2(0.0, e), t) - h);
+  vec3 pos = vec3(p, h);
   vPos = pos;
-  gl_Position = uProj * uView * uModel * vec4(pos, 1.0);
+  vec4 world = uModel * vec4(pos, 1.0);
+  vWorld = world.xyz;
+  vNormal = mat3(uModel) * normalize(cross(dx, dy));
+  gl_Position = uProj * uView * world;
 }`;
 
-  /* ---------- Fragment: Farbmischung wie im Original, Licht vereinfacht ---------- */
   const FRAG = `
 precision highp float;
-uniform vec3 uC1, uC2, uC3;
-uniform float uBrightness, uLift;
+uniform vec3 uC1, uC2, uC3, uEye;
+uniform float uBrightness, uLift, uTime, uSurge, uSurgePos, uGloss;
 varying vec3 vPos;
+varying vec3 vWorld;
+varying vec3 vNormal;
 void main(){
-  /* identisch zu shadergradient defaults/plane/fragment.glsl */
-  vec3 col = mix(mix(uC1, uC2, smoothstep(-3.0, 3.0, vPos.x)), uC3, vPos.z);
-  /* Ersatz für Ambient-Licht + Clearcoat: weicher Glanz auf den Wellenkämmen */
-  col = clamp(col, 0.0, 1.0) * uBrightness;
-  col += smoothstep(0.4, 1.6, vPos.z) * 0.05;
-  /* uLift > 0 entspricht der sRGB-Ausgabe von three.js (pastelliger, hell) */
+  /* Grundfarbe identisch zu shadergradient defaults/waterPlane */
+  vec3 base = clamp(mix(mix(uC1, uC2, smoothstep(-3.0, 3.0, vPos.x)), uC3, vPos.z), 0.0, 1.0);
+
+  vec3 N = normalize(vNormal);
+  vec3 V = normalize(uEye - vWorld);
+  if(dot(N, V) < 0.0) N = -N;                       // beidseitig beleuchten
+  vec3 L = normalize(vec3(-0.45 + 0.15 * sin(uTime * 0.07), 0.65, 0.6));
+  float ndl = max(dot(N, L), 0.0);
+  float ndv = max(dot(N, V), 0.0);
+
+  /* Dünnschicht-Schimmer (cosmic-Shader): Farbe kippt mit Blickwinkel und Höhe */
+  float fres = pow(1.0 - ndv, 3.0);
+  vec3 irid = 0.5 + 0.5 * cos(6.2831 * (fres * 1.4 + vPos.z * 0.22 + uTime * 0.02 + vec3(0.0, 0.33, 0.67)));
+
+  vec3 col = base * (0.62 + 0.48 * ndl) * uBrightness;
+  float spec = pow(max(dot(N, normalize(L + V)), 0.0), 70.0) * uGloss;
+  col += spec * mix(vec3(1.0), irid, 0.6);
+  col += fres * 0.28 * mix(uC2, irid, 0.7) * uGloss;
+  /* Sättigung anheben, damit die Akzentfarben satt statt grau wirken */
+  float lum = dot(col, vec3(0.299, 0.587, 0.114));
+  col = mix(vec3(lum), col, 1.35);
+
+  /* XP-Welle: leuchtendes Band, das über die Fläche läuft */
+  float band = exp(-pow((vPos.y + vPos.x * 0.35 - uSurgePos) * 0.9, 2.0));
+  col += mix(uC1, uC2, 0.5 + 0.5 * sin(vPos.x)) * band * uSurge * 0.55;
+  col += base * uSurge * 0.18;
+
   col = mix(col, pow(clamp(col, 0.0, 1.0), vec3(1.0 / 2.2)), uLift);
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
 }`;
@@ -104,43 +144,42 @@ void main(){
     if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){ console.warn("shader-gradient:", gl.getShaderInfoLog(s)); return null; }
     return s;
   }
+  const bail = () => { canvas.remove(); root.classList.remove("has-shader-bg"); };
   const vs = compile(gl.VERTEX_SHADER, VERT), fs = compile(gl.FRAGMENT_SHADER, FRAG);
-  if(!vs || !fs){ canvas.remove(); document.documentElement.classList.remove("has-shader-bg"); return; }
+  if(!vs || !fs){ bail(); return; }
   const prog = gl.createProgram();
   gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
-  if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){ canvas.remove(); document.documentElement.classList.remove("has-shader-bg"); return; }
+  if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){ bail(); return; }
   gl.useProgram(prog);
 
-  /* ---------- Geometrie: planeGeometry(10, 10, 1, 192) als Triangle-Strip-Liste ---------- */
-  const SEG_X = 1, SEG_Y = 192, SIZE = 10;
-  const verts = [];
-  for(let iy = 0; iy <= SEG_Y; iy++){
-    for(let ix = 0; ix <= SEG_X; ix++){
-      verts.push(ix / SEG_X * SIZE - SIZE / 2, SIZE / 2 - iy / SEG_Y * SIZE, 0);
-    }
+  /* ---------- Geometrie: planeGeometry(10, 10, n, n) wie waterPlane; schwächere Geräte bekommen weniger Gitter ---------- */
+  const small = Math.min(screen.width, screen.height) < 600 || (navigator.hardwareConcurrency || 8) <= 4;
+  const SEG = small ? 120 : 192, SIZE = 10;
+  const verts = new Float32Array((SEG + 1) * (SEG + 1) * 3);
+  let vi = 0;
+  for(let iy = 0; iy <= SEG; iy++) for(let ix = 0; ix <= SEG; ix++){
+    verts[vi++] = ix / SEG * SIZE - SIZE / 2; verts[vi++] = SIZE / 2 - iy / SEG * SIZE; verts[vi++] = 0;
   }
-  const idx = [];
-  for(let iy = 0; iy < SEG_Y; iy++){
-    for(let ix = 0; ix < SEG_X; ix++){
-      const a = iy * (SEG_X + 1) + ix, b = a + SEG_X + 1, c = b + 1, d = a + 1;
-      idx.push(a, b, d, b, c, d);
-    }
+  const idx = new Uint16Array(SEG * SEG * 6);
+  let ii = 0;
+  for(let iy = 0; iy < SEG; iy++) for(let ix = 0; ix < SEG; ix++){
+    const a = iy * (SEG + 1) + ix, b = a + SEG + 1, c = b + 1, d = a + 1;
+    idx[ii++] = a; idx[ii++] = b; idx[ii++] = d; idx[ii++] = b; idx[ii++] = c; idx[ii++] = d;
   }
-  const vbo = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
-  const ibo = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idx, gl.STATIC_DRAW);
   const aPos = gl.getAttribLocation(prog, "aPos");
   gl.enableVertexAttribArray(aPos);
   gl.vertexAttribPointer(aPos, 3, gl.FLOAT, false, 0, 0);
+  gl.enable(gl.DEPTH_TEST);
 
   const U = {};
-  ["uProj","uView","uModel","uTime","uSpeed","uNoiseDensity","uNoiseStrength","uC1","uC2","uC3","uBrightness","uLift"]
-    .forEach(n => U[n] = gl.getUniformLocation(prog, n));
+  ["uProj","uView","uModel","uTime","uSpeed","uNoiseDensity","uNoiseStrength","uC1","uC2","uC3","uEye",
+   "uBrightness","uLift","uSurge","uSurgePos","uGloss"].forEach(n => U[n] = gl.getUniformLocation(prog, n));
 
-  /* ---------- Matrizen (spaltenweise, wie WebGL sie erwartet) ---------- */
+  /* ---------- Matrizen (spaltenweise) ---------- */
   const DEG = Math.PI / 180;
   function mul(a, b){
     const o = new Float32Array(16);
@@ -165,94 +204,134 @@ void main(){
       -(xx*eye[0]+xy*eye[1]+xz*eye[2]), -(yx*eye[0]+yy*eye[1]+yz*eye[2]), -(zx*eye[0]+zy*eye[1]+zz*eye[2]), 1
     ]);
   }
-  function rotX(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]); }
-  function rotY(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]); }
   function rotZ(a){ const c=Math.cos(a), s=Math.sin(a); return new Float32Array([c,s,0,0, -s,c,0,0, 0,0,1,0, 0,0,0,1]); }
   function translate(x, y, z){ return new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1]); }
 
-  /* Halo-Preset: position(-1.4,0,0), rotation(0°,10°,50°), Kamera Azimut 180° / Polar 90° / Abstand 3.6, FOV 45° */
-  const PRESET = { density:1.3, speed:0.4, strength:4, posX:-1.4, rotX:0, rotY:10, rotZ:50, azimuth:180, polar:90, distance:3.6, fov:45 };
-  const model = mul(translate(PRESET.posX, 0, 0), mul(rotX(PRESET.rotX*DEG), mul(rotY(PRESET.rotY*DEG), rotZ(PRESET.rotZ*DEG))));
-  const th = PRESET.azimuth * DEG, ph = PRESET.polar * DEG;
-  const eye = [PRESET.distance*Math.sin(ph)*Math.sin(th), PRESET.distance*Math.cos(ph), PRESET.distance*Math.sin(ph)*Math.cos(th)];
-  gl.uniformMatrix4fv(U.uView, false, lookAt(eye, [0,0,0], [0,1,0]));
-  gl.uniformMatrix4fv(U.uModel, false, model);
+  /* Universe-Preset (position −0.5/0.1/0, rotationZ 235°, Kamera Azimut 180° / Polar 115° / Abstand 3.9),
+     etwas schneller und kräftiger, damit es lebt */
+  const PRESET = { density:1.1, speed:0.16, strength:2.6, azimuth:180, polar:115, distance:3.9, fov:45 };
+  gl.uniformMatrix4fv(U.uModel, false, mul(translate(-0.5, 0.1, 0), rotZ(235 * DEG)));
   gl.uniform1f(U.uSpeed, PRESET.speed);
   gl.uniform1f(U.uNoiseDensity, PRESET.density);
   gl.uniform1f(U.uNoiseStrength, PRESET.strength);
 
   /* ---------- Farben aus den Theme-Tokens, weich überblendet ---------- */
-  function hexToRgb(str){
+  function toRgb(str){
     const s = String(str).trim();
     let m = s.match(/^#([0-9a-f]{6})$/i);
     if(m){ const n = parseInt(m[1], 16); return [(n>>16&255)/255, (n>>8&255)/255, (n&255)/255]; }
     m = s.match(/^#([0-9a-f]{3})$/i);
-    if(m){ return m[1].split("").map(h => parseInt(h+h, 16)/255); }
+    if(m) return m[1].split("").map(h => parseInt(h+h, 16)/255);
     m = s.match(/rgba?\(([^)]+)\)/);
     if(m){ const p = m[1].split(/[ ,/]+/).map(Number); return [p[0]/255, p[1]/255, p[2]/255]; }
-    return [0.5, 0.5, 0.5];
+    return [.5, .5, .5];
   }
-  function mixRgb(a, b, t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+  const mixRgb = (a, b, t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t];
   function readTarget(){
-    const cs = getComputedStyle(document.documentElement);
-    const light = document.documentElement.getAttribute("data-theme") === "light";
-    const ac = hexToRgb(cs.getPropertyValue("--ac")), sec = hexToRgb(cs.getPropertyValue("--sec"));
-    const acL = hexToRgb(cs.getPropertyValue("--ac-light")), secL = hexToRgb(cs.getPropertyValue("--sec-light"));
-    if(light){
-      /* hell: pastellig wie das Original-Preset (Lift = sRGB-Ausgabe) */
-      return { c1: mixRgb(secL, [1,1,1], .15), c2: mixRgb(acL, [1,1,1], .25), c3: [.86,.84,.95], bright: 1.05, lift: 1 };
+    const cs = getComputedStyle(root);
+    const v = n => toRgb(cs.getPropertyValue(n));
+    if(root.getAttribute("data-theme") === "light"){
+      return { c1: mixRgb(v("--ac-light"), [1,1,1], .1), c2: mixRgb(v("--sec-light"), [1,1,1], .2), c3: [.93,.91,.99], bright: 1.0, lift: 1, gloss: .55 };
     }
-    /* dunkel: satte Akzentfarben, die in tiefes Fast-Schwarz auslaufen */
-    return { c1: mixRgb(sec, [0,0,0], .25), c2: mixRgb(ac, [0,0,0], .15), c3: [.02,.018,.04], bright: .62, lift: 0 };
+    /* dunkel: Akzentfarben gleiten in Schwarz — wie das Universe-Preset (#5606ff → #fe8989 → #000) */
+    return { c1: v("--ac"), c2: v("--sec"), c3: [0,0,0], bright: .85, lift: 0, gloss: 1 };
   }
-  let cur = readTarget(), from = cur, to = cur, blendStart = 0;
+  let from = readTarget(), to = from, blendStart = -1e9;
   const BLEND_MS = 1400;
-  function retarget(){ from = current(performance.now()); to = readTarget(); blendStart = performance.now(); requestFrame(); }
   function current(now){
     const k = Math.min(1, (now - blendStart) / BLEND_MS);
     const e = k < .5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2) / 2;
-    return {
-      c1: mixRgb(from.c1, to.c1, e), c2: mixRgb(from.c2, to.c2, e), c3: mixRgb(from.c3, to.c3, e),
-      bright: from.bright + (to.bright - from.bright) * e, lift: from.lift + (to.lift - from.lift) * e, done: k >= 1
-    };
+    const o = { done: k >= 1 };
+    for(const key of ["c1","c2","c3"]) o[key] = mixRgb(from[key], to[key], e);
+    for(const key of ["bright","lift","gloss"]) o[key] = from[key] + (to[key] - from[key]) * e;
+    return o;
   }
-  new MutationObserver(retarget).observe(document.documentElement, { attributes:true, attributeFilter:["data-theme","data-period"] });
+  new MutationObserver(() => { from = current(performance.now()); to = readTarget(); blendStart = performance.now(); wake(); })
+    .observe(root, { attributes:true, attributeFilter:["data-theme","data-period"] });
 
-  /* ---------- Größe: Verlauf ist weich, halbe Auflösung reicht und spart GPU ---------- */
-  const SCALE = 0.5;
+  /* ---------- Interaktion: Maus-/Scroll-Parallaxe ---------- */
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let mx = 0, my = 0, sx = 0, smx = 0, smy = 0, ssx = 0;
+  addEventListener("pointermove", e => {
+    if(e.pointerType !== "mouse") return;
+    mx = e.clientX / innerWidth - .5; my = e.clientY / innerHeight - .5; wake();
+  }, { passive:true });
+  addEventListener("scroll", () => {
+    const max = Math.max(1, document.documentElement.scrollHeight - innerHeight);
+    sx = Math.min(1, scrollY / max); wake();
+  }, { passive:true });
+
+  /* ---------- XP-Reaktion: Funktionen aus xp.js sanft umhüllen ---------- */
+  let surge = 0, surgeTarget = 0, surgePos = -8;
+  function pulse(amount){
+    if(reduceMotion.matches) return;
+    surgeTarget = Math.min(1.6, surgeTarget + amount);
+    surgePos = -8; wake();
+  }
+  if(typeof window.addXP === "function"){
+    const orig = window.addXP;
+    window.addXP = function(n){ if(n > 0) pulse(Math.min(.9, .35 + n / 60)); return orig.apply(this, arguments); };
+  }
+  if(typeof window.showLevelUp === "function"){
+    const orig = window.showLevelUp;
+    window.showLevelUp = function(){ pulse(1.4); return orig.apply(this, arguments); };
+  }
+
+  /* ---------- Größe ---------- */
+  const SCALE = small ? .5 : .6;
+  let aspect = 1;
   function resize(){
     const w = Math.max(1, Math.round(innerWidth * SCALE)), h = Math.max(1, Math.round(innerHeight * SCALE));
     if(canvas.width !== w || canvas.height !== h){ canvas.width = w; canvas.height = h; }
     gl.viewport(0, 0, w, h);
-    /* Hochkant (Handy): FOV vergrößern, damit der Verlauf nicht zu einem Streifen wird */
-    const aspect = w / h;
+    aspect = w / h;
+    /* Hochkant: FOV vergrößern, damit die Wellen nicht zu einem Streifen werden */
     const fov = aspect < 1 ? 2 * Math.atan(Math.tan(PRESET.fov * DEG / 2) / Math.max(aspect, .5)) : PRESET.fov * DEG;
     gl.uniformMatrix4fv(U.uProj, false, perspective(Math.min(fov, 110 * DEG), aspect, .1, 100));
-    requestFrame();
+    wake();
   }
   addEventListener("resize", resize);
 
-  /* ---------- Render-Loop: pausiert im Hintergrund-Tab, statisch bei reduzierter Bewegung ---------- */
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
-  let raf = 0, last = performance.now(), elapsed = 7; // Startwert ≠ 0: interessantere erste Form
+  /* ---------- Render-Loop ---------- */
+  let raf = 0, last = 0, elapsed = 11;
   function draw(now){
     raf = 0;
-    const dt = Math.min(.1, (now - last) / 1000); last = now;
-    if(!reduceMotion.matches) elapsed += dt;
-    cur = current(now);
+    const dt = last ? Math.min(.1, (now - last) / 1000) : 0; last = now;
+    const still = reduceMotion.matches;
+    if(!still) elapsed += dt;
+
+    /* Kamera: langsames Schweben + gedämpftes Nachziehen von Maus und Scroll */
+    const k = 1 - Math.exp(-dt * 2.5);
+    smx += (mx - smx) * k; smy += (my - smy) * k; ssx += (sx - ssx) * k;
+    const az = (PRESET.azimuth + (still ? 0 : Math.sin(elapsed * .045) * 9 + smx * 14)) * DEG;
+    const po = (PRESET.polar + (still ? 0 : Math.sin(elapsed * .031) * 4 + smy * 8 - ssx * 10)) * DEG;
+    const dist = PRESET.distance - ssx * .5;
+    const eye = [dist*Math.sin(po)*Math.sin(az), dist*Math.cos(po), dist*Math.sin(po)*Math.cos(az)];
+    gl.uniformMatrix4fv(U.uView, false, lookAt(eye, [0, 0, 0], [0, 1, 0]));
+    gl.uniform3fv(U.uEye, eye);
+
+    /* XP-Welle: schnell an, langsam ab; das Leuchtband läuft quer über die Fläche */
+    surge += (surgeTarget - surge) * (1 - Math.exp(-dt * 6));
+    surgeTarget *= Math.exp(-dt * 1.1);
+    surgePos += dt * 9;
+    gl.uniform1f(U.uSurge, surge);
+    gl.uniform1f(U.uSurgePos, surgePos);
+
+    const c = current(now);
     gl.uniform1f(U.uTime, elapsed);
-    gl.uniform3fv(U.uC1, cur.c1); gl.uniform3fv(U.uC2, cur.c2); gl.uniform3fv(U.uC3, cur.c3);
-    gl.uniform1f(U.uBrightness, cur.bright); gl.uniform1f(U.uLift, cur.lift);
-    gl.clearColor(cur.c3[0], cur.c3[1], cur.c3[2], 1);
+    gl.uniform3fv(U.uC1, c.c1); gl.uniform3fv(U.uC2, c.c2); gl.uniform3fv(U.uC3, c.c3);
+    gl.uniform1f(U.uBrightness, c.bright); gl.uniform1f(U.uLift, c.lift); gl.uniform1f(U.uGloss, c.gloss);
+    gl.clearColor(c.c3[0], c.c3[1], c.c3[2], 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
     canvas.classList.add("ready");
-    if(!document.hidden && (!reduceMotion.matches || !cur.done)) raf = requestAnimationFrame(draw);
+
+    const settling = Math.abs(mx - smx) + Math.abs(my - smy) + Math.abs(sx - ssx) > .001 || surge > .002 || !c.done;
+    if(!document.hidden && (!still || settling)) raf = requestAnimationFrame(draw);
   }
-  /* Neustart aus dem Ruhezustand: Zeitbasis zurücksetzen, damit kein Sprung entsteht */
-  function requestFrame(){ if(!raf && !document.hidden){ last = performance.now(); raf = requestAnimationFrame(draw); } }
-  document.addEventListener("visibilitychange", requestFrame);
-  reduceMotion.addEventListener && reduceMotion.addEventListener("change", requestFrame);
+  function wake(){ if(!raf && !document.hidden){ last = 0; raf = requestAnimationFrame(draw); } }
+  document.addEventListener("visibilitychange", wake);
+  reduceMotion.addEventListener && reduceMotion.addEventListener("change", wake);
   canvas.addEventListener("webglcontextlost", e => { e.preventDefault(); cancelAnimationFrame(raf); raf = 0; canvas.classList.remove("ready"); });
   resize();
 })();
