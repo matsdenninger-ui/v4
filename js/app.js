@@ -64,6 +64,9 @@ document.body.addEventListener("click", e=>{
     case "session-preflight":
       openPreflight("deep_work", id);
       break;
+    case "quick-start":
+      quickStart(id || null);
+      break;
     case "workout-preflight":
       openPreflight("workout", null);
       break;
@@ -696,7 +699,7 @@ function renderAll(){
   renderLearning(); renderSkills(); renderPeople(); renderRapport(); renderRestCheck();
   renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation();
   renderGoals(); renderGoalSkillSel(); renderReview(); renderSwot();
-  renderKnowledge();
+  renderKnowledge(); renderHustle(); renderTimeCheck(); renderMonthReview();
   renderHero(); renderTodayFocusGoals();
 }
 rolloverTodos();
@@ -706,6 +709,8 @@ renderAll();                              // zeichnet über syncTimerUI() auch e
 settleAbandonedSession(SEEN_AT_BOOT);     // Session, die eine geschlossene App überdauert hat, abrechnen statt weiterlaufen lassen
 checkBadges();
 initCloudSync();
+checkComeback();                          // nach 2+ Tagen Pause: freundlich begrüßen statt überfordern
+handleGoParam();                          // Deep-Link aus einer Push-Erinnerung (?go=…)
 
 /* ============================================================
    Mitternachts-Reset

@@ -1,0 +1,27 @@
+# Ascend-Erinnerungen: ruft alle 15 Minuten /api/cron auf.
+# Einrichtung (einmalig): Repo → Settings → Secrets and variables → Actions →
+#   ASCEND_URL    = Adresse deiner App, z. B. https://dein-projekt.vercel.app
+#   ASCEND_SECRET = dein Sync-Code (derselbe Wert wie APP_SECRET bei Vercel)
+# Ohne diese Secrets läuft der Job leer durch und tut nichts.
+name: Ascend-Erinnerungen
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  erinnern:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fällige Erinnerungen verschicken
+        env:
+          URL: ${{ secrets.ASCEND_URL }}
+          SECRET: ${{ secrets.ASCEND_SECRET }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then
+            echo "ASCEND_URL / ASCEND_SECRET fehlen — übersprungen."
+            exit 0
+          fi
+          curl -fsS -m 30 -H "Authorization: Bearer $SECRET" "${URL%/}/api/cron"

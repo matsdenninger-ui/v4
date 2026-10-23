@@ -201,6 +201,7 @@ function renderHero(){
   $("heroChips").innerHTML = chips.join("");
 
   renderMission();
+  if(typeof renderMinDay === "function") renderMinDay();
 }
 
 function renderTodayFocusGoals(){

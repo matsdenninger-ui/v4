@@ -4,7 +4,7 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 28;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 29;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die erst spätere App-Versionen eingeführt haben. Ein Gerät mit
@@ -13,9 +13,11 @@ let memoryFallback = null;
      v21: Trainings-App
      v26: Glaubenssätze/Experimente/Beweise + Session-Rahmen (Pre-Flight)
      v27: Second Brain — Karteikarten + Wiederholungs-Log
-     v28: Feierabend-Ritual, SWOT, Tagesthemen */
+     v28: Feierabend-Ritual, SWOT, Tagesthemen
+     v29: Erinnerungen, Side Hustle, Zeit-Check, Monatsrückblick, Minimum-Tag */
 const RESCUE_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions",
-  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate","swot","weekThemes"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate","swot","weekThemes",
+  "reminders","hustleIdeas","income","screenTime","selfRating","minimumDay","wonByDate"];
 
 /* Felder, bei denen null ein echter Wert ist ("läuft nicht mehr") und nicht
    "diese App-Version kennt das Feld nicht". Nur hier darf ein null aus der
@@ -42,7 +44,7 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
   "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash",
-  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate","hustleIdeas","income","wonByDate"];
 /* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
    oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
    jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
@@ -172,6 +174,14 @@ function defaultState(){
     shutdownByDate: {},              // {"date": true} — Feierabend-Ritual abgeschlossen
     swot: { s:"", w:"", o:"", t:"", updated:0 },   // persönliche SWOT-Analyse
     weekThemes: ["","","","","","",""],            // Tagesthema Mo–So im Wochenplan (z. B. „Admin“)
+    /* ---------- Dranbleiben (v29) ---------- */
+    reminders: { enabled:false, tz:"", items:{} }, // Push-Erinnerungen; der Server liest sie aus dem Sync-Stand
+    hustleIdeas: [],                 // {id, title, scores:{fun,fit,money,time,cost}, status:"idea"|"testing"|"keep"|"change"|"stop", started, goal_id, note, touched}
+    income: [],                      // {id, date, idea_id|null, amount, hours, note, touched}
+    screenTime: {},                  // {"YYYY-MM-DD" (Montag der Woche): Ø Stunden pro Tag}
+    selfRating: {},                  // {"YYYY-MM": {score 1–10, note, at}}
+    minimumDay: { outcomes:1, habits:2 },          // Was zählt als „Tag gewonnen“
+    wonByDate: {},                   // {"date": true} — Minimum-Tag geschafft (XP einmal pro Tag)
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
     updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
@@ -513,13 +523,16 @@ function mergeCollections(base, other, deleted){
     cards:        mergeById(base.cards, other.cards, deleted),
     reviewByDate: mergeDateMax(base.reviewByDate, other.reviewByDate),
     shutdownByDate: mergeDateFlags(base.shutdownByDate, other.shutdownByDate),
+    wonByDate:   mergeDateFlags(base.wonByDate, other.wonByDate),
+    hustleIdeas: mergeById(base.hustleIdeas, other.hustleIdeas, deleted),
+    income:      mergeById(base.income, other.income, deleted),
     // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
     trash: mergeById(base.trash, other.trash, null)
       .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
   };
 }
 const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
-  "beliefs","evidence","experiments","focusSessions","cards"];
+  "beliefs","evidence","experiments","focusSessions","cards","hustleIdeas","income"];
 function collectionsChanged(before, after){
   return COLLECTION_KEYS.some(k=>arrChanged(before[k], after[k]))
     || JSON.stringify(before.routineChecks) !== JSON.stringify(after.routineChecks)
@@ -531,6 +544,7 @@ function collectionsChanged(before, after){
     || JSON.stringify(before.journal) !== JSON.stringify(after.journal)
     || JSON.stringify(before.reviewByDate) !== JSON.stringify(after.reviewByDate)
     || JSON.stringify(before.shutdownByDate) !== JSON.stringify(after.shutdownByDate)
+    || JSON.stringify(before.wonByDate) !== JSON.stringify(after.wonByDate)
     || (after.xp||0) > (before.xp||0);
 }
 
@@ -851,6 +865,9 @@ function initCloudSync(){
 
 
 let S = loadState();
+// Letzter Speicherstand VOR diesem Start — für „Willkommen zurück“ (minday.js).
+// Beim Start speichern Rollover & Co. sofort neu und würden ihn sonst überschreiben.
+const BOOT_UPDATED_AT = S.updatedAt || 0;
 ensureFieldTs(S);        // ältere Stände auf Feld-Zeitstempel heben
 resetChangeTracking();   // ab hier zählt nur, was sich WIRKLICH ändert
 // Die einmalige XP-Korrektur sofort festschreiben, sonst liefe sie bei jedem

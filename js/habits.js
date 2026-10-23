@@ -27,13 +27,14 @@ function renderHabits(){
     list.innerHTML = '<div class="empty">🌱 <b>Noch keine Habits.</b><br>Starte mit einem einzigen kleinen Habit — Konsistenz schlägt Intensität.</div>';
   } else {
     list.innerHTML = S.habits.map(h=>{
-      const on = !!h.dates[tk], st = habitStreak(h);
+      const on = !!h.dates[tk], st = habitGraceStreak(h), retten = habitNeedsRescue(h);
       const noteKey = "habit:"+h.id, noteOpen = openNotes.has(noteKey), hasNote = !!(h.note && h.note.trim());
       return `<div class="item-wrap" data-id="${h.id}">
         <div class="check-item ${on?"done":""}">
           <button class="cbx ${on?"on":""}" data-act="habit-toggle" data-id="${h.id}">${ICON_CHECK}</button>
           <span class="txt" style="text-decoration:none;color:${on?"var(--dim)":"inherit"}">${esc(h.name)}</span>
-          ${st>0 ? `<span class="streak">🔥 ${st}</span>` : ""}
+          ${retten ? `<span class="streak rescue" title="Gestern verpasst — heute machen, dann hält die Serie">⚡ heute retten</span>` : ""}
+          ${st>0 ? `<span class="streak" title="Nie zweimal aussetzen: ein einzelner verpasster Tag beendet die Serie nicht">🔥 ${st}</span>` : ""}
           <button class="icon-btn note-btn ${hasNote?"has-note":""}" data-act="note-toggle" data-kind="habit" data-id="${h.id}" aria-label="Notiz">📝</button>
           <button class="icon-btn del" data-act="habit-del" data-id="${h.id}">${ICON_X}</button>
         </div>

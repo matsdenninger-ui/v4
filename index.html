@@ -5,6 +5,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ascend — Self-Improvement Dashboard</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ascend">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -46,7 +54,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v32 · 23.10.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v33 · 23.10.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <span class="nav-label">Übersicht</span>
@@ -74,6 +82,10 @@
     <button data-page="goals">
       <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
       Goals</button>
+    <span class="nav-label">Geld</span>
+    <button data-page="hustle">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3h6M10 3v6L4.5 18.5A1.7 1.7 0 0 0 6 21h12a1.7 1.7 0 0 0 1.5-2.5L14 9V3M7 15h10"/></svg>
+      Side Hustle</button>
   </nav>
   <div class="side-foot">
     <div class="level-card">
@@ -92,6 +104,7 @@
       <button class="btn sm" id="levelSetBtn">Setzen</button>
     </div>
     <div class="side-actions">
+      <button class="demo-btn" id="remindersBtn">🔔 Erinnerungen</button>
       <button class="demo-btn" id="themeToggleBtn">🌙 Dunkles Theme</button>
       <button class="demo-btn" id="demoBtn">✦ Demo-Daten laden</button>
       <div class="export-import-box">
@@ -159,6 +172,9 @@
     <!-- Glance-Chips -->
     <div class="hero-chips" id="heroChips"></div>
 
+    <!-- Minimum-Tag: was den Tag „gewonnen“ macht -->
+    <div class="minday" id="minDayBanner"></div>
+
     <!-- Kennzahlen -->
     <div class="stat-strip">
       <div class="stat"><b id="stTodos">0/0</b><small>To-Dos erledigt</small></div>
@@ -216,6 +232,7 @@
               <div class="clock" id="clock">00:00:00</div>
               <div class="state" id="timerState">Bereit</div>
               <button class="btn violet" id="timerBtn">▶ Session starten</button>
+              <button class="btn ghost sm quick-start-btn" data-act="quick-start" id="quickStartBtn">⚡ Nur 5 Minuten — ohne Vorbereitung</button>
               <div id="lastIfThen" class="if-then-note"></div>
               <div class="focus-stat">
                 <div><b id="focusToday">0,0 h</b><small>Heute</small></div>
@@ -592,7 +609,7 @@
     <div class="stat-strip">
       <div class="stat"><b id="pXp">0</b><small>Gesamt-XP</small></div>
       <div class="stat"><b id="pLvl">1</b><small>Level</small></div>
-      <div class="stat"><b id="pBadges">0/15</b><small>Badges</small></div>
+      <div class="stat"><b id="pBadges">0/17</b><small>Badges</small></div>
       <div class="stat"><b id="pFocusTotal">0 h</b><small>Fokus gesamt</small></div>
     </div>
 
@@ -626,6 +643,18 @@
         <p class="sub">Eine ehrliche Zusammenfassung deiner Woche — auf Knopfdruck.</p>
         <div class="empty" style="margin-bottom:14px">📋 Der Report fasst To-Dos, Habits, Fokuszeit,<br>Workouts, Schlaf und Stimmung der letzten 7 Tage zusammen.</div>
         <button class="btn violet" id="reportBtn">Weekly Report erzeugen</button>
+      </div>
+
+      <div class="card span2" id="monthReviewCard">
+        <h3>🪞 Monatsrückblick <span class="tag">Vorher · Nachher</span></h3>
+        <p class="sub">Fortschritt fühlt sich oft klein an, weil man ihn jeden Tag sieht. Hier steht schwarz auf weiß, was sich gegenüber dem letzten Monat verändert hat — und wie zufrieden du mit dir bist.</p>
+        <div id="monthReview"></div>
+      </div>
+
+      <div class="card span2" id="timeCheckCard">
+        <h3>⏱ Zeit-Check <span class="tag">letzte 7 Tage</span></h3>
+        <p class="sub">Wohin gingen deine Stunden wirklich? Fokus, Side Hustle und Training kommen aus deinen Daten — die Handy-Bildschirmzeit trägst du einmal pro Woche ein.</p>
+        <div id="timeCheck"></div>
       </div>
 
       <div class="card">
@@ -677,6 +706,44 @@
         <p class="sub">Stärken und Schwächen liegen in dir, Chancen und Risiken um dich herum. Füll die vier Felder aus und leite daraus deine nächsten Ziele ab — Stärken ausbauen, Chancen nutzen.</p>
         <div class="swot-grid" id="swotGrid"></div>
         <div class="meta" id="swotMeta" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= SIDE HUSTLE ================= -->
+  <section class="page" id="page-hustle">
+    <div class="stat-strip hs-stats" id="hustleStats"></div>
+    <div class="grid g2">
+      <div class="card span2">
+        <h3>🧪 Aktiver 30-Tage-Test</h3>
+        <p class="sub">Eine Idee, 30 Tage, vier Wochenschritte. Danach entscheidest du mit echten Zahlen statt Bauchgefühl: weitermachen, anpassen oder stoppen.</p>
+        <div id="hustleActive"></div>
+      </div>
+
+      <div class="card">
+        <h3>💡 Ideen bewerten</h3>
+        <p class="sub">Schreib alle Ideen auf und bewerte jede mit fünf Reglern (1–5). Die mit den meisten Punkten ist dein bester Kandidat.</p>
+        <div class="row-add">
+          <input id="hustleIdeaInput" maxlength="80" placeholder="Idee, z. B. „Social-Media-Betreuung für Handwerker“">
+          <button class="btn" id="hustleIdeaAdd">+</button>
+        </div>
+        <div class="rapport" id="hustleSwotHint"></div>
+        <div id="hustleIdeaList"></div>
+      </div>
+
+      <div class="card">
+        <h3>💶 Einnahmen <span class="tag">+5 XP</span></h3>
+        <p class="sub">Trag jede Einnahme mit den Stunden ein, die du dafür gebraucht hast — so siehst du, was sich pro Stunde wirklich lohnt.</p>
+        <div class="inc-form">
+          <input type="number" id="incAmount" min="0" step="0.01" placeholder="Betrag €">
+          <input type="number" id="incHours" min="0" step="0.25" placeholder="Stunden">
+          <input type="date" id="incDate">
+          <select id="incIdea"></select>
+          <input id="incNote" maxlength="80" placeholder="Notiz (optional)">
+          <button class="btn" id="incAdd">Eintragen</button>
+        </div>
+        <div class="inc-bars" id="incomeBars"></div>
+        <div class="check-list" id="incomeList"></div>
       </div>
     </div>
   </section>
@@ -736,6 +803,48 @@
     <div class="modal-actions">
       <button class="btn ghost" id="reflectCancel">Später</button>
       <button class="btn" id="reflectSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Willkommen zurück nach einer Pause -->
+<div class="modal" id="comebackModal" role="dialog" aria-labelledby="cbTitle">
+  <div class="modal-box" style="max-width:440px">
+    <h3 id="cbTitle">👋 Schön, dass du wieder da bist</h3>
+    <p class="sub">Du warst <b id="comebackDays">2</b> Tage nicht hier. Kein Aufholen, kein schlechtes Gewissen — eine kleine Sache heute reicht, um wieder reinzukommen.</p>
+    <div class="cb-options">
+      <button class="btn violet" data-act="cb-quick">⚡ 5 Minuten Fokus</button>
+      <button class="btn ghost" data-act="cb-habit">🔁 Ein Habit abhaken</button>
+      <button class="btn ghost" data-act="cb-outcome">🎯 Ein Outcome für heute</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn ghost" data-act="cb-close">Erstmal umschauen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Push-Erinnerungen -->
+<div class="modal" id="reminderModal" role="dialog" aria-labelledby="remTitle">
+  <div class="modal-box" style="max-width:520px">
+    <h3 id="remTitle">🔔 Erinnerungen</h3>
+    <p class="sub">Ascend meldet sich, wenn gerade etwas ansteht — und nur dann. Sind deine Habits erledigt, kommt auch keine Habit-Erinnerung.</p>
+    <div id="remStatus"></div>
+    <div class="rem-actions">
+      <button class="btn" id="remEnable">Auf diesem Gerät aktivieren</button>
+      <button class="btn ghost" id="remTest">Test-Push</button>
+      <button class="btn ghost" id="remDisable">Abmelden</button>
+    </div>
+    <div class="pf-lab">Was und wann</div>
+    <div id="remItems"></div>
+    <details class="rem-setup">
+      <summary>Einmalige Einrichtung des Zeitplans (GitHub)</summary>
+      <p>Damit Erinnerungen auch bei geschlossener App kommen, prüft ein kostenloser GitHub-Zeitplan alle 15 Minuten, ob etwas ansteht. Dafür im Repo unter <b>Settings → Secrets and variables → Actions</b> zwei Secrets anlegen:</p>
+      <p><code>ASCEND_URL</code> = Adresse deiner App (z. B. https://dein-projekt.vercel.app)<br><code>ASCEND_SECRET</code> = dein Sync-Code</p>
+      <p>Erinnerungen können sich um bis zu ca. 15–30 Minuten verspäten.</p>
+    </details>
+    <div class="modal-actions">
+      <button class="btn ghost" id="remMaster">Alle Erinnerungen pausieren</button>
+      <button class="btn" id="remClose">Fertig</button>
     </div>
   </div>
 </div>
@@ -1068,6 +1177,10 @@
 <script src="js/winddown.js?v=38"></script>
 <script src="js/progress.js?v=38"></script>
 <script src="js/export.js?v=38"></script>
+<script src="js/minday.js?v=39"></script>
+<script src="js/insights.js?v=39"></script>
+<script src="js/hustle.js?v=39"></script>
+<script src="js/reminders.js?v=39"></script>
 <script src="js/app.js?v=38"></script>
 </body>
 </html>

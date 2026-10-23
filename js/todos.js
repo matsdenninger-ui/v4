@@ -492,6 +492,7 @@ function groupBlockHTML(t, mode){
     </div>
     <div class="outcome-actions">
       ${!t.done && next ? `<button class="btn violet sm" data-act="session-preflight" data-id="${t.id}">▶ Session zu diesem ${imBacklog?"Ergebnis":"Outcome"}</button>` : ""}
+      ${!t.done && next ? `<button class="btn ghost sm" data-act="quick-start" data-id="${t.id}" title="Ohne Pre-Flight: 5 Minuten am nächsten Subtask">⚡ 5 Min.</button>` : ""}
       ${!t.done && !imBacklog ? `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>` : ""}
       <button class="btn ghost sm" data-act="four-bullet" data-id="${t.id}" title="Update für Chef oder Team: Auftrag · Erledigt · Risiken · Nächstes">📨 Update</button>
     </div>
