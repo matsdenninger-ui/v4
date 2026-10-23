@@ -34,13 +34,8 @@
 .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 .sidebar::-webkit-scrollbar-thumb:hover{background:var(--dim)}
 .brand{display:flex;align-items:center;gap:11px;margin-bottom:14px}
-.brand-mark{
-  width:34px;height:34px;border-radius:10px;flex:none;
-  background:linear-gradient(135deg,var(--ac),var(--sec) 130%);
-  display:grid;place-items:center;font-family:var(--font-display);
-  font-weight:800;font-size:17px;color:#fff;letter-spacing:-.5px;
-  box-shadow:var(--glow-ac);position:relative;
-}
+.brand-mark{width:36px;height:36px;flex:none;display:grid;place-items:center;color:var(--text);position:relative}
+.brand-logo{width:36px;height:36px;display:block;overflow:visible;filter:drop-shadow(0 4px 14px var(--ac-soft))}
 .brand h1{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:-.3px}
 .brand span{display:block;font-size:11px;color:var(--dim);font-weight:400;font-family:var(--font-body);letter-spacing:.4px}
 
