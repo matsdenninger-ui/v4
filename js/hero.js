@@ -196,6 +196,8 @@ function renderHero(){
   // Fällige Karteikarten (knowledge.js) — nur wenn etwas ansteht, sonst kein Platz verschwenden
   const kn = typeof knowledgeChip === "function" ? knowledgeChip() : "";
   if(kn) chips.push(kn);
+  const fr = typeof fridayChip === "function" ? fridayChip() : "";
+  if(fr) chips.push(fr);
   $("heroChips").innerHTML = chips.join("");
 
   renderMission();
@@ -237,6 +239,7 @@ function renderWeek(){
     return `<div class="wb-day ${dateKey===tk?"today":""}" data-day="${i}">
       <h5>${name}</h5>
       <div class="wb-date">${fmtShort(dateKey)}</div>
+      <input class="wb-theme" data-act="wb-theme" data-i="${i}" maxlength="24" placeholder="Thema" value="${esc((S.weekThemes||[])[i]||"")}" aria-label="Tagesthema ${name}">
       ${items.map(it=>{
         return `<div class="wb-item ${it.done?"done":""}" data-id="${it.id}">
           <div class="wb-item-row">
@@ -303,4 +306,14 @@ document.body.addEventListener("keydown", e=>{
     e.preventDefault();
     document.querySelector(`[data-act="goal-todo-add"][data-id="${e.target.dataset.id}"]`).click();
   }
+});
+
+
+/* Tagesthemen (Block-out): ein Thema pro Wochentag, gilt jede Woche */
+document.body.addEventListener("input", e=>{
+  const el = e.target;
+  if(!el.dataset || el.dataset.act !== "wb-theme") return;
+  if(!Array.isArray(S.weekThemes) || S.weekThemes.length !== 7) S.weekThemes = ["","","","","","",""];
+  S.weekThemes[parseInt(el.dataset.i)] = el.value;
+  save();
 });

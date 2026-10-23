@@ -4,7 +4,7 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 27;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 28;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die erst spätere App-Versionen eingeführt haben. Ein Gerät mit
@@ -12,9 +12,10 @@ let memoryFallback = null;
    Zusammenführen NICHT durch Standardwerte ersetzt werden.
      v21: Trainings-App
      v26: Glaubenssätze/Experimente/Beweise + Session-Rahmen (Pre-Flight)
-     v27: Second Brain — Karteikarten + Wiederholungs-Log */
+     v27: Second Brain — Karteikarten + Wiederholungs-Log
+     v28: Feierabend-Ritual, SWOT, Tagesthemen */
 const RESCUE_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions",
-  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate","swot","weekThemes"];
 
 /* Felder, bei denen null ein echter Wert ist ("läuft nicht mehr") und nicht
    "diese App-Version kennt das Feld nicht". Nur hier darf ein null aus der
@@ -41,7 +42,7 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
   "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash",
-  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate","shutdownByDate"];
 /* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
    oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
    jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
@@ -167,6 +168,10 @@ function defaultState(){
        eine Box weiter und verlängert den Abstand (siehe KN_INTERVALS). */
     cards: [],                       // {id, topic_id|null, front, back, box 0-5, due "YYYY-MM-DD", reviews, lapses, last_review, touched}
     reviewByDate: {},                // {"date": Anzahl wiederholter Karten}
+    /* ---------- Wissen → Funktionen (v28) ---------- */
+    shutdownByDate: {},              // {"date": true} — Feierabend-Ritual abgeschlossen
+    swot: { s:"", w:"", o:"", t:"", updated:0 },   // persönliche SWOT-Analyse
+    weekThemes: ["","","","","","",""],            // Tagesthema Mo–So im Wochenplan (z. B. „Admin“)
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
     updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
@@ -507,6 +512,7 @@ function mergeCollections(base, other, deleted){
     // pro Karte gewinnt die zuletzt angefasste Seite.
     cards:        mergeById(base.cards, other.cards, deleted),
     reviewByDate: mergeDateMax(base.reviewByDate, other.reviewByDate),
+    shutdownByDate: mergeDateFlags(base.shutdownByDate, other.shutdownByDate),
     // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
     trash: mergeById(base.trash, other.trash, null)
       .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
@@ -524,6 +530,7 @@ function collectionsChanged(before, after){
     || JSON.stringify(before.badges) !== JSON.stringify(after.badges)
     || JSON.stringify(before.journal) !== JSON.stringify(after.journal)
     || JSON.stringify(before.reviewByDate) !== JSON.stringify(after.reviewByDate)
+    || JSON.stringify(before.shutdownByDate) !== JSON.stringify(after.shutdownByDate)
     || (after.xp||0) > (before.xp||0);
 }
 

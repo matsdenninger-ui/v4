@@ -226,7 +226,9 @@ async function toggleTodoDone(id){
     }
   }
   const warOutcome = !!t.is_outcome;
-  t.done = !t.done; t.status = t.done ? "done" : "open"; t.touched = Date.now(); save();
+  t.done = !t.done; t.status = t.done ? "done" : "open"; t.touched = Date.now();
+  if(t.done) t.done_at = Date.now(); else delete t.done_at;   // für Friday Highlights
+  save();
   if(t.done) addXP(t.parent_id ? 2 : 5, t.parent_id ? "Subtask erledigt" : "To-Do erledigt");
   renderTodos(); renderWeek(); renderOutcomes(); renderHero();
   // Parent ist erledigt, wenn alle Kinder erledigt sind — aber nur mit Bestätigung.
@@ -248,7 +250,7 @@ async function completeOutcome(parentId, still){
       { title:"Aufgabe abschließen", okLabel:"Abschließen" });
     if(!ok) return;
   }
-  parent.done = true; parent.status = "done"; parent.touched = Date.now(); save();
+  parent.done = true; parent.status = "done"; parent.touched = Date.now(); parent.done_at = Date.now(); save();
   addXP(15, "Ergebnis erreicht: " + parent.text);
   toast("🎯 Abgeschlossen: " + parent.text);
   renderOutcomes(); renderTodos(); renderWeek(); renderHero(); checkBadges();
@@ -488,10 +490,11 @@ function groupBlockHTML(t, mode){
       <input data-act="subtask-input" data-id="${t.id}" placeholder="Nächster Subtask — klein genug für 25 Min." maxlength="120">
       <button class="btn sm" data-act="subtask-add" data-id="${t.id}">+</button>
     </div>
-    ${!t.done ? `<div class="outcome-actions">
-      ${next ? `<button class="btn violet sm" data-act="session-preflight" data-id="${t.id}">▶ Session zu diesem ${imBacklog?"Ergebnis":"Outcome"}</button>` : ""}
-      ${imBacklog ? "" : `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>`}
-    </div>` : ""}
+    <div class="outcome-actions">
+      ${!t.done && next ? `<button class="btn violet sm" data-act="session-preflight" data-id="${t.id}">▶ Session zu diesem ${imBacklog?"Ergebnis":"Outcome"}</button>` : ""}
+      ${!t.done && !imBacklog ? `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>` : ""}
+      <button class="btn ghost sm" data-act="four-bullet" data-id="${t.id}" title="Update für Chef oder Team: Auftrag · Erledigt · Risiken · Nächstes">📨 Update</button>
+    </div>
   </div>`;
 }
 

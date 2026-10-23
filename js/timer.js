@@ -578,6 +578,7 @@ function renderFocusOverlay(){
     : `<span class="focus-noif">Kein Wenn-dann gesetzt</span>`;
   tickFocusOverlay();
   renderFocusFlow();
+  if(typeof renderParkList === "function") renderParkList();
   focusTick = setInterval(tickFocusOverlay, 500);
 }
 

@@ -101,3 +101,43 @@ function addRoutineItem(list){
 }
 $("routineAMInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addRoutineItem("am"); });
 $("routinePMInput").addEventListener("keydown", e=>{ if(e.key==="Enter") addRoutineItem("pm"); });
+
+
+/* ---------- Habit-Ideen ----------
+   Kleine, konkrete Gewohnheiten aus den Wissens-Themen der App: Fokus,
+   Erholung, Lernen, Kommunikation. Ein Tipp legt sie an. */
+const HABIT_IDEAS = [
+  ["📵", "90 Min. Fokus im Flugmodus", "Fokus"],
+  ["🧠", "Karteikarten wiederholen", "Lernen"],
+  ["📖", "30 Minuten lesen", "Lernen"],
+  ["🌙", "Feierabend-Ritual machen", "Kopf"],
+  ["🚶", "10 Minuten raus in die Natur", "Erholung"],
+  ["🔕", "1 Stunde ohne Social Media", "Reize"],
+  ["💬", "Bei einem Menschen melden", "Beziehungen"],
+  ["🙏", "3 Dinge, die gut liefen", "Psyche"],
+  ["🎙", "Eine Sprachnachricht/Rede aufnehmen und anhören", "Sprechen"],
+  ["🧘", "5 Minuten nichts tun", "Kopf"],
+];
+function renderHabitIdeas(){
+  const box = $("habitTpl");
+  if(!box.classList.contains("open")){ box.innerHTML = ""; return; }
+  const vorhanden = new Set(S.habits.map(h=>h.name.toLowerCase()));
+  box.innerHTML = HABIT_IDEAS.map(([ico, name, cat])=>{
+    const hat = vorhanden.has(name.toLowerCase());
+    return `<button class="pf-chip ${hat?"on":""}" data-habit-idea="${esc(name)}" ${hat?"disabled":""}>${ico} ${esc(name)} <small>${esc(cat)}</small></button>`;
+  }).join("");
+}
+$("habitTplBtn").addEventListener("click", ()=>{
+  const box = $("habitTpl");
+  box.classList.toggle("open");
+  $("habitTplBtn").textContent = box.classList.contains("open") ? "Ideen ausblenden" : "🌱 Ideen für Habits";
+  renderHabitIdeas();
+});
+$("habitTpl").addEventListener("click", e=>{
+  const b = e.target.closest("[data-habit-idea]"); if(!b || b.disabled) return;
+  const name = b.dataset.habitIdea;
+  if(S.habits.some(h=>h.name.toLowerCase()===name.toLowerCase())) return;
+  S.habits.push({id:uid(), name, dates:{}, note:"", touched:Date.now()});
+  save(); renderHabits(); renderHeatmap(); renderHero(); renderHabitIdeas();
+  toast("🌱 Habit angelegt: " + name);
+});

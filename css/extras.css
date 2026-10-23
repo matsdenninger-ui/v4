@@ -1,0 +1,108 @@
+/* ============================================================
+   ASCEND — extras.css
+   Wissen → Funktionen: Text-Modal, Parkplatz, Feierabend, Erholung,
+   Personen-Notizen, Goals (Und dann? · Rückblick · SWOT), Wochenthemen,
+   Habit-Ideen
+   ============================================================ */
+
+/* ---------- Text zum Kopieren ---------- */
+.share-text{font-size:13px;line-height:1.6;min-height:260px;font-family:var(--font-body)}
+
+/* ---------- Gedanken-Parkplatz im Fokus-Overlay ---------- */
+.focus-park{width:100%;max-width:520px}
+.focus-park input{width:100%;font-size:13px;background:var(--overlay-1);border-style:dashed}
+.focus-park-count{font-size:11.5px;color:var(--mint);margin-top:6px;min-height:16px;text-align:center}
+
+/* ---------- Feierabend-Ritual ---------- */
+.sd-summary{
+  font-size:13px;color:var(--dim);background:var(--elev);border-radius:var(--radius-sm);
+  padding:10px 12px;margin-bottom:4px;
+}
+.sd-summary b{color:var(--text)}
+.sd-row{
+  display:flex;align-items:center;gap:9px;font-size:13px;padding:7px 10px;margin-bottom:5px;
+  background:var(--elev);border-radius:var(--radius-sm);
+}
+.sd-row > span:first-child{flex:none;color:var(--dim)}
+.sd-row .sd-txt{flex:1;min-width:0;overflow-wrap:break-word;color:var(--text)}
+.sd-row.ok{color:var(--mint);background:var(--mint-soft)}
+.sd-row.ok > span:first-child{color:var(--mint)}
+.sd-row .btn{flex:none}
+.sd-row .icon-btn{width:24px;height:24px}
+.sd-tag{flex:none;font-size:11px;color:var(--ac)}
+.sd-hint{font-size:11px;color:var(--faint);margin:2px 0 4px}
+#sdTomorrow{width:100%}
+.sd-toggles{grid-template-columns:repeat(3,1fr)}
+
+/* ---------- Erholung ---------- */
+.rest-chip{font-size:12px}
+.rest-bars{display:flex;flex-direction:column;gap:7px}
+.rest-bar-row{display:grid;grid-template-columns:120px 1fr 34px;align-items:center;gap:10px;font-size:12.5px}
+.rest-bar-row .bar{height:8px;margin:0}
+.rest-bar-row .bar i{background:linear-gradient(90deg,var(--sec),var(--sec-light))}
+.rest-bar-row.zero{opacity:.5}
+.rest-bar-lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rest-bar-n{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.rest-top{margin-top:16px;padding:13px 14px;background:var(--elev);border-radius:var(--radius-sm);border:1px solid var(--border-soft)}
+.rest-top-q{font-size:12.5px;color:var(--dim);margin-bottom:8px;line-height:1.55}
+.rest-top-q b{color:var(--text)}
+.rest-tips{margin:0;padding-left:18px;font-size:13px;line-height:1.7}
+
+/* ---------- Social: Gesprächsfrage + Notizen ---------- */
+.rapport{
+  font-size:12.5px;color:var(--dim);background:var(--ac-soft);border-radius:var(--radius-sm);
+  padding:9px 11px;margin-bottom:12px;line-height:1.55;
+}
+.rapport b{color:var(--ac)}
+.link-btn{color:var(--ac);font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:2px;margin-left:4px}
+.person-wrap .todo-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.person-follow{color:var(--ac) !important;overflow-wrap:break-word}
+.person-notes{padding:4px 12px 10px}
+.person-notes textarea{min-height:56px}
+.person-notes input{width:100%}
+
+/* ---------- Goals: Und dann? · Rückblick ---------- */
+.goal-second{margin-top:10px}
+.goal-second label{display:block;font-size:11px;font-weight:700;color:var(--dim);margin-bottom:5px}
+.goal-second label span{font-weight:500;color:var(--faint)}
+.goal-second input{width:100%;font-size:12.5px;padding:7px 10px}
+.goal-reflect{
+  margin-top:10px;padding:10px 12px;font-size:12.5px;line-height:1.55;color:var(--text);
+  background:var(--mint-soft);border-radius:var(--radius-sm);
+}
+.goal-reflect-next{margin-top:4px;color:var(--dim)}
+.goal-reflect-next b{color:var(--mint)}
+.reflect-habit{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim);margin-top:8px}
+.reflect-habit input{width:auto}
+
+/* ---------- SWOT ---------- */
+.swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.swot-cell{background:var(--elev);border-radius:var(--radius-sm);padding:12px;border-top:3px solid var(--border)}
+.swot-cell label{display:block;font-size:12.5px;font-weight:700;margin-bottom:7px}
+.swot-cell textarea{min-height:90px;font-size:13px}
+.swot-s{border-top-color:var(--mint)}
+.swot-w{border-top-color:var(--rose)}
+.swot-o{border-top-color:var(--ac)}
+.swot-t{border-top-color:var(--sec)}
+
+/* ---------- Wochenplan: Tagesthema ---------- */
+.wb-theme{
+  width:100%;font-size:10.5px;text-align:center;padding:3px 5px;border-radius:6px;
+  background:transparent;border:1px dashed var(--border);color:var(--ac);font-weight:600;
+}
+.wb-theme:placeholder-shown{color:var(--faint)}
+.wb-theme::placeholder{font-weight:500}
+
+/* ---------- Habit-Ideen ---------- */
+.habit-tpl{display:none;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.habit-tpl.open{display:flex}
+.habit-tpl .pf-chip small{opacity:.65;margin-left:4px;font-size:10.5px}
+.habit-tpl .pf-chip:disabled{opacity:.5;cursor:default}
+
+/* ---------- Mobil ---------- */
+@media (max-width:860px){
+  .swot-grid{grid-template-columns:1fr}
+  .sd-toggles{grid-template-columns:1fr}
+  .rest-bar-row{grid-template-columns:96px 1fr 30px}
+}
+.pf-req.sd-opt{background:var(--elev);color:var(--dim)}

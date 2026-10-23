@@ -309,9 +309,20 @@ document.body.addEventListener("click", e=>{
 
     case "person-ping": {
       const p = S.people.find(p=>p.id===id); if(!p) break;
-      p.last = tk; p.touched = Date.now(); save(); renderPeople();
-      toast("Check-in bei "+p.name+" notiert 💬");
+      p.last = tk; p.touched = Date.now(); save();
+      // Direkt danach ist der beste Moment, sich das Gesprächsthema zu merken
+      openPeople.add(p.id); renderPeople();
+      const f = document.querySelector(`[data-act="person-field"][data-field="followup"][data-id="${p.id}"]`);
+      if(f) f.focus();
+      toast("Check-in bei "+p.name+" notiert 💬 — worüber habt ihr gesprochen?");
       break; }
+    case "person-notes":
+      if(openPeople.has(id)) openPeople.delete(id); else openPeople.add(id);
+      renderPeople();
+      break;
+    case "rapport-next":
+      rapportIdx++; renderRapport();
+      break;
     case "person-del":
       S.people = S.people.filter(p=>p.id!==id); tombstone(id); save(); renderPeople(); break;
 
@@ -389,6 +400,17 @@ document.body.addEventListener("click", e=>{
     case "hero-name-edit":
       editingName = true; renderHero();
       break;
+    /* ---------- Karriere-Texte (career.js) ---------- */
+    case "goal-reflect":
+      openReflection(id);
+      break;
+    case "four-bullet":
+      openFourBullet(id);
+      break;
+    case "friday-open":
+      openFridayHighlights();
+      break;
+
     case "goto-goals":
       document.querySelector('#nav button[data-page="goals"]').click();
       break;
@@ -427,7 +449,7 @@ document.body.addEventListener("keydown", e=>{
 /* Statische Knöpfe des Outcome-/Glaubenssatz-Bereichs */
 $("outcomeAddBtn").addEventListener("click", openOutcomeModal);
 $("outcomePickBtn").addEventListener("click", openOutcomePicker);
-$("finishDayBtn").addEventListener("click", finishDay);
+// „Feierabend“ öffnet das Ritual (winddown.js), das finishDay-Logik einschließt
 $("outcomeCancel").addEventListener("click", closeOutcomeModal);
 $("outcomeModal").addEventListener("click", e=>{ if(e.target === $("outcomeModal")) closeOutcomeModal(); });
 $("outcomeSave").addEventListener("click", ()=>{
@@ -456,6 +478,11 @@ document.body.addEventListener("input", e=>{
     else if(kind === "pm") obj = S.routinePM.find(x=>x.id===nid);
     if(obj){ obj.note = el.value; obj.touched = Date.now(); save(); }
     return; // kein Re-Render, damit der Cursor beim Tippen nicht springt
+  }
+  if(el.dataset.act === "person-field"){
+    const p = S.people.find(x=>x.id===el.dataset.id);
+    if(p){ p[el.dataset.field === "followup" ? "followup" : "notes"] = el.value; p.touched = Date.now(); save(); }
+    return; // kein Re-Render beim Tippen
   }
   if(el.dataset.act === "know-notes-input"){
     const t = S.knowledge.find(t=>t.id===el.dataset.id);
@@ -666,9 +693,9 @@ function renderAll(){
   $("mealPlan").value = S.mealPlan; $("gymPlan").value = S.gymPlan;
   renderWorkouts(); renderBodyCharts(); renderTraining();
   loadJournalToday(); renderJournalHist(); renderMoodHist();
-  renderLearning(); renderSkills(); renderPeople();
+  renderLearning(); renderSkills(); renderPeople(); renderRapport(); renderRestCheck();
   renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation();
-  renderGoals(); renderGoalSkillSel(); renderReview();
+  renderGoals(); renderGoalSkillSel(); renderReview(); renderSwot();
   renderKnowledge();
   renderHero(); renderTodayFocusGoals();
 }

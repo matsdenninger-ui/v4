@@ -108,8 +108,10 @@ $("moodTags").addEventListener("click", e=>{
 $("energy").addEventListener("input", ()=>{ $("energyVal").textContent = $("energy").value+" / 10"; });
 $("moodSave").addEventListener("click", ()=>{
   if(!selMood){ toast("Wähle zuerst eine Stimmung."); return; }
-  S.moods.push({ts:Date.now(), date:todayKey(), mood:selMood, energy:parseInt($("energy").value), tags:[...selTags]});
+  const rest = typeof takeRestSelection === "function" ? takeRestSelection() : [];
+  S.moods.push({ts:Date.now(), date:todayKey(), mood:selMood, energy:parseInt($("energy").value), tags:[...selTags], rest});
   save(); renderMoodHist();
+  if(typeof renderRestCheck === "function") renderRestCheck();
   addXP(5, "Stimmung geloggt");
   selMood = null; selTags.clear();
   document.querySelectorAll(".mood-btn,.tag-chip").forEach(x=>x.classList.remove("sel"));
@@ -120,7 +122,7 @@ function renderMoodHist(){
   $("moodHist").innerHTML = last.length
     ? last.map(m=>`<div class="check-item" style="cursor:default">
         <span style="font-size:19px">${MOOD_EMOJI[m.mood]}</span>
-        <span class="txt meta">${fmtShort(m.date)} · Energie ${m.energy}/10${m.tags.length?" · "+m.tags.map(esc).join(", "):""}</span>
+        <span class="txt meta">${fmtShort(m.date)} · Energie ${m.energy}/10${m.tags.length?" · "+m.tags.map(esc).join(", "):""}${(m.rest||[]).length && typeof restType==="function" ? " · fehlt: "+m.rest.map(r=>(restType(r)||{}).icon||"").join("") : ""}</span>
       </div>`).join("")
     : "";
 }
@@ -166,7 +168,26 @@ function findSkill(id){
   return null;
 }
 
-/* ---------- Social ---------- */
+/* ---------- Social ----------
+   „Seen · Heard · Remembered“: Wer sich an Partner, Kinder, Haustier und das
+   letzte Gesprächsthema erinnert, gibt Menschen das Gefühl, wichtig zu sein.
+   Dafür hat jede Person ein Notizfeld (📝) und ein „Beim nächsten Mal fragen“. */
+const RAPPORT_QS = [
+  "In welcher Gegend wohnst du — und was magst du daran?",
+  "Was beschäftigt dich gerade am meisten?",
+  "Wie habt ihr euch kennengelernt?",
+  "Steht demnächst eine Reise oder etwas Schönes an?",
+  "Woran arbeitest du gerade, das dir Spaß macht?",
+  "Was war das Highlight deiner Woche?",
+  "Hast du Geschwister oder Kinder — wie geht es ihnen?",
+  "Was machst du am liebsten, wenn du frei hast?",
+];
+let rapportIdx = Math.floor(Math.random()*RAPPORT_QS.length);
+const openPeople = new Set();
+function renderRapport(){
+  const el = $("rapportQ"); if(!el) return;
+  el.innerHTML = `💡 <b>Gesprächsfrage:</b> ${esc(RAPPORT_QS[rapportIdx % RAPPORT_QS.length])} <button class="link-btn" data-act="rapport-next">andere</button>`;
+}
 function addPerson(){
   const n = $("personInput").value.trim();
   if(!n) return;
@@ -187,11 +208,25 @@ function renderPeople(){
       info = days===0 ? "Heute gemeldet ✓" : "Vor "+days+" Tag"+(days===1?"":"en");
     }
     const overdue = p.last && (dateFromKey(todayKey()) - dateFromKey(p.last))/864e5 >= 14;
-    return `<div class="check-item" style="cursor:default">
-      <span class="txt">${esc(p.name)}</span>
-      <span class="meta" style="${overdue?"color:var(--rose)":""}">${info}</span>
-      <button class="btn ghost sm" data-act="person-ping" data-id="${p.id}">Gemeldet</button>
-      <button class="icon-btn del" data-act="person-del" data-id="${p.id}">${ICON_X}</button>
+    const open = openPeople.has(p.id);
+    const hasNote = !!((p.notes||"").trim() || (p.followup||"").trim());
+    return `<div class="item-wrap person-wrap">
+      <div class="check-item" style="cursor:default">
+        <div class="todo-main">
+          <span class="txt">${esc(p.name)}</span>
+          ${(p.followup||"").trim() ? `<span class="meta person-follow">❓ ${esc(p.followup)}</span>` : ""}
+        </div>
+        <span class="meta" style="${overdue?"color:var(--rose)":""}">${info}</span>
+        <button class="icon-btn note-btn ${hasNote?"has-note":""}" data-act="person-notes" data-id="${p.id}" aria-label="Notizen">📝</button>
+        <button class="btn ghost sm" data-act="person-ping" data-id="${p.id}">Gemeldet</button>
+        <button class="icon-btn del" data-act="person-del" data-id="${p.id}">${ICON_X}</button>
+      </div>
+      ${open ? `<div class="person-notes">
+        <label class="kn-field-lab">Wichtig für ${esc(p.name)} <span class="kn-lab-hint">Partner, Kinder, Haustiere, Geburtstag, Hobbys</span></label>
+        <textarea data-act="person-field" data-field="notes" data-id="${p.id}" rows="2" placeholder="z. B. Freundin Lea · Hund Bruno · liebt Bouldern">${esc(p.notes||"")}</textarea>
+        <label class="kn-field-lab">Beim nächsten Mal fragen</label>
+        <input data-act="person-field" data-field="followup" data-id="${p.id}" maxlength="120" placeholder="z. B. Wie lief das Vorstellungsgespräch?" value="${esc(p.followup||"")}">
+      </div>` : ""}
     </div>`;
   }).join("");
 }
