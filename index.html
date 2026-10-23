@@ -9,20 +9,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/base.css?v=37">
-<link rel="stylesheet" href="css/layout.css?v=37">
-<link rel="stylesheet" href="css/cards.css?v=37">
-<link rel="stylesheet" href="css/today.css?v=37">
-<link rel="stylesheet" href="css/nutrition.css?v=37">
-<link rel="stylesheet" href="css/body.css?v=37">
-<link rel="stylesheet" href="css/training.css?v=37">
-<link rel="stylesheet" href="css/mind.css?v=37">
-<link rel="stylesheet" href="css/progress.css?v=37">
-<link rel="stylesheet" href="css/goals.css?v=37">
-<link rel="stylesheet" href="css/knowledge.css?v=37">
-<link rel="stylesheet" href="css/components.css?v=37">
-<link rel="stylesheet" href="css/responsive.css?v=37">
-<link rel="stylesheet" href="css/animations.css?v=37">
+<link rel="stylesheet" href="css/base.css?v=38">
+<link rel="stylesheet" href="css/layout.css?v=38">
+<link rel="stylesheet" href="css/cards.css?v=38">
+<link rel="stylesheet" href="css/today.css?v=38">
+<link rel="stylesheet" href="css/nutrition.css?v=38">
+<link rel="stylesheet" href="css/body.css?v=38">
+<link rel="stylesheet" href="css/training.css?v=38">
+<link rel="stylesheet" href="css/mind.css?v=38">
+<link rel="stylesheet" href="css/progress.css?v=38">
+<link rel="stylesheet" href="css/goals.css?v=38">
+<link rel="stylesheet" href="css/knowledge.css?v=38">
+<link rel="stylesheet" href="css/extras.css?v=38">
+<link rel="stylesheet" href="css/components.css?v=38">
+<link rel="stylesheet" href="css/responsive.css?v=38">
+<link rel="stylesheet" href="css/animations.css?v=38">
 </head>
 <body>
 
@@ -45,7 +46,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v31 · 23.10.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v32 · 23.10.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <span class="nav-label">Übersicht</span>
@@ -190,7 +191,7 @@
         <div class="outcome-foot">
           <button class="btn" id="outcomeAddBtn">+ Outcome für heute</button>
           <button class="btn ghost" id="outcomePickBtn">Aus Backlog</button>
-          <button class="btn ghost" id="finishDayBtn" title="Offene Outcomes wandern auf morgen — ohne Rest und ohne Schuld-Badge.">🌙 Fertig für heute</button>
+          <button class="btn ghost" id="finishDayBtn" title="Feierabend-Ritual: Offenes auf morgen legen, geparkte Gedanken sortieren, das Wichtigste für morgen notieren.">🌙 Feierabend</button>
         </div>
       </div>
 
@@ -243,6 +244,8 @@
             <input id="habitInput" placeholder="Neuen Habit anlegen, z. B. „10 Min. Lesen“ …" maxlength="60">
             <button class="btn" id="habitAdd">Anlegen</button>
           </div>
+          <button class="btn ghost sm" id="habitTplBtn" style="margin-bottom:12px">🌱 Ideen für Habits</button>
+          <div class="habit-tpl" id="habitTpl"></div>
           <div class="check-list" id="habitList"></div>
 
           <div class="collapsible" id="moreCollapsible">
@@ -287,7 +290,7 @@
     <div class="tab-pane" id="ttab-week">
       <div class="card">
         <h3>📅 Weekly Planning Board</h3>
-        <p class="sub">Ziehe To-Dos zwischen den Tagen, tippe „+“ um bestehende zuzuweisen. Nicht erledigte Punkte rutschen automatisch auf heute nach.</p>
+        <p class="sub">Ziehe To-Dos zwischen den Tagen, tippe „+“ um bestehende zuzuweisen. Nicht erledigte Punkte rutschen automatisch auf heute nach.<br><b>Tagesthemen:</b> Gib jedem Tag ein Thema (z. B. „Admin“, „Deep Work“, „Meetings“) — gleichartige Aufgaben gebündelt heißt weniger Hin- und Herspringen.</p>
         <div class="week-board" id="weekBoard"></div>
       </div>
     </div>
@@ -541,13 +544,16 @@
           <div class="slider-lab"><span>Energie-Level</span><span id="energyVal">5 / 10</span></div>
           <input type="range" id="energy" min="1" max="10" value="5">
           <div class="tags" id="moodTags"></div>
+          <div class="slider-lab" style="margin-top:4px"><span>Welche Erholung fehlt dir gerade? <span class="kn-lab-hint">optional</span></span></div>
+          <div class="tags" id="restTags"></div>
           <button class="btn" id="moodSave">Stimmung loggen</button>
           <div id="moodHist" style="margin-top:14px"></div>
         </div>
 
         <div class="card">
           <h3>💬 Social Check-ins</h3>
-          <p class="sub">Beziehungen brauchen Pflege. Wann hast du dich zuletzt gemeldet?</p>
+          <p class="sub">Beziehungen brauchen Pflege. Wann hast du dich zuletzt gemeldet? Mit 📝 merkst du dir, was den Menschen wichtig ist.</p>
+          <div class="rapport" id="rapportQ"></div>
           <div class="row-add">
             <input id="personInput" placeholder="Name, z. B. Mama" maxlength="40">
             <button class="btn" id="personAdd">+</button>
@@ -572,6 +578,12 @@
         <p class="sub">Deine Kompetenz-Landkarte. Level steigen automatisch, wenn ein verknüpftes Goal zu 100% erreicht ist.</p>
         <div class="skill-cols" id="skillTree"></div>
       </div>
+
+      <div class="card span2">
+        <h3>🔋 Erholungs-Check <span class="tag">7 Arten von Erholung</span></h3>
+        <p class="sub">Müde heißt nicht immer „zu wenig Schlaf“. Manchmal fehlt Ruhe für den Kopf, weniger Reize oder Zeit mit guten Menschen. Hier siehst du, was dir in den letzten 14 Tagen am häufigsten gefehlt hat — und was dagegen hilft.</p>
+        <div id="restCheck"></div>
+      </div>
     </div>
   </section>
 
@@ -580,7 +592,7 @@
     <div class="stat-strip">
       <div class="stat"><b id="pXp">0</b><small>Gesamt-XP</small></div>
       <div class="stat"><b id="pLvl">1</b><small>Level</small></div>
-      <div class="stat"><b id="pBadges">0/10</b><small>Badges</small></div>
+      <div class="stat"><b id="pBadges">0/15</b><small>Badges</small></div>
       <div class="stat"><b id="pFocusTotal">0 h</b><small>Fokus gesamt</small></div>
     </div>
 
@@ -616,6 +628,13 @@
         <button class="btn violet" id="reportBtn">Weekly Report erzeugen</button>
       </div>
 
+      <div class="card">
+        <h3>📨 Friday Highlights <span class="tag">Karriere</span></h3>
+        <p class="sub">Jeden Freitag eine kurze Mail an deine Führungskraft: Was lief diese Woche, was kommt nächste Woche. Baut Vertrauen und macht deine Arbeit sichtbar — und am Jahresende hast du alles fürs Mitarbeitergespräch.</p>
+        <div class="empty" style="margin-bottom:14px">📨 Ascend füllt die Mail aus erledigten Outcomes,<br>Fokuszeit, Check-ins und deinem Wochenplan vor.</div>
+        <button class="btn violet" id="fridayBtn">Friday Highlights erstellen</button>
+      </div>
+
       <div class="card span2">
         <h3>🧭 Wochen-Review</h3>
         <p class="sub">Eine Karte statt Tagebuch: welche Glaubenssätze diese Woche Beweise bekommen haben, und welche Wenn-dann-Experimente bleiben oder fallen.</p>
@@ -639,6 +658,7 @@
           <button class="btn" id="goalAdd">Ziel anlegen</button>
         </div>
         <input id="goalMs" placeholder="Meilensteine, kommagetrennt: „80 kg, 90 kg, 95 kg, 100 kg“" style="width:100%">
+        <input id="goalSecond" maxlength="200" placeholder="🌳 Und dann? Was ändert sich, wenn du es erreicht hast — und was passiert danach? (optional)" style="width:100%;margin-top:9px">
       </div>
 
       <div class="card">
@@ -651,6 +671,12 @@
         <h3>🧭 Langfristige Goals</h3>
         <p class="sub">Dein Nordstern für die nächsten Jahre.</p>
         <div id="goalsLong"></div>
+      </div>
+      <div class="card span2">
+        <h3>🧭 Persönliche SWOT <span class="tag">einmal im Quartal</span></h3>
+        <p class="sub">Stärken und Schwächen liegen in dir, Chancen und Risiken um dich herum. Füll die vier Felder aus und leite daraus deine nächsten Ziele ab — Stärken ausbauen, Chancen nutzen.</p>
+        <div class="swot-grid" id="swotGrid"></div>
+        <div class="meta" id="swotMeta" style="margin-top:10px"></div>
       </div>
     </div>
   </section>
@@ -694,6 +720,59 @@
     </div>
   </section>
 </main>
+
+<!-- Rückblick nach erreichtem Ziel (gegen die Arrival Fallacy) -->
+<div class="modal" id="reflectModal" role="dialog" aria-labelledby="reflectTitle">
+  <div class="modal-box" style="max-width:480px">
+    <h3 id="reflectTitle">🏁 Ziel erreicht — und jetzt?</h3>
+    <p class="sub"><b id="reflectGoalName"></b><br>Das Hochgefühl nach einem Ziel verfliegt schnell. Was bleibt, ist der Weg — halt ihn kurz fest.</p>
+    <div class="pf-lab">Wie fühlt es sich an — verglichen mit deiner Erwartung?</div>
+    <div class="pf-chips" id="reflectFeel"></div>
+    <div class="pf-lab">Was hat dir der Weg gebracht?</div>
+    <input id="reflectPath" maxlength="160" placeholder="z. B. Ich trainiere jetzt wirklich regelmäßig">
+    <div class="pf-lab">Welcher Prozess soll weiterlaufen?</div>
+    <input id="reflectNext" maxlength="60" placeholder="z. B. 3× pro Woche trainieren">
+    <label class="reflect-habit"><input type="checkbox" id="reflectHabit"> als Habit anlegen</label>
+    <div class="modal-actions">
+      <button class="btn ghost" id="reflectCancel">Später</button>
+      <button class="btn" id="reflectSave">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Feierabend-Ritual -->
+<div class="modal" id="shutdownModal" role="dialog" aria-labelledby="sdTitle">
+  <div class="modal-box" style="max-width:500px">
+    <h3 id="sdTitle">🌙 Feierabend-Ritual</h3>
+    <p class="sub">Zwei Minuten, dann darf der Kopf abschalten: Was aufgeschrieben und eingeplant ist, muss er sich nicht mehr merken.</p>
+    <div class="sd-summary" id="sdSummary"></div>
+    <div class="pf-lab">1 · Offene Outcomes</div>
+    <div id="sdOutcomes"></div>
+    <div class="pf-lab">2 · Geparkte Gedanken von heute</div>
+    <div id="sdParked"></div>
+    <div class="pf-lab">3 · Das Wichtigste morgen</div>
+    <input id="sdTomorrow" maxlength="120" placeholder="Womit startest du morgen?">
+    <div class="pf-lab">4 · Abschalten <span class="pf-req sd-opt">optional</span></div>
+    <div class="pf-toggle-grid sd-toggles" id="sdToggles"></div>
+    <div class="modal-actions">
+      <button class="btn ghost" id="sdCancel">Abbrechen</button>
+      <button class="btn" id="sdSave">Tag abschließen 🌙</button>
+    </div>
+  </div>
+</div>
+
+<!-- Text zum Kopieren: Friday Highlights, 4-Punkte-Update -->
+<div class="modal" id="shareModal" role="dialog" aria-labelledby="shareTitle">
+  <div class="modal-box" style="max-width:560px">
+    <h3 id="shareTitle">📨 Text</h3>
+    <p class="sub" id="shareSub"></p>
+    <textarea id="shareText" rows="14" class="share-text"></textarea>
+    <div class="modal-actions">
+      <button class="btn ghost" id="shareClose">Schließen</button>
+      <button class="btn" id="shareCopy">Kopieren</button>
+    </div>
+  </div>
+</div>
 
 <!-- Report modal -->
 <div class="modal" id="reportModal">
@@ -874,6 +953,11 @@
     <!-- Der Ablauf der Aufgabe: beim Start verschwindet das Dashboard mit den
          Subtasks — hier läuft er Schritt für Schritt weiter. -->
     <div class="focus-flow" id="focusFlow"></div>
+    <!-- Gedanken-Parkplatz: Einfall notieren statt die Aufgabe zu wechseln -->
+    <div class="focus-park">
+      <input id="focusParkInput" maxlength="120" placeholder="💭 Gedanke dazwischen? Hier parken + Enter — dann weiter">
+      <div class="focus-park-count" id="focusParkCount"></div>
+    </div>
     <div class="focus-actions">
       <button class="btn ghost" id="focusAbortBtn">Abbrechen</button>
       <button class="btn" id="focusEndBtn">Session beenden</button>
@@ -960,27 +1044,30 @@
   </div>
 </div>
 
-<script src="js/helpers.js?v=37"></script>
-<script src="js/data.js?v=37"></script>
-<script src="js/exercisedb.js?v=37"></script>
-<script src="js/storage.js?v=37"></script>
-<script src="js/theme.js?v=37"></script>
-<script src="js/ui.js?v=37"></script>
-<script src="js/xp.js?v=37"></script>
-<script src="js/hero.js?v=37"></script>
-<script src="js/todos.js?v=37"></script>
-<script src="js/habits.js?v=37"></script>
-<script src="js/timer.js?v=37"></script>
-<script src="js/nutrition.js?v=37"></script>
-<script src="js/charts.js?v=37"></script>
-<script src="js/workouts.js?v=37"></script>
-<script src="js/training.js?v=37"></script>
-<script src="js/mind.js?v=37"></script>
-<script src="js/goals.js?v=37"></script>
-<script src="js/models.js?v=37"></script>
-<script src="js/knowledge.js?v=37"></script>
-<script src="js/progress.js?v=37"></script>
-<script src="js/export.js?v=37"></script>
-<script src="js/app.js?v=37"></script>
+<script src="js/helpers.js?v=38"></script>
+<script src="js/data.js?v=38"></script>
+<script src="js/exercisedb.js?v=38"></script>
+<script src="js/storage.js?v=38"></script>
+<script src="js/theme.js?v=38"></script>
+<script src="js/ui.js?v=38"></script>
+<script src="js/xp.js?v=38"></script>
+<script src="js/hero.js?v=38"></script>
+<script src="js/todos.js?v=38"></script>
+<script src="js/habits.js?v=38"></script>
+<script src="js/timer.js?v=38"></script>
+<script src="js/nutrition.js?v=38"></script>
+<script src="js/charts.js?v=38"></script>
+<script src="js/workouts.js?v=38"></script>
+<script src="js/training.js?v=38"></script>
+<script src="js/mind.js?v=38"></script>
+<script src="js/rest.js?v=38"></script>
+<script src="js/goals.js?v=38"></script>
+<script src="js/models.js?v=38"></script>
+<script src="js/knowledge.js?v=38"></script>
+<script src="js/career.js?v=38"></script>
+<script src="js/winddown.js?v=38"></script>
+<script src="js/progress.js?v=38"></script>
+<script src="js/export.js?v=38"></script>
+<script src="js/app.js?v=38"></script>
 </body>
 </html>

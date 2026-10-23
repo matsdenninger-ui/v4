@@ -14,8 +14,8 @@ $("goalAdd").addEventListener("click", ()=>{
   if(!title){ toast("Gib deinem Ziel einen Namen."); return; }
   const ms = $("goalMs").value.split(",").map(s=>s.trim()).filter(Boolean).map(text=>({text, done:false}));
   S.goals.push({id:uid(), title, type:$("goalType").value, skillId:$("goalSkill").value||null, ms, progress:0,
-    actionTodos:[], skillXPGranted:false, touched:Date.now()});
-  $("goalTitle").value = $("goalMs").value = "";
+    actionTodos:[], skillXPGranted:false, second:$("goalSecond").value.trim(), touched:Date.now()});
+  $("goalTitle").value = $("goalMs").value = $("goalSecond").value = "";
   save(); renderGoals(); renderTodayFocusGoals(); renderHero();
   toast("Ziel angelegt: "+title);
 });
@@ -35,6 +35,9 @@ function grantGoalCompletionXP(g){
   addXP(50, "Ziel erreicht: "+g.title+"!");
   if(skillMsg) toast("🏆 Skill-Level gestiegen"+skillMsg);
   checkBadges();
+  // Arrival Fallacy: Das Hochgefühl verfliegt schnell — darum kurz festhalten,
+  // was der Weg gebracht hat und welcher Prozess weiterlaufen soll.
+  if(!g.reflection) setTimeout(()=>openReflection(g.id), 900);
 }
 function renderGoals(){
   const render = (type, elId, emptyMsg)=>{
@@ -57,6 +60,15 @@ function renderGoals(){
             <span class="cbx ${m.done?"on":""}">${ICON_CHECK}</span>${esc(m.text)}
           </div>`).join("")}</div>`
         : `<input type="range" min="0" max="100" step="5" value="${g.progress||0}" data-act="goal-range" data-id="${g.id}" style="margin-top:8px">`}
+        <div class="goal-second">
+          <label>🌳 Und dann? <span>Was ändert sich, wenn du es erreicht hast — und danach?</span></label>
+          <input data-act="goal-second" data-id="${g.id}" maxlength="200" placeholder="Folgen der Folgen durchdenken …" value="${esc(g.second||"")}">
+        </div>
+        ${g.reflection ? `<div class="goal-reflect">
+          <div class="goal-todos-lab">🏁 Rückblick</div>
+          <div>${esc(REFLECT_FEEL[g.reflection.feel]||"")}${g.reflection.path ? " · " + esc(g.reflection.path) : ""}</div>
+          ${g.reflection.next ? `<div class="goal-reflect-next">Weiter mit: <b>${esc(g.reflection.next)}</b></div>` : ""}
+        </div>` : (p===100 ? `<button class="btn ghost sm" style="margin-top:8px" data-act="goal-reflect" data-id="${g.id}">🏁 Rückblick schreiben</button>` : "")}
         ${skill ? `<span class="goal-link">⤷ Skill: ${esc(skill.name)} · Level ${skill.lvl}/5${g.skillXPGranted ? " · XP erhalten ✓" : " · bei 100% Level-Up"}</span>` : ""}
         ${beliefBlockHTML(g)}
         <div class="goal-todos">
@@ -221,3 +233,84 @@ function renderReview(){
         <div class="rev-exp-meta">${e.status==="kept"?"✓ behalten":"✗ fallengelassen"}</div>
       </div>`).join("") : ""}`;
 }
+
+
+/* ============================================================
+   RÜCKBLICK NACH DEM ZIEL (gegen die Arrival Fallacy)
+   ============================================================ */
+const REFLECT_FEEL = { more:"😃 besser als erwartet", same:"🙂 wie erwartet", less:"😐 weniger als erwartet" };
+let reflectGoalId = null, reflectFeel = null;
+function openReflection(goalId){
+  const g = S.goals.find(x=>x.id===goalId); if(!g) return;
+  reflectGoalId = goalId; reflectFeel = g.reflection ? g.reflection.feel : null;
+  $("reflectGoalName").textContent = g.title;
+  $("reflectPath").value = g.reflection ? g.reflection.path || "" : "";
+  $("reflectNext").value = g.reflection ? g.reflection.next || "" : "";
+  $("reflectHabit").checked = false;
+  renderReflectFeel();
+  $("reflectModal").classList.add("open");
+}
+function renderReflectFeel(){
+  $("reflectFeel").innerHTML = Object.keys(REFLECT_FEEL).map(k=>
+    `<button class="pf-chip ${reflectFeel===k?"on":""}" data-feel="${k}">${REFLECT_FEEL[k]}</button>`).join("");
+}
+$("reflectFeel").addEventListener("click", e=>{
+  const b = e.target.closest("[data-feel]"); if(!b) return;
+  reflectFeel = b.dataset.feel; renderReflectFeel();
+});
+$("reflectCancel").addEventListener("click", ()=>$("reflectModal").classList.remove("open"));
+$("reflectSave").addEventListener("click", ()=>{
+  const g = S.goals.find(x=>x.id===reflectGoalId); if(!g) return;
+  const next = $("reflectNext").value.trim();
+  g.reflection = { feel: reflectFeel || "same", path: $("reflectPath").value.trim(), next, at: Date.now() };
+  g.touched = Date.now();
+  let msg = "🏁 Rückblick gespeichert.";
+  if(next && $("reflectHabit").checked && !S.habits.some(h=>h.name.toLowerCase()===next.toLowerCase())){
+    S.habits.push({id:uid(), name:next.slice(0,60), dates:{}, note:"", touched:Date.now()});
+    renderHabits(); renderHeatmap();
+    msg += " Neuer Habit: " + next;
+  }
+  save(); renderGoals(); renderHero();
+  $("reflectModal").classList.remove("open");
+  toast(msg);
+});
+
+/* ============================================================
+   PERSÖNLICHE SWOT
+   Stärken & Schwächen = in dir. Chancen & Risiken = um dich herum.
+   Einmal im Quartal ausfüllen und daraus Ziele ableiten.
+   ============================================================ */
+const SWOT_FIELDS = [
+  ["s","💪 Stärken","Was kannst du besonders gut? Worum bitten dich andere?"],
+  ["w","🧱 Schwächen","Was hält dich zurück? Welche Fähigkeit fehlt?"],
+  ["o","🌱 Chancen","Welche Trends, Kontakte oder Gelegenheiten kannst du nutzen?"],
+  ["t","⚠️ Risiken","Was könnte dir Probleme machen? Worauf solltest du vorbereitet sein?"],
+];
+function renderSwot(){
+  const box = $("swotGrid"); if(!box) return;
+  if(!S.swot || typeof S.swot !== "object") S.swot = {s:"",w:"",o:"",t:"",updated:0};
+  box.innerHTML = SWOT_FIELDS.map(([k, lab, ph])=>`
+    <div class="swot-cell swot-${k}">
+      <label>${lab}</label>
+      <textarea data-act="swot-input" data-k="${k}" rows="4" placeholder="${esc(ph)}">${esc(S.swot[k]||"")}</textarea>
+    </div>`).join("");
+  renderSwotMeta();
+}
+function renderSwotMeta(){
+  const el = $("swotMeta"); if(!el) return;
+  const u = S.swot && S.swot.updated;
+  if(!u){ el.textContent = "Noch nicht ausgefüllt — nimm dir 10 Minuten."; return; }
+  const tage = Math.round((Date.now() - u) / 864e5);
+  el.innerHTML = "Zuletzt aktualisiert: " + new Date(u).toLocaleDateString("de-DE") +
+    (tage >= 90 ? ' · <b style="color:var(--sec)">Zeit für ein Quartals-Update</b>' : "");
+}
+document.body.addEventListener("input", e=>{
+  const el = e.target;
+  if(el.dataset && el.dataset.act === "swot-input"){
+    S.swot[el.dataset.k] = el.value; S.swot.updated = Date.now(); save(); renderSwotMeta();
+  }
+  if(el.dataset && el.dataset.act === "goal-second"){
+    const g = S.goals.find(x=>x.id===el.dataset.id);
+    if(g){ g.second = el.value; g.touched = Date.now(); save(); }
+  }
+});
