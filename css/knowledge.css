@@ -1,0 +1,140 @@
+/* ============================================================
+   ASCEND — knowledge.css
+   Second Brain: Wiederholung, PARA-Themen, Karteikarten, Denkmodelle
+   ============================================================ */
+
+/* ---------- Wiederholung: Kennzahlen + Start ---------- */
+.kn-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kn-stats .stat{background:var(--elev);padding:14px 16px}
+.kn-stats .stat b{font-size:22px}
+.kn-start{width:100%;justify-content:center;padding:13px 18px;font-size:14px}
+.kn-done-note{
+  font-size:13px;color:var(--mint);background:var(--mint-soft);
+  border-radius:var(--radius-sm);padding:12px 14px;line-height:1.5;
+}
+.kn-done-note b{color:var(--text)}
+
+/* ---------- Laufende Wiederholung ---------- */
+.kn-session-top{display:flex;align-items:center;gap:10px;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:8px}
+.kn-session-top span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kn-session-bar{height:6px;margin-bottom:16px}
+.kn-session-bar i{background:linear-gradient(90deg,var(--ac),var(--ac-light))}
+.kn-flash{
+  background:var(--elev);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 22px 20px;margin-bottom:14px;min-height:130px;
+}
+.kn-flash-lab{font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;color:var(--faint);font-weight:700;margin-bottom:6px}
+.kn-flash-front{font-family:var(--font-display);font-size:18px;font-weight:700;line-height:1.4;color:var(--text);overflow-wrap:break-word}
+.kn-flash-back{
+  font-size:14.5px;line-height:1.6;color:var(--text);overflow-wrap:break-word;
+  border-left:2px solid var(--ac);padding-left:11px;
+}
+.kn-flash-front + .kn-flash-lab{margin-top:18px;padding-top:14px;border-top:1px dashed var(--border)}
+.kn-grade{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kn-grade .btn{flex-direction:column;justify-content:center;gap:2px;padding:12px 10px}
+.kn-grade .btn small{font-size:11px;font-weight:500;opacity:.8}
+.kn-keyhint{font-size:11.5px;color:var(--faint);text-align:center;margin-top:9px}
+
+/* ---------- Neues Thema ---------- */
+.kn-new select{flex:none;width:auto;max-width:190px}
+
+/* ---------- PARA-Filter ---------- */
+.kn-para-tabs{margin:12px 0 16px}
+.kn-para-tabs button{padding:9px 12px;font-size:12.5px}
+.kn-count{
+  font-size:10.5px;font-weight:700;min-width:18px;padding:1px 6px;border-radius:10px;
+  background:var(--elev);color:var(--dim);font-variant-numeric:tabular-nums;
+}
+.kn-para-tabs button.on .kn-count{background:var(--ac-soft);color:var(--ac)}
+
+/* ---------- Themen (aufklappbar) ---------- */
+.kn-topic-head{cursor:pointer;margin-bottom:0;user-select:none}
+.kn-chev{flex:none;width:16px;font-size:18px;line-height:1;color:var(--dim);transition:transform .18s;text-align:center}
+.kn-topic.open .kn-chev{transform:rotate(90deg);color:var(--ac)}
+.kn-topic-title{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.kn-topic-title b{font-size:14px;font-weight:600;overflow-wrap:break-word}
+.kn-topic-title small{font-size:11.5px;color:var(--dim);line-height:1.45}
+.kn-due{color:var(--sec);font-weight:600}
+.kn-para{
+  flex:none;font-size:10px;letter-spacing:.6px;text-transform:uppercase;font-weight:700;
+  padding:3px 9px;border-radius:12px;background:var(--elev);color:var(--dim);border:1px solid var(--border);
+}
+.kn-para-project{background:var(--sec-soft);color:var(--sec);border-color:transparent}
+.kn-para-area{background:var(--ac-soft);color:var(--ac);border-color:transparent}
+.kn-para-resource{background:var(--mint-soft);color:var(--mint);border-color:transparent}
+.kn-para-archive{opacity:.75}
+
+.kn-body{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft)}
+.kn-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:12px}
+.kn-row select{flex:1 1 150px;min-width:0}
+.kn-row .kn-field-lab{margin:0;flex:none}
+.kn-field-lab{display:block;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;color:var(--dim);font-weight:700;margin:12px 0 6px}
+.kn-lab-hint{text-transform:none;letter-spacing:0;font-weight:500;color:var(--faint);margin-left:4px}
+.kn-body textarea{min-height:70px}
+.kn-explain-meta{font-size:11px;color:var(--faint);margin-top:4px}
+
+/* ---------- Karteikarten im Thema ---------- */
+.kn-card{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 11px;margin-bottom:7px;
+  background:var(--surface);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+}
+.kn-card-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.kn-card-main b{font-size:13px;font-weight:600;line-height:1.45;overflow-wrap:break-word}
+.kn-card-main span{font-size:12px;color:var(--dim);line-height:1.5;overflow-wrap:break-word}
+.kn-card-side{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px;padding-top:2px}
+.kn-card-side small{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.kn-card .icon-btn{width:24px;height:24px}
+.kn-box{display:inline-flex;gap:2px}
+.kn-box i{width:9px;height:4px;border-radius:2px;background:var(--track)}
+.kn-box i.on{background:var(--ac)}
+.kn-card-add{display:flex;gap:7px;margin-top:8px}
+.kn-card-add input{flex:1;min-width:0;font-size:12.5px;padding:7px 9px}
+.kn-card-add .btn{flex:none}
+
+/* ---------- Denkmodell-Bibliothek ---------- */
+.kn-model-group{margin-bottom:16px}
+.kn-model-group:last-child{margin-bottom:0}
+.kn-model{
+  background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);
+  margin-bottom:7px;transition:border-color .15s;
+}
+.kn-model[open]{border-color:var(--border)}
+.kn-model summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:11px 12px;
+}
+.kn-model summary::-webkit-details-marker{display:none}
+.kn-model-ico{flex:none;font-size:16px;width:22px;text-align:center}
+.kn-model-title{flex:1;min-width:0;font-size:13.5px;font-weight:600}
+.kn-model-has{flex:none;color:var(--mint);font-weight:700;font-size:13px}
+.kn-model-body{padding:0 14px 13px 44px;font-size:12.5px;color:var(--dim);line-height:1.65}
+.kn-model-body p{margin-bottom:8px}
+.kn-model-apply b{color:var(--text);font-weight:600}
+.kn-model-note{font-size:12px;color:var(--mint);font-weight:600}
+
+/* Beweislage — bewusst unterscheidbar, Mythos nicht als Fehler-Rot */
+.kn-ev{
+  flex:none;font-size:10px;letter-spacing:.5px;text-transform:uppercase;font-weight:700;
+  padding:3px 8px;border-radius:10px;white-space:nowrap;
+}
+.ev-solid{background:var(--mint-soft);color:var(--mint)}
+.ev-rule{background:var(--ac-soft);color:var(--ac)}
+.ev-mixed{background:var(--sec-soft);color:var(--sec)}
+.ev-myth{background:none;color:var(--dim);border:1px dashed var(--border)}
+
+#knModelsAll:disabled{opacity:.55;cursor:default;filter:none}
+
+/* ---------- Mobil ---------- */
+@media (max-width:860px){
+  .kn-stats{grid-template-columns:repeat(2,1fr)}
+  .kn-new{flex-wrap:wrap}
+  .kn-new input{flex:1 1 100%}
+  .kn-new select{flex:1 1 auto;max-width:none}
+  .kn-card-add{flex-wrap:wrap}
+  .kn-card-add input{flex:1 1 100%}
+}
+@media (max-width:480px){
+  .kn-flash{padding:18px 16px}
+  .kn-flash-front{font-size:16px}
+  .kn-model-body{padding-left:14px}
+  .kn-topic-head .kn-para{display:none}
+}
