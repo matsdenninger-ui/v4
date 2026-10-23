@@ -193,6 +193,9 @@ function renderHero(){
   const streak = S.habits.reduce((m,h)=>Math.max(m,habitStreak(h)),0);
   chips.push(`<div class="hchip">🔥 Streak: <b>${streak} Tag${streak===1?"":"e"}</b></div>`);
   chips.push(trainingChip());
+  // Fällige Karteikarten (knowledge.js) — nur wenn etwas ansteht, sonst kein Platz verschwenden
+  const kn = typeof knowledgeChip === "function" ? knowledgeChip() : "";
+  if(kn) chips.push(kn);
   $("heroChips").innerHTML = chips.join("");
 
   renderMission();

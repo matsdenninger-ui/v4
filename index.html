@@ -9,19 +9,20 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/base.css?v=36">
-<link rel="stylesheet" href="css/layout.css?v=36">
-<link rel="stylesheet" href="css/cards.css?v=36">
-<link rel="stylesheet" href="css/today.css?v=36">
-<link rel="stylesheet" href="css/nutrition.css?v=36">
-<link rel="stylesheet" href="css/body.css?v=36">
-<link rel="stylesheet" href="css/training.css?v=36">
-<link rel="stylesheet" href="css/mind.css?v=36">
-<link rel="stylesheet" href="css/progress.css?v=36">
-<link rel="stylesheet" href="css/goals.css?v=36">
-<link rel="stylesheet" href="css/components.css?v=36">
-<link rel="stylesheet" href="css/responsive.css?v=36">
-<link rel="stylesheet" href="css/animations.css?v=36">
+<link rel="stylesheet" href="css/base.css?v=37">
+<link rel="stylesheet" href="css/layout.css?v=37">
+<link rel="stylesheet" href="css/cards.css?v=37">
+<link rel="stylesheet" href="css/today.css?v=37">
+<link rel="stylesheet" href="css/nutrition.css?v=37">
+<link rel="stylesheet" href="css/body.css?v=37">
+<link rel="stylesheet" href="css/training.css?v=37">
+<link rel="stylesheet" href="css/mind.css?v=37">
+<link rel="stylesheet" href="css/progress.css?v=37">
+<link rel="stylesheet" href="css/goals.css?v=37">
+<link rel="stylesheet" href="css/knowledge.css?v=37">
+<link rel="stylesheet" href="css/components.css?v=37">
+<link rel="stylesheet" href="css/responsive.css?v=37">
+<link rel="stylesheet" href="css/animations.css?v=37">
 </head>
 <body>
 
@@ -44,7 +45,7 @@
 <aside class="sidebar" id="sidebar">
   <div class="brand">
     <div class="brand-mark">A</div>
-    <div><h1>Ascend</h1><span id="versionTag">v30 · 06.10.2026</span></div>
+    <div><h1>Ascend</h1><span id="versionTag">v31 · 23.10.2026</span></div>
   </div>
   <nav class="nav" id="nav">
     <span class="nav-label">Übersicht</span>
@@ -654,21 +655,41 @@
     </div>
   </section>
 
-  <!-- ================= KNOWLEDGE ================= -->
+  <!-- ================= KNOWLEDGE (Second Brain) ================= -->
   <section class="page" id="page-knowledge">
     <div class="grid g2">
       <div class="card span2">
-        <h3> Neues Thema</h3>
-        <p class="sub">Lege ein Thema an und sammle Wissen, Taktiken und offene Aufgaben dazu.</p>
-        <div class="row-add">
+        <h3>🧠 Wiederholung <span class="tag">+1 XP / Karte</span></h3>
+        <p class="sub">Verteilte Wiederholung: Was du weißt, kommt nach 1, 3, 7, 30 und 90 Tagen wieder. Was du nicht weißt, morgen.</p>
+        <div id="knowReview"></div>
+      </div>
+
+      <div class="card span2">
+        <h3>Neues Thema</h3>
+        <p class="sub">Sortiert nach P.A.R.A.: Projekte haben ein Ziel und ein Ende, Bereiche pflegst du dauerhaft, Ressourcen sind Sammlungen zu einem Interesse.</p>
+        <div class="row-add kn-new">
           <input id="knowTopicTitle" placeholder="Thema, z. B. „Verhandlungstechnik“" maxlength="60">
+          <select id="knowTopicPara">
+            <option value="project">🎯 Projekt</option>
+            <option value="area">🧭 Bereich</option>
+            <option value="resource" selected>📚 Ressource</option>
+          </select>
+          <select id="knowTopicGoal" style="display:none"></select>
           <button class="btn" id="knowTopicAdd">Thema anlegen</button>
         </div>
       </div>
 
       <div class="card span2">
         <h3>📚 Themen</h3>
+        <div class="seg-tabs kn-para-tabs" id="knParaTabs"></div>
         <div id="knowledgeList"></div>
+      </div>
+
+      <div class="card span2">
+        <h3>🧭 Denkmodell-Bibliothek <span class="tag">mit Faktencheck</span></h3>
+        <p class="sub">Konzepte aus Produktivitäts- und Psychologie-Grafiken — in eigenen Worten, mit ehrlicher Einordnung, was davon belegt ist und was Mythos. Jedes Modell lässt sich als Karteikarte lernen.</p>
+        <button class="btn ghost sm" id="knModelsAll" style="margin-bottom:14px">Alle als Karten übernehmen</button>
+        <div id="knowModels"></div>
       </div>
     </div>
   </section>
@@ -939,26 +960,27 @@
   </div>
 </div>
 
-<script src="js/helpers.js?v=36"></script>
-<script src="js/data.js?v=36"></script>
-<script src="js/exercisedb.js?v=36"></script>
-<script src="js/storage.js?v=36"></script>
-<script src="js/theme.js?v=36"></script>
-<script src="js/ui.js?v=36"></script>
-<script src="js/xp.js?v=36"></script>
-<script src="js/hero.js?v=36"></script>
-<script src="js/todos.js?v=36"></script>
-<script src="js/habits.js?v=36"></script>
-<script src="js/timer.js?v=36"></script>
-<script src="js/nutrition.js?v=36"></script>
-<script src="js/charts.js?v=36"></script>
-<script src="js/workouts.js?v=36"></script>
-<script src="js/training.js?v=36"></script>
-<script src="js/mind.js?v=36"></script>
-<script src="js/goals.js?v=36"></script>
-<script src="js/knowledge.js?v=36"></script>
-<script src="js/progress.js?v=36"></script>
-<script src="js/export.js?v=36"></script>
-<script src="js/app.js?v=36"></script>
+<script src="js/helpers.js?v=37"></script>
+<script src="js/data.js?v=37"></script>
+<script src="js/exercisedb.js?v=37"></script>
+<script src="js/storage.js?v=37"></script>
+<script src="js/theme.js?v=37"></script>
+<script src="js/ui.js?v=37"></script>
+<script src="js/xp.js?v=37"></script>
+<script src="js/hero.js?v=37"></script>
+<script src="js/todos.js?v=37"></script>
+<script src="js/habits.js?v=37"></script>
+<script src="js/timer.js?v=37"></script>
+<script src="js/nutrition.js?v=37"></script>
+<script src="js/charts.js?v=37"></script>
+<script src="js/workouts.js?v=37"></script>
+<script src="js/training.js?v=37"></script>
+<script src="js/mind.js?v=37"></script>
+<script src="js/goals.js?v=37"></script>
+<script src="js/models.js?v=37"></script>
+<script src="js/knowledge.js?v=37"></script>
+<script src="js/progress.js?v=37"></script>
+<script src="js/export.js?v=37"></script>
+<script src="js/app.js?v=37"></script>
 </body>
 </html>

@@ -4,16 +4,17 @@
 /* ---------- Storage (localStorage mit In-Memory-Fallback) ---------- */
 const LS_KEY = "ascend_state_v1";
 const LS_PREV_KEY = "ascend_state_prev";   // Sicherungskopie vor jeder Cloud-Übernahme
-const APP_STATE_VERSION = 26;              // hochzählen, sobald neue Felder dazukommen
+const APP_STATE_VERSION = 27;              // hochzählen, sobald neue Felder dazukommen
 let memoryFallback = null;
 
 /* Felder, die erst spätere App-Versionen eingeführt haben. Ein Gerät mit
    älterer App-Version schickt sie gar nicht mit — dann dürfen sie beim
    Zusammenführen NICHT durch Standardwerte ersetzt werden.
      v21: Trainings-App
-     v26: Glaubenssätze/Experimente/Beweise + Session-Rahmen (Pre-Flight) */
+     v26: Glaubenssätze/Experimente/Beweise + Session-Rahmen (Pre-Flight)
+     v27: Second Brain — Karteikarten + Wiederholungs-Log */
 const RESCUE_FIELDS = ["trainingSplit","trainingDays","trainingGoal","restDefault","restSound","activeSession","sessions",
-  "beliefs","evidence","experiments","focusSessions"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate"];
 
 /* Felder, bei denen null ein echter Wert ist ("läuft nicht mehr") und nicht
    "diese App-Version kennt das Feld nicht". Nur hier darf ein null aus der
@@ -40,7 +41,7 @@ const META_FIELDS = ["updatedAt","appVersion","fieldTs","deletedIds","wipeAt","d
 const MERGED_FIELDS = ["sessions","workouts","bodyLog","sleep","moods",
   "todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
   "routineChecks","mealEaten","focusByDate","sessionsByDate","skills","badges","journal","xp","trash",
-  "beliefs","evidence","experiments","focusSessions"];
+  "beliefs","evidence","experiments","focusSessions","cards","reviewByDate"];
 /* hydration steht bewusst NICHT in dieser Liste: Trinkmenge lässt sich per Klick
    oder Reset-Button gewollt verringern. Über mergeDateMax kam der höhere Wert nach
    jedem Abgleich zurück — jetzt entscheidet der Feld-Zeitstempel. */
@@ -158,7 +159,14 @@ function defaultState(){
     ],
     people: [],                      // {id, name, last}
     goals: [],                       // {id, title, type, skillId, ms:[{text,done}], progress, actionTodos:[{id,text,done}], skillXPGranted}
-    knowledge: [],                   // {id, title, notes:"", todos:[{id,text,done}]}
+    knowledge: [],                   // {id, title, notes:"", todos:[{id,text,done}],
+                                      //  para:"project"|"area"|"resource"|"archive", goal_id|null, explain:"" (Feynman)}
+    /* ---------- Second Brain (v27) ----------
+       Karteikarten hängen optional an einem Knowledge-Thema. Wiederholung nach
+       dem Leitner-Prinzip: Box 0 = neu/vergessen, jede richtige Antwort schiebt
+       eine Box weiter und verlängert den Abstand (siehe KN_INTERVALS). */
+    cards: [],                       // {id, topic_id|null, front, back, box 0-5, due "YYYY-MM-DD", reviews, lapses, last_review, touched}
+    reviewByDate: {},                // {"date": Anzahl wiederholter Karten}
     badges: {},                      // {badgeId: dateUnlocked}
     profile: { name: "", avatar: "🔥" },
     updatedAt: 0,                    // Zeitstempel des letzten Speicherns, für Konfliktauflösung beim Cloud-Sync
@@ -495,13 +503,17 @@ function mergeCollections(base, other, deleted){
     evidence:     mergeById(base.evidence, other.evidence, deleted),
     experiments:  mergeById(base.experiments, other.experiments, deleted),
     focusSessions: mergeById(base.focusSessions, other.focusSessions, deleted),
+    // Karteikarten: eine Wiederholung ändert die Karte in place (box, due) —
+    // pro Karte gewinnt die zuletzt angefasste Seite.
+    cards:        mergeById(base.cards, other.cards, deleted),
+    reviewByDate: mergeDateMax(base.reviewByDate, other.reviewByDate),
     // Papierkorb: NICHT über die Grabsteine filtern — hier liegt ja gerade das Gelöschte
     trash: mergeById(base.trash, other.trash, null)
       .sort((a,b)=>(b.deletedAt||0)-(a.deletedAt||0)).slice(0,100),
   };
 }
 const COLLECTION_KEYS = ["todos","habits","supplements","routineAM","routinePM","goals","learning","people","knowledge",
-  "beliefs","evidence","experiments","focusSessions"];
+  "beliefs","evidence","experiments","focusSessions","cards"];
 function collectionsChanged(before, after){
   return COLLECTION_KEYS.some(k=>arrChanged(before[k], after[k]))
     || JSON.stringify(before.routineChecks) !== JSON.stringify(after.routineChecks)
@@ -511,6 +523,7 @@ function collectionsChanged(before, after){
     || JSON.stringify(before.skills) !== JSON.stringify(after.skills)
     || JSON.stringify(before.badges) !== JSON.stringify(after.badges)
     || JSON.stringify(before.journal) !== JSON.stringify(after.journal)
+    || JSON.stringify(before.reviewByDate) !== JSON.stringify(after.reviewByDate)
     || (after.xp||0) > (before.xp||0);
 }
 

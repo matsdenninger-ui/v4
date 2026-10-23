@@ -354,9 +354,10 @@ document.body.addEventListener("click", e=>{
       break; }
 
     case "know-del":
-      customConfirm("Thema wirklich löschen? Notizen und To-Dos gehen verloren.", {okLabel:"Löschen", danger:true}).then(ok=>{
+      customConfirm("Thema wirklich löschen? Notizen, Karteikarten und To-Dos gehen verloren.", {okLabel:"Löschen", danger:true}).then(ok=>{
         if(!ok) return;
-        S.knowledge = S.knowledge.filter(t=>t.id!==id); tombstone(id); save(); renderKnowledge();
+        knDeleteCardsOfTopic(id);
+        S.knowledge = S.knowledge.filter(t=>t.id!==id); tombstone(id); save(); renderKnowledge(); renderHero();
       });
       break;
     case "know-todo-add": {
