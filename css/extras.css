@@ -106,3 +106,141 @@
   .rest-bar-row{grid-template-columns:96px 1fr 30px}
 }
 .pf-req.sd-opt{background:var(--elev);color:var(--dim)}
+
+/* ============================================================
+   Dranbleiben (v39): Erinnerungen, Schnellstart, Minimum-Tag,
+   Comeback, Side Hustle, Zeit-Check, Monatsrückblick
+   ============================================================ */
+
+/* ---------- Erinnerungen ---------- */
+.rem-status{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;margin-bottom:6px;background:var(--elev);border-radius:var(--radius-sm);font-size:13px}
+.rem-status > span{flex:none;width:18px;color:var(--faint);font-weight:700}
+.rem-status.ok > span{color:var(--mint)}
+.rem-status b{font-weight:600;display:block}
+.rem-status small{display:block;color:var(--dim);font-size:11.5px;line-height:1.5;margin-top:2px}
+.rem-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 4px}
+.rem-actions .btn:disabled{opacity:.5;cursor:default;filter:none}
+.rem-item{display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:6px;background:var(--elev);border-radius:var(--radius-sm)}
+.rem-item.off .rem-item-main{opacity:.55}
+.rem-item-main{flex:1;min-width:0}
+.rem-item-main b{display:block;font-size:13px;font-weight:600}
+.rem-item-main small{display:block;font-size:11px;color:var(--dim)}
+.rem-item input[type=time]{flex:none;width:auto;padding:6px 8px;font-size:13px}
+.rem-setup{margin-top:12px;font-size:12px;color:var(--dim);line-height:1.6}
+.rem-setup summary{cursor:pointer;color:var(--ac);font-weight:600}
+.rem-setup p{margin-top:7px}
+.rem-setup code{background:var(--elev);padding:1px 5px;border-radius:4px;color:var(--text)}
+
+/* ---------- Schnellstart ---------- */
+.quick-start-btn{margin-top:10px}
+
+/* ---------- Minimum-Tag ---------- */
+.minday{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 22px;padding:12px 14px;
+  background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);
+}
+.minday:empty{display:none}
+.minday.won{border-style:solid;border-color:rgba(52,211,153,.4);background:linear-gradient(120deg,var(--surface),var(--mint-soft))}
+.minday-ico{flex:none;font-size:22px}
+.minday-main{flex:1;min-width:0}
+.minday-main b{display:block;font-size:13.5px;font-weight:600}
+.minday.won .minday-main b{color:var(--mint)}
+.minday-main small{display:block;font-size:12px;color:var(--dim);line-height:1.5}
+.minday-edit{flex:1 1 100%;font-size:12.5px;color:var(--dim);padding-top:8px;border-top:1px solid var(--border-soft);line-height:2}
+.minday-edit select{width:auto;padding:3px 8px;margin:0 3px}
+.minday-edit small{display:block;color:var(--faint);line-height:1.4}
+.streak.rescue{background:var(--sec-soft);color:var(--sec)}
+
+/* ---------- Comeback ---------- */
+.cb-options{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.cb-options .btn{justify-content:center;padding:12px}
+
+/* ---------- Side Hustle ---------- */
+.hs-stats{margin-bottom:28px}
+.hs-stats .stat b{font-size:21px}
+.hs-active-head{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.hs-active-head > div{flex:1;min-width:0}
+.hs-active-head b{display:block;font-size:15px;font-weight:700}
+.hs-active-head small{font-size:12px;color:var(--dim)}
+.hs-score{flex:none;font-size:12px;font-weight:700;color:var(--ac);background:var(--ac-soft);padding:3px 9px;border-radius:12px}
+.hs-days{height:8px;margin-bottom:14px}
+.hs-days i{background:linear-gradient(90deg,var(--sec),var(--sec-light))}
+.hs-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.hs-metrics > div{background:var(--elev);border-radius:var(--radius-sm);padding:10px 12px}
+.hs-metrics b{display:block;font-family:var(--font-display);font-size:18px}
+.hs-metrics small{font-size:11px;color:var(--dim)}
+.hs-steps .ms{font-size:13px;line-height:1.45;align-items:flex-start}
+.hs-steps .ms .cbx{margin-top:1px;flex:none}
+.hs-decide{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft)}
+.hs-decide.due{background:var(--sec-soft);border:none;border-radius:var(--radius-sm);padding:12px}
+.hs-decide-btns{display:flex;gap:8px;flex-wrap:wrap}
+.hs-idea{background:var(--elev);border:1px solid var(--border-soft);border-radius:var(--radius-sm);margin-bottom:8px}
+.hs-idea.testing{border-color:var(--sec)}
+.hs-idea.stop{opacity:.55}
+.hs-idea-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.hs-idea-title{flex:1;min-width:0}
+.hs-idea-title b{display:block;font-size:13.5px;font-weight:600;overflow-wrap:break-word}
+.hs-idea-title small{font-size:11.5px;color:var(--dim)}
+.hs-idea-score{flex:none;width:96px;display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+.hs-idea-score .bar{flex:1;height:6px;margin:0}
+.hs-idea-body{padding:2px 12px 12px;display:flex;flex-direction:column;gap:8px}
+.hs-crit{display:grid;grid-template-columns:1fr 110px 18px;align-items:center;gap:10px;font-size:12.5px}
+.hs-crit b{text-align:right;color:var(--ac)}
+.hs-note{width:100%;font-size:12.5px}
+.hs-idea-body .btn{align-self:flex-start}
+.inc-form{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.inc-form .btn{justify-content:center}
+.inc-bars{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-bottom:14px}
+.inc-bar{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px}
+.inc-bar-col{width:100%;height:70px;background:var(--elev);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+.inc-bar-col i{display:block;width:100%;background:linear-gradient(0deg,var(--mint),#8ce8c6);border-radius:6px 6px 0 0}
+.inc-bar b{font-size:10.5px;white-space:nowrap}
+.inc-bar small{color:var(--faint)}
+
+/* ---------- Zeit-Check ---------- */
+.tc-rows{display:flex;flex-direction:column;gap:9px}
+.tc-row{display:grid;grid-template-columns:170px 1fr 56px;align-items:center;gap:10px;font-size:13px}
+.tc-row .bar{height:10px;margin:0}
+.tc-row.missing{opacity:.55}
+.tc-val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.tc-sub{font-size:12px;color:var(--dim);margin-top:10px}
+.tc-fazit{margin-top:12px;padding:11px 13px;background:var(--elev);border-radius:var(--radius-sm);font-size:13px;line-height:1.7}
+.tc-fazit b{color:var(--text)}
+.tc-screen{margin-top:16px;padding-top:12px;border-top:1px solid var(--border-soft)}
+.tc-screen label{font-size:12.5px;font-weight:600}
+.tc-screen label small{font-weight:400;color:var(--faint)}
+.tc-trend{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:12px}
+.tc-trend-col{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px}
+.tc-trend-bar{width:100%;height:60px;background:var(--elev);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+.tc-trend-bar i{display:block;width:100%;background:var(--rose);opacity:.85;border-radius:6px 6px 0 0}
+.tc-trend-col small{color:var(--faint)}
+
+/* ---------- Monatsrückblick ---------- */
+.mr-head{font-size:12px;color:var(--dim);margin-bottom:10px}
+.mr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.mr-metric{display:flex;align-items:center;gap:9px;background:var(--elev);border-radius:var(--radius-sm);padding:10px 11px}
+.mr-ico{flex:none;font-size:17px}
+.mr-main{flex:1;min-width:0}
+.mr-main small{display:block;font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mr-main b{font-family:var(--font-display);font-size:17px}
+.mr-delta{flex:none;font-size:11px;font-weight:700;color:var(--faint)}
+.mr-metric.up .mr-delta{color:var(--mint)}
+.mr-metric.down .mr-delta{color:var(--sec)}
+.mr-mindset{margin-top:12px;font-size:13px;color:var(--dim);line-height:1.6}
+.mr-mindset b{color:var(--text)}
+.mr-rate{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-soft)}
+.mr-rate #selfNote{width:100%;margin-top:8px}
+.mr-trend .tc-trend-bar i{background:var(--ac)}
+.mr-notes{margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;line-height:1.5}
+.mr-notes small{color:var(--ac);font-weight:600;margin-right:6px}
+
+@media (max-width:860px){
+  .mr-grid{grid-template-columns:1fr 1fr}
+  .tc-row{grid-template-columns:120px 1fr 48px;font-size:12px}
+  .hs-metrics{grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .hs-metrics b{font-size:15px}
+  .hs-crit{grid-template-columns:1fr 90px 16px}
+}
+@media (max-width:480px){
+  .inc-form{grid-template-columns:1fr}
+}

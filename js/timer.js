@@ -76,6 +76,7 @@ function syncTimerUI(){
   $("timerBtn").textContent = laeuft ? "■ Session beenden" : "▶ Session starten";
   $("timerBtn").classList.toggle("ghost", laeuft);
   $("timerBtn").classList.toggle("violet", !laeuft);
+  if($("quickStartBtn")) $("quickStartBtn").style.display = laeuft ? "none" : "";
   if(laeuft){
     timerInterval = setInterval(tickTimer, 500);
     tickTimer();
@@ -799,3 +800,26 @@ function saveDebrief(){
 }
 
 /* ---------- Weekly Board ---------- */
+
+/* ---------- Schnellstart: nur 5 Minuten ----------
+   Für Tage, an denen schon der Pre-Flight zu viel ist. Kein Formular — der
+   Timer läuft sofort für den nächsten Schritt. Nach 5 Minuten zeigt das Overlay
+   „Zeitbox erreicht“: weitermachen oder beenden, beides ist ein Gewinn. */
+function quickStart(outcomeId){
+  if(focusElapsedMin() !== null){ toast("Es läuft schon eine Session."); return; }
+  const o = outcomeId ? S.todos.find(t=>t.id===outcomeId) : (clearTodayOutcomes()[0] || openOutcomes()[0] || null);
+  const sess = {
+    id: uid(), context: "deep_work", outcome_task_id: o ? o.id : null,
+    goal_id: o && o.goal_id ? o.goal_id : null, belief_id: null,
+    challenge: "matched", duration_min: 5, distraction_plan: "", preflight: { quick: true },
+    started_at: Date.now(), ended_at: null, flow_score: null, evidence_text: null, next_subtask_text: null,
+    touched: Date.now(),
+  };
+  if(!Array.isArray(S.focusSessions)) S.focusSessions = [];
+  S.focusSessions.unshift(sess);
+  S.timerStart = Date.now(); S.timerId = sess.id;
+  save(); markSeen();
+  syncTimerUI(); renderFocusOverlay(); renderFocus();
+  const next = o ? nextOpenSubtask(o) : null;
+  toast("⚡ 5 Minuten — " + (next ? "nur: " + next.text : "fang einfach an. Danach darfst du aufhören."));
+}

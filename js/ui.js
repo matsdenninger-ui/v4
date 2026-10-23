@@ -51,7 +51,7 @@ document.addEventListener("keydown", e=>{
 
 
 /* ---------- Navigation ---------- */
-const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body & Training", mind:"Mind", progress:"Progress", goals:"Goals", knowledge:"Knowledge" };
+const PAGE_TITLES = { today:"Today", nutrition:"Nutrition & Supplements", body:"Body & Training", mind:"Mind", progress:"Progress", goals:"Goals", knowledge:"Knowledge", hustle:"Side Hustle" };
 document.querySelectorAll("#nav button").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     document.querySelectorAll("#nav button").forEach(b=>b.classList.remove("active"));
@@ -61,7 +61,8 @@ document.querySelectorAll("#nav button").forEach(btn=>{
     $("page-"+p).classList.add("active");
     $("pageTitle").textContent = PAGE_TITLES[p];
     if(p==="body"){ renderTraining(); switchBodyTab(bodyTab); }
-    if(p==="progress"){ renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation(); }
+    if(p==="progress"){ renderProgressStats(); renderProgressCharts(); renderBadges(); renderCorrelation(); if(typeof renderTimeCheck==="function") renderTimeCheck(); if(typeof renderMonthReview==="function") renderMonthReview(); }
+    if(p==="hustle" && typeof renderHustle==="function") renderHustle();
     closeSidebar();
     try{ window.scrollTo({top:0, behavior:"smooth"}); }catch(e){}
   });
