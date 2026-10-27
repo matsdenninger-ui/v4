@@ -7,13 +7,23 @@ function nextTodoOrder(){
   return Math.max(...S.todos.map(t=>t.order ?? 0)) + 1;
 }
 
+/* Tag bzw. Reihenfolge ändern. Beides trägt einen eigenen Zeitstempel statt
+   `touched` — so entscheidet der Abgleich die Tageszuweisung im Wochenboard
+   unabhängig vom Abhaken oder Umbenennen (storage.js → mergeTodos). */
+function setTodoDate(t, dateKey){
+  t.date = dateKey || null; t.scheduled_date = dateKey || null; t.dateAt = Date.now();
+}
+function setTodoOrder(t, order){ t.order = order; t.orderAt = Date.now(); }
+
 function addTodo(){
   const v = $("todoInput").value.trim();
   if(!v) return;
   const mins = parseInt($("todoMinutes").value) || null;
-  const tk = todayKey();
-  S.todos.push({id:uid(), text:v, done:false, date:tk, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder(), touched:Date.now(),
-    parent_id:null, is_outcome:false, scheduled_date:tk, status:"open"});
+  // Neue Punkte landen im Backlog, nicht automatisch auf heute — eingeplant wird
+  // bewusst im Wochenboard (sonst füllt jeder neue Punkt den heutigen Tag).
+  const now = Date.now();
+  S.todos.push({id:uid(), text:v, done:false, date:null, estMinutes:mins, focusedMinutes:0, order:nextTodoOrder(), touched:now,
+    dateAt:now, orderAt:now, parent_id:null, is_outcome:false, scheduled_date:null, status:"open"});
   $("todoInput").value = ""; $("todoMinutes").value = ""; save(); renderTodos(); renderWeek(); renderOutcomes(); renderHero();
 }
 $("todoAdd").addEventListener("click", addTodo);
@@ -36,8 +46,10 @@ function renderTodos(){
   // Der Backlog zeigt jeden eigenständigen Punkt — auch einen Aufgabenblock, der
   // gerade nicht auf Heute steht. Ausgeblendet ist nur, was Heute schon als
   // Outcome zeigt (sonst stünde dieselbe Aufgabe zweimal auf dem Schirm) und
-  // alles, was selbst ein Subtask ist.
-  const todos = S.todos.filter(t=>!t.parent_id && !(t.is_outcome && t.date === tk)).sort((a,b)=>{
+  // alles, was selbst ein Subtask ist. Dazu zählen auch die Wochenboard-Punkte,
+  // die gerade im Heute-Fenster nachgerückt sind.
+  const imFenster = new Set(todayWindow().board.map(t=>t.id));
+  const todos = S.todos.filter(t=>!t.parent_id && !(t.is_outcome && t.date === tk) && !imFenster.has(t.id)).sort((a,b)=>{
     const da = a.date || "9999-99-99", db = b.date || "9999-99-99";
     if(da !== db) return da.localeCompare(db);
     return (a.order??0)-(b.order??0);
@@ -115,7 +127,7 @@ function initTodoDrag(){
     const now = Date.now();
     orderedIds.forEach((tid, idx)=>{
       const t = S.todos.find(x=>x.id===tid);
-      if(t){ t.order = idx; t.touched = now; }
+      if(t && t.order !== idx){ t.order = idx; t.orderAt = now; }
     });
     save();
     renderHero();
@@ -198,11 +210,24 @@ function initWeekDragReorder(){
     if(dayIndex !== null && !isNaN(dayIndex)){
       const dateKey = weekDates()[dayIndex];
       const t = S.todos.find(x=>x.id===todoId);
-      if(t && t.date !== dateKey){
-        t.date = dateKey; t.touched = Date.now(); save();
-        renderTodos(); renderHero();
-        toast("„"+t.text+"“ auf "+WD[dayIndex]+" verschoben");
+      const verschoben = t && t.date !== dateKey;
+      if(verschoben) setTodoDate(t, dateKey);
+      // Reihenfolge innerhalb des Tages festhalten — sie bestimmt, welcher Punkt
+      // im Heute-Fenster als Nächstes nachrückt. Die vorhandenen order-Werte der
+      // Spalte werden nur neu verteilt, damit der Backlog stimmig bleibt.
+      const spalte = [...dayEl.querySelectorAll(".wb-item")]
+        .map(el=>S.todos.find(x=>x.id===el.dataset.id)).filter(Boolean);
+      const werte = spalte.map(x=>x.order ?? 0).sort((a,b)=>a-b);
+      let umsortiert = false;
+      spalte.forEach((x,i)=>{
+        // Gleiche Werte (z. B. -1 vom Feierabend) würden die Reihenfolge nicht halten
+        const soll = i && werte[i] <= werte[i-1] ? (werte[i] = werte[i-1] + 1) : werte[i];
+        if(x.order !== soll){ setTodoOrder(x, soll); umsortiert = true; }
+      });
+      if(verschoben || umsortiert){
+        save(); renderTodos(); renderOutcomes(); renderHero();
       }
+      if(verschoben) toast("„"+t.text+"“ auf "+WD[dayIndex]+" verschoben");
     }
     weekDragState = null;
     renderWeek();
@@ -298,8 +323,8 @@ function restoreTodo(text, estMinutes){
 /* Nur aus dem Weekly Board entfernen: Datum wird gelöscht (nicht eingeplant), das To-Do selbst bleibt in der Liste erhalten */
 function unassignTodo(id){
   const t = S.todos.find(t=>t.id===id); if(!t) return;
-  t.date = null; t.touched = Date.now(); save();
-  renderWeek(); renderTodos(); renderHero();
+  setTodoDate(t, null); save();
+  renderWeek(); renderTodos(); renderOutcomes(); renderHero();
   toast("„"+t.text+"“ aus dem Weekly Board entfernt — bleibt in der To-Do-Liste.");
 }
 
@@ -352,25 +377,37 @@ $("trashRestoreAll").addEventListener("click", ()=>{
   renderTrashList();
 });
 
-/* Jeden Tag: überfällige, nicht erledigte To-Dos auf heute nachziehen (Fortschritt bleibt erhalten) */
-/* Jeden Tag: überfällige, nicht erledigte To-Dos auf heute nachziehen (Fortschritt bleibt erhalten);
-   erledigte To-Dos von vergangenen Tagen verschwinden automatisch (nur To-Dos — Habits/Routinen bleiben unberührt) */
-function rolloverTodos(){
+/* Tageswechsel — aufräumen, ohne den Wochenplan umzubauen.
+   Früher rutschte JEDES offene To-Do vergangener Tage auf heute, mit frischem
+   `touched`. Das kippte alles Liegengebliebene auf einen Tag, und weil es schon
+   beim Öffnen passierte (vor dem Cloud-Abgleich), galt der veraltete Stand eines
+   länger nicht geöffneten Geräts als „neuer“ und überschrieb den Wochenplan des
+   anderen Geräts. Jetzt:
+     · Offene To-Dos bleiben an ihrem Tag — das Board markiert sie als überfällig.
+     · Nur offene Outcomes ziehen auf heute nach; sie sind die Zusage für den Tag.
+     · Kein Zeitstempel: der Schritt ist deterministisch, läuft auf jedem Gerät
+       gleich und nach jedem Abgleich erneut (storage.js). Eine echte Änderung des
+       anderen Geräts gewinnt deshalb immer.
+     · Erledigte To-Dos verschwinden erst am Tag NACH dem Abhaken.
+   ohneSpeichern: nur S anpassen (der Aufrufer speichert selbst). */
+function rolloverTodos(ohneSpeichern){
   const tk = todayKey();
   let changed = false;
   S.todos.forEach(t=>{
-    if(!t.done && t.date && t.date < tk){ t.date = tk; t.scheduled_date = tk; t.touched = Date.now(); changed = true; }
+    if(t.is_outcome && !t.parent_id && !t.done && t.date && t.date < tk){ t.date = tk; t.scheduled_date = tk; changed = true; }
   });
   // Erledigte To-Dos vergangener Tage verschwinden — ein abgeschlossenes Outcome
   // nimmt seine Subtasks mit, sonst blieben sie als Waisen im Backlog stehen.
-  const weg = S.todos.filter(t => t.done && t.date && t.date < tk);
+  const erledigtVorHeute = t => !t.done_at || todayKey(new Date(t.done_at)) < tk;
+  const weg = S.todos.filter(t => t.done && t.date && t.date < tk && erledigtVorHeute(t));
   if(weg.length){
     changed = true;
     const ids = new Set();
     weg.forEach(t=>{ ids.add(t.id); if(t.is_outcome) outcomeChildren(t.id).forEach(k=>ids.add(k.id)); });
     S.todos = S.todos.filter(t=>!ids.has(t.id));
   }
-  if(changed) save();
+  if(changed && !ohneSpeichern) save();
+  return changed;
 }
 
 /* ============================================================
@@ -406,6 +443,27 @@ function clearTodayOutcomes(){ return openOutcomes().filter(outcomeIsClear); }
    besetzt einen Platz, sonst wären vier Outcomes über die Hintertür möglich. */
 function outcomeSlotsLeft(){ return Math.max(0, MAX_OUTCOMES - openOutcomes().length); }
 
+/* Heute-Fenster: die Outcomes des Tages, aufgefüllt mit den To-Dos, die im
+   Wochenboard auf heute liegen — zusammen höchstens MAX_OUTCOMES offene. Die
+   Board-Reihenfolge entscheidet; wird ein Punkt erledigt, rückt der nächste
+   nach. Erledigte Board-Punkte von heute bleiben als Erfolg stehen.
+     board   = im Fenster gezeigte Board-Punkte (offen + heute erledigt)
+     wartend = offene Board-Punkte, die noch keinen freien Platz haben */
+function todayWindow(){
+  const tk = todayKey();
+  const outcomes = todayOutcomes();
+  const boardHeute = S.todos.filter(t=>t.date===tk && !t.parent_id && !t.is_outcome)
+    .sort((a,b)=>(a.order??0)-(b.order??0));
+  const frei = Math.max(0, MAX_OUTCOMES - outcomes.filter(o=>!o.done).length);
+  const offen = boardHeute.filter(t=>!t.done);
+  const nachgerückt = new Set(offen.slice(0, frei).map(t=>t.id));
+  return {
+    outcomes,
+    board: boardHeute.filter(t=>t.done || nachgerückt.has(t.id)),
+    wartend: offen.slice(frei),
+  };
+}
+
 function addSubtask(parentId, text, opts){
   text = String(text||"").trim();
   if(!text) return null;
@@ -440,6 +498,7 @@ function addSubtask(parentId, text, opts){
    ============================================================ */
 function groupBlockHTML(t, mode){
   const imBacklog = mode === "backlog";
+  const imBoard = mode === "board";     // im Heute-Fenster nachgerückter Wochenboard-Punkt
   const p = outcomeProgress(t);
   const next = nextOpenSubtask(t);
   const kids = outcomeChildren(t.id);
@@ -460,6 +519,7 @@ function groupBlockHTML(t, mode){
         <div class="outcome-meta">
           ${p.total ? `<b>${p.done}/${p.total}</b> Subtasks` : "<b>0 Subtasks</b> — Definition of Done fehlt"}
           ${imBacklog ? ` · <span class="no-wrap">${todoDayLabel(t)}</span>` : ""}
+          ${imBoard ? ` · <span class="no-wrap">📅 Wochenboard</span>` : ""}
           ${t.focusedMinutes ? ` · ⏱ ${t.focusedMinutes} Min.` : ""}
           ${goal ? `<span class="goal-here">🎯 ${esc(goal.title)}</span>` : ""}
         </div>
@@ -493,7 +553,8 @@ function groupBlockHTML(t, mode){
     <div class="outcome-actions">
       ${!t.done && next ? `<button class="btn violet sm" data-act="session-preflight" data-id="${t.id}">▶ Session zu diesem ${imBacklog?"Ergebnis":"Outcome"}</button>` : ""}
       ${!t.done && next ? `<button class="btn ghost sm" data-act="quick-start" data-id="${t.id}" title="Ohne Pre-Flight: 5 Minuten am nächsten Subtask">⚡ 5 Min.</button>` : ""}
-      ${!t.done && !imBacklog ? `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>` : ""}
+      ${!t.done && imBoard ? `<button class="btn ghost sm" data-act="wb-unassign" data-id="${t.id}">→ aus dem Board</button>`
+        : !t.done && !imBacklog ? `<button class="btn ghost sm" data-act="outcome-to-backlog" data-id="${t.id}">→ in den Backlog</button>` : ""}
       <button class="btn ghost sm" data-act="four-bullet" data-id="${t.id}" title="Update für Chef oder Team: Auftrag · Erledigt · Risiken · Nächstes">📨 Update</button>
     </div>
   </div>`;
@@ -502,22 +563,44 @@ function groupBlockHTML(t, mode){
 function renderOutcomes(){
   const box = $("outcomeList");
   if(!box) return;
-  const alle = todayOutcomes();
-  const offen = alle.filter(o=>!o.done);
+  const fenster = todayWindow();
+  const alle = fenster.outcomes;
+  const offen = alle.filter(o=>!o.done).length + fenster.board.filter(t=>!t.done).length;
   // Über dem Deckel (kommt nur nach Cloud-Merge oder Import vor) wäre „5 / 3"
   // schlicht falsch zu lesen — dort nennt das Label die Zahl und die Grenze.
-  $("outcomeCount").textContent = offen.length > MAX_OUTCOMES
-    ? offen.length + " offen · max. " + MAX_OUTCOMES
-    : offen.length + " / " + MAX_OUTCOMES + " Outcomes";
+  $("outcomeCount").textContent = offen > MAX_OUTCOMES
+    ? offen + " offen · max. " + MAX_OUTCOMES
+    : offen + " / " + MAX_OUTCOMES + " Outcomes";
 
-  if(!alle.length){
+  if(!alle.length && !fenster.board.length){
     box.innerHTML = `<div class="empty outcome-empty">🎯 <b>Noch kein Outcome für heute.</b><br>
       Wähle das eine Ergebnis, das den Tag gewonnen macht — nicht zehn Aufgaben.<br>
       <span class="hint-next">Nächster Schritt: „Outcome für heute“ antippen.</span></div>`;
     return;
   }
 
-  box.innerHTML = alle.map(o=>groupBlockHTML(o, "today")).join("") + renderOutcomeOverflow(alle);
+  box.innerHTML = alle.map(o=>groupBlockHTML(o, "today")).join("")
+    + fenster.board.map(t=>hasSubtasks(t) ? groupBlockHTML(t, "board") : boardTodoHTML(t)).join("")
+    + renderBoardWaiting(fenster.wartend)
+    + renderOutcomeOverflow(alle);
+}
+
+/* Ein einfacher Wochenboard-Punkt (ohne Subtasks) im Heute-Fenster — schlicht als
+   Zeile, damit er nicht als Outcome ohne Definition of Done angemahnt wird. */
+function boardTodoHTML(t){
+  return `<div class="check-item board-pick ${t.done?"done":""}" data-id="${t.id}">
+    <button class="cbx ${t.done?"on":""}" data-act="todo-toggle" data-id="${t.id}" aria-label="Abhaken">${ICON_CHECK}</button>
+    <div class="todo-main">
+      <span class="txt">${esc(t.text)}</span>
+      <span class="meta">📅 Wochenboard${t.estMinutes ? ` · ⏱ ${t.focusedMinutes||0}/${t.estMinutes} Min.` : ""}</span>
+    </div>
+    ${t.done ? "" : `<button class="icon-btn promote-btn" data-act="todo-promote" data-id="${t.id}" title="Zum Outcome machen (mit Subtasks)" aria-label="Zum Outcome machen">🎯</button>`}
+    <button class="icon-btn del" data-act="wb-unassign" data-id="${t.id}" title="Aus dem Board nehmen — bleibt im Backlog" aria-label="Aus dem Board nehmen">${ICON_UNPLAN}</button>
+  </div>`;
+}
+function renderBoardWaiting(wartend){
+  if(!wartend.length) return "";
+  return `<div class="board-waiting">+ ${wartend.length} weitere${wartend.length===1?"r Punkt":" Punkte"} im Wochenboard für heute — rückt nach, sobald hier etwas erledigt ist.</div>`;
 }
 
 /* Der Deckel ist hart: mehr als 3 offene Outcomes sind keine Priorisierung mehr,
@@ -577,7 +660,7 @@ function promoteTodoToOutcome(id){
   }
   const kinder = outcomeChildren(id);
   t.is_outcome = true; t.parent_id = null;
-  t.date = todayKey(); t.scheduled_date = todayKey();
+  setTodoDate(t, todayKey());
   t.done = false; t.status = "open"; t.touched = Date.now();
   save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
   toast(kinder.length
@@ -594,7 +677,7 @@ function demoteOutcome(id){
   // NUR den Bezug zu Heute lösen. Die Subtasks bleiben dran — sie SIND die
   // Definition of Done. Sie einzeln in den Backlog zu streuen würde genau das
   // zerstören, was am Outcome den Wert ausmacht.
-  t.is_outcome = false; t.date = null; t.scheduled_date = null; t.touched = Date.now();
+  t.is_outcome = false; setTodoDate(t, null); t.touched = Date.now();
   if(kinder.length) expandedGroups.add(id);   // gleich sichtbar, dass nichts verloren ging
   save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
   toast("„" + t.text + "“ liegt jetzt im Backlog" + (kinder.length ? " — die " + kinder.length + " Subtasks bleiben dran." : "."));
@@ -606,7 +689,7 @@ function finishDay(){
   const offen = openOutcomes();
   if(!offen.length){ toast("Für heute ist nichts mehr offen."); return; }
   const morgen = todayKey(addDays(new Date(),1));
-  offen.forEach(o=>{ o.date = morgen; o.scheduled_date = morgen; o.touched = Date.now(); });
+  offen.forEach(o=>setTodoDate(o, morgen));
   save(); renderOutcomes(); renderTodos(); renderWeek(); renderHero();
   toast("🌙 " + offen.length + (offen.length===1 ? " Outcome" : " Outcomes") + " auf morgen verschoben. Feierabend.");
 }

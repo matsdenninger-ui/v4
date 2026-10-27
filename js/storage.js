@@ -218,6 +218,10 @@ function normalizeTodo(t){
   if(t.status !== soll) t.status = soll;
   // Ein Subtask kann kein Outcome sein — sonst zählt er doppelt auf Heute.
   if(t.parent_id) t.is_outcome = false;
+  // Tag und Reihenfolge haben eigene Zeitstempel (siehe mergeTodos). Ältere
+  // Einträge übernehmen dafür ihren touched-Wert.
+  if(typeof t.dateAt !== "number") t.dateAt = t.touched || 0;
+  if(typeof t.orderAt !== "number") t.orderAt = t.touched || 0;
   return t;
 }
 function normalizeTodos(state){
@@ -389,6 +393,31 @@ function mergeById(baseArr, otherArr, deleted){
   });
   return [...map.values()];
 }
+/* To-Dos: wie mergeById, aber Tag (date) und Reihenfolge (order) entscheiden
+   über eigene Zeitstempel (dateAt/orderAt) statt über `touched`. Genau diese
+   beiden Felder ändert das Wochenboard. Vorher gewann der ganze Eintrag, wer
+   ihn zuletzt irgendwie angefasst hatte — ein Abhaken oder Umsortieren auf dem
+   einen Gerät schob damit die alte Tageszuweisung über den Wochenplan, den das
+   andere Gerät gerade gebaut hatte. Jetzt gewinnt pro Feld die jüngste Änderung. */
+function todoStamp(t, key){ return typeof t[key] === "number" ? t[key] : (t.touched||0); }
+function mergeTodos(baseArr, otherArr, deleted){
+  const baseById  = new Map((baseArr||[]).filter(Boolean).map(t=>[t.id,t]));
+  const otherById = new Map((otherArr||[]).filter(Boolean).map(t=>[t.id,t]));
+  return mergeById(baseArr, otherArr, deleted).map(item=>{
+    const a = baseById.get(item.id), b = otherById.get(item.id);
+    if(!a || !b) return item;
+    const out = Object.assign({}, item);
+    const dA = todoStamp(a,"dateAt"), dB = todoStamp(b,"dateAt");
+    const d = dA >= dB ? a : b;                 // Gleichstand: base gewinnt, wie in mergeById
+    out.date = d.date ?? null;
+    out.scheduled_date = d.date ?? null;
+    out.dateAt = Math.max(dA, dB);
+    const oA = todoStamp(a,"orderAt"), oB = todoStamp(b,"orderAt");
+    out.order = (oA >= oB ? a : b).order;
+    out.orderAt = Math.max(oA, oB);
+    return out;
+  });
+}
 function arrChanged(before, after){
   return JSON.stringify(before||[]) !== JSON.stringify(after||[]);
 }
@@ -493,7 +522,7 @@ function mergeXp(base, other){
    Häkchen, Level und XP gehen nie verloren). */
 function mergeCollections(base, other, deleted){
   return {
-    todos:      mergeById(base.todos, other.todos, deleted),
+    todos:      mergeTodos(base.todos, other.todos, deleted),
     habits:     mergeArrWithDates(base.habits, other.habits, deleted),
     supplements:mergeArrWithDates(base.supplements, other.supplements, deleted),
     routineAM:  mergeById(base.routineAM, other.routineAM, deleted),
@@ -715,6 +744,7 @@ function cloudSave(immediate){
           backupLocalState();
           const before = JSON.stringify(S);
           S = mergeCloudState(S, remote).state;
+          rolloverTodos(true);   // Tageswechsel auch auf dem übernommenen Stand (ohne Zeitstempel)
           save0();
           resetChangeTracking();
           if(JSON.stringify(S) !== before){
@@ -785,6 +815,7 @@ async function cloudLoad(silent){
       const before = JSON.stringify(S);
       const merge = mergeCloudState(S, cloudData);
       S = merge.state;
+      rolloverTodos(true);     // Tageswechsel auch auf dem übernommenen Stand (ohne Zeitstempel)
       save0();                 // nur lokal cachen
       resetChangeTracking();
       if(JSON.stringify(S) !== before){

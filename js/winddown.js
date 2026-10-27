@@ -81,7 +81,7 @@ function completeShutdown(){
   const tk = todayKey();
   const morgen = todayKey(addDays(new Date(),1));
   const offen = openOutcomes();
-  offen.forEach(o=>{ o.date = morgen; o.scheduled_date = morgen; o.touched = Date.now(); });
+  offen.forEach(o=>setTodoDate(o, morgen));
   const wichtig = $("sdTomorrow").value.trim();
   if(wichtig){
     S.todos.push({ id:uid(), text:wichtig, done:false, date:morgen, estMinutes:null, focusedMinutes:0,
@@ -115,7 +115,7 @@ document.body.addEventListener("click", e=>{
     case "sd-park-tomorrow": {
       const t = S.todos.find(x=>x.id===id); if(!t) break;
       const morgen = todayKey(addDays(new Date(),1));
-      t.date = morgen; t.scheduled_date = morgen; t.touched = Date.now();
+      setTodoDate(t, morgen);
       save(); renderShutdown(); renderTodos(); renderWeek();
       break; }
     case "sd-park-del":

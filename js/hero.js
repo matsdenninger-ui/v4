@@ -242,7 +242,10 @@ function renderWeek(){
       <div class="wb-date">${fmtShort(dateKey)}</div>
       <input class="wb-theme" data-act="wb-theme" data-i="${i}" maxlength="24" placeholder="Thema" value="${esc((S.weekThemes||[])[i]||"")}" aria-label="Tagesthema ${name}">
       ${items.map(it=>{
-        return `<div class="wb-item ${it.done?"done":""}" data-id="${it.id}">
+        // Liegengebliebenes bleibt an seinem Tag und wird nur markiert — verschieben
+        // entscheidest du (früher rutschte alles automatisch auf heute).
+        const überfällig = !it.done && dateKey < tk;
+        return `<div class="wb-item ${it.done?"done":""} ${überfällig?"overdue":""}" data-id="${it.id}" ${überfällig?'title="Überfällig — auf einen anderen Tag ziehen"':""}>
           <div class="wb-item-row">
             <button class="wb-drag-handle" aria-label="Ziehen">${DRAG_ICON}</button>
             <span class="wb-txt" data-act="wb-toggle" data-id="${it.id}">${esc(it.text)}</span>
@@ -286,10 +289,9 @@ function openTodoAssignPicker(day){
   function onPick(e){
     const t = S.todos.find(x=>x.id===e.currentTarget.dataset.todoId);
     if(t){
-      t.date = dateKey;
-      t.order = nextTodoOrder();
-      t.touched = Date.now();
-      save(); renderWeek(); renderTodos(); renderHero();
+      setTodoDate(t, dateKey);
+      setTodoOrder(t, nextTodoOrder());
+      save(); renderWeek(); renderTodos(); renderOutcomes(); renderHero();
       toast("„"+t.text+"“ auf "+WD[day]+" gelegt");
     }
     cleanup();
